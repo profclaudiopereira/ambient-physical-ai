@@ -148,9 +148,7 @@ Milestone 002: Completed
 
 ## Hardware Reference
 
-```text
-photos/2026-05-31_unit-mini-tof-90_front.jpeg
-```
+![Mini ToF-90](photos/2026-05-31_unit-mini-tof-90_front.jpeg)
 
 Front view of the M5Stack Unit Mini ToF-90 sensor.
 
@@ -158,9 +156,7 @@ Front view of the M5Stack Unit Mini ToF-90 sensor.
 
 ## Investigation Setup
 
-```text
-photos/2026-05-31_cores3-lite_tof-investigation.jpeg
-```
+![CoreS3 Lite + ToF](photos/2026-05-31_cores3-lite_tof-investigation.jpeg)
 
 Initial ESP-IDF integration and I2C investigation setup using CoreS3 Lite.
 
@@ -170,9 +166,7 @@ This setup was used during the early bring-up phase of the Presence Layer.
 
 ## Validation Setup
 
-```text
-photos/2026-05-31_m5dial_tof-validation.jpeg
-```
+![M5Dial + ToF](photos/2026-05-31_m5dial_tof-validation.jpeg)
 
 Validation setup using M5Dial.
 
