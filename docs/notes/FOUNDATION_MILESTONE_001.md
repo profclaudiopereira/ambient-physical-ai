@@ -92,3 +92,8 @@ Demo First. Complexity Later.
 Foundation Phase
 
 Milestone Completed: ✅
+
+
+## Evidence
+
+![Presence Node first run](../../assets/screenshots/firmware/presence-node/2026-05-31_presence-node_first-run_esp-idf-monitor.png)
