@@ -89,3 +89,58 @@ Hardware acquired.
 Integration planned for:
 
 Presence Node v0.2
+
+## Validation
+
+The Mini ToF-90 sensor was independently validated before integration into the Ambient Physical AI runtime.
+
+### Validation Platform
+
+* M5Dial
+* ESP32-S3
+* Arduino IDE
+
+### Validation Sketch
+
+```text
+validation/arduino/vl53l0x_validation.ino
+```
+
+### Result
+
+Successful distance measurements were obtained:
+
+```text
+Distance: 45 mm
+Distance: 42 mm
+Distance: 46 mm
+Distance: 43 mm
+Distance: 43 mm
+Distance: 45 mm
+Distance: 44 mm
+```
+
+### Validation Outcome
+
+Confirmed operational:
+
+* VL53L0X sensor
+* Grove cable
+* Grove interface
+* power supply
+* distance measurement
+
+### Architectural Impact
+
+This validation confirms that the hardware layer is operational.
+
+Any remaining issues observed during ESP-IDF integration are therefore considered software integration challenges and not hardware failures.
+
+### Status
+
+Hardware Validation: Completed
+
+Milestone 002: Completed
+
+
+
