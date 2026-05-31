@@ -1,11 +1,10 @@
 Listagem de caminhos de pasta
-O número de série do volume é 000000FE 3CAD:6921
+O número de série do volume é 000000A9 3CAD:6921
 C:.
 ¦   .gitignore
 ¦   LICENSE
 ¦   README.md
 ¦   repository_snapshot.txt
-¦   tree.txt
 ¦   
 +---.github
 ¦       .gitkeep
