@@ -8,9 +8,12 @@
 
 M5Stack Unit Mini ToF-90°
 
-Sensor:
-
-VL53L0X
+Sensor: VL53L0X
+Interface: I2C
+Address: 0x29
+Range: 3 cm ~ 200 cm
+Field of View: 25°
+Role: Presence Layer
 
 ---
 
