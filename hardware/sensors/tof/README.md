@@ -142,5 +142,95 @@ Hardware Validation: Completed
 
 Milestone 002: Completed
 
+---
+
+# Photos
+
+## Hardware Reference
+
+```text
+photos/2026-05-31_unit-mini-tof-90_front.jpeg
+```
+
+Front view of the M5Stack Unit Mini ToF-90 sensor.
+
+---
+
+## Investigation Setup
+
+```text
+photos/2026-05-31_cores3-lite_tof-investigation.jpeg
+```
+
+Initial ESP-IDF integration and I2C investigation setup using CoreS3 Lite.
+
+This setup was used during the early bring-up phase of the Presence Layer.
+
+---
+
+## Validation Setup
+
+```text
+photos/2026-05-31_m5dial_tof-validation.jpeg
+```
+
+Validation setup using M5Dial.
+
+This configuration successfully validated:
+
+* VL53L0X sensor
+* Grove cable
+* Grove interface
+* power supply
+* distance measurement
+
+Observed measurements:
+
+```text
+Distance: 45 mm
+Distance: 42 mm
+Distance: 46 mm
+Distance: 43 mm
+```
+
+---
+
+# ESP-IDF Integration
+
+Firmware:
+
+```text
+firmware/nodes/presence-node
+```
+
+Platform:
+
+```text
+ESP-IDF 5.4.2
+```
+
+Result:
+
+```text
+VL53L0X detected
+```
+
+The sensor is successfully detected by the official Presence Node firmware.
+
+Current status:
+
+```text
+M002 Hardware Validation
+COMPLETED
+
+M003 Sprint 1
+Device Detection
+COMPLETED
+
+M003 Sprint 2
+Distance Measurement
+NEXT
+```
+
 
 
