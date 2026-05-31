@@ -7,7 +7,7 @@
 #define I2C_MASTER_SCL_IO           2
 #define I2C_MASTER_SDA_IO           1
 #define I2C_MASTER_PORT             I2C_NUM_0
-#define I2C_MASTER_FREQ_HZ          50000
+#define I2C_MASTER_FREQ_HZ          100000
 #define I2C_SCAN_TIMEOUT_MS         50
 
 static const char *TAG = "presence-node";
@@ -23,7 +23,7 @@ void app_main(void)
         .scl_io_num = I2C_MASTER_SCL_IO,
         .sda_io_num = I2C_MASTER_SDA_IO,
         .glitch_ignore_cnt = 7,
-        .flags.enable_internal_pullup = false,
+        .flags.enable_internal_pullup = true,
     };
 
     i2c_master_bus_handle_t bus_handle;
@@ -35,16 +35,21 @@ void app_main(void)
         return;
     }
 
-    while (1) {
-    ESP_LOGI(TAG, "Probing VL53L0X at address 0x29...");
+ while (1) {
+    ESP_LOGI(TAG, "Scanning I2C bus...");
 
-    err = i2c_master_probe(bus_handle, 0x29, 1000);
+    int devices_found = 0;
 
-    if (err == ESP_OK) {
-        ESP_LOGI(TAG, "VL53L0X detected at 0x29");
-    } else {
-        ESP_LOGW(TAG, "VL53L0X not detected: %s", esp_err_to_name(err));
+    for (uint8_t address = 1; address < 127; address++) {
+        err = i2c_master_probe(bus_handle, address, 200);
+
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Found I2C device at address 0x%02X", address);
+            devices_found++;
+        }
     }
+
+    ESP_LOGI(TAG, "Scan complete. Devices found: %d", devices_found);
 
     vTaskDelay(pdMS_TO_TICKS(3000));
 }
