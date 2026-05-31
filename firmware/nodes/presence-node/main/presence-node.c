@@ -1,20 +1,25 @@
 #include <stdio.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2c_master.h"
-#include "esp_log.h"
 
-#define I2C_MASTER_SCL_IO           2
-#define I2C_MASTER_SDA_IO           1
+#include "driver/i2c_master.h"
+
+#include "esp_log.h"
+#include "esp_err.h"
+
+#include "vl53l0x.h"
+
+#define I2C_MASTER_SCL_IO           15
+#define I2C_MASTER_SDA_IO           13
 #define I2C_MASTER_PORT             I2C_NUM_0
 #define I2C_MASTER_FREQ_HZ          100000
-#define I2C_SCAN_TIMEOUT_MS         50
 
 static const char *TAG = "presence-node";
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "Presence Node v0.2 - I2C Scanner");
+    ESP_LOGI(TAG, "Presence Node v0.3 - VL53L0X Test");
     ESP_LOGI(TAG, "Initializing I2C bus...");
 
     i2c_master_bus_config_t bus_config = {
@@ -28,29 +33,57 @@ void app_main(void)
 
     i2c_master_bus_handle_t bus_handle;
 
-    esp_err_t err = i2c_new_master_bus(&bus_config, &bus_handle);
+    esp_err_t err = i2c_new_master_bus(
+        &bus_config,
+        &bus_handle
+    );
 
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize I2C bus: %s", esp_err_to_name(err));
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(
+            TAG,
+            "Failed to initialize I2C bus: %s",
+            esp_err_to_name(err)
+        );
         return;
     }
 
- while (1) {
-    ESP_LOGI(TAG, "Scanning I2C bus...");
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = VL53L0X_I2C_ADDRESS,
+        .scl_speed_hz = I2C_MASTER_FREQ_HZ,
+    };
 
-    int devices_found = 0;
+    i2c_master_dev_handle_t tof_dev = NULL;
 
-    for (uint8_t address = 1; address < 127; address++) {
-        err = i2c_master_probe(bus_handle, address, 200);
+    ESP_ERROR_CHECK(
+        i2c_master_bus_add_device(
+            bus_handle,
+            &dev_cfg,
+            &tof_dev
+        )
+    );
 
-        if (err == ESP_OK) {
-            ESP_LOGI(TAG, "Found I2C device at address 0x%02X", address);
-            devices_found++;
+    while (1)
+    {
+        err = vl53l0x_is_alive(tof_dev);
+
+        if (err == ESP_OK)
+        {
+            ESP_LOGI(
+                TAG,
+                "VL53L0X detected"
+            );
         }
+        else
+        {
+            ESP_LOGW(
+                TAG,
+                "VL53L0X not detected: %s",
+                esp_err_to_name(err)
+            );
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(3000));
     }
-
-    ESP_LOGI(TAG, "Scan complete. Devices found: %d", devices_found);
-
-    vTaskDelay(pdMS_TO_TICKS(3000));
-}
 }
