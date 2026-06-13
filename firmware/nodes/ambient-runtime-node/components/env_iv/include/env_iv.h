@@ -1,0 +1,14 @@
+#pragma once
+
+#include "esp_err.h"
+#include "driver/i2c_master.h"
+
+typedef struct {
+    float temperature_c;
+    float humidity_percent;
+} env_iv_sht40_data_t;
+
+esp_err_t env_iv_sht40_read(
+    i2c_master_bus_handle_t bus,
+    env_iv_sht40_data_t *data
+);
