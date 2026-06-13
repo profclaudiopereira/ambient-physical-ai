@@ -1,17 +1,20 @@
-# ESP-IDF
+# ESP-IDF build artifacts
 build/
-sdkconfig
 sdkconfig.old
-managed_components/
+
+# ESP-IDF generated files
+dependencies.lock
+
+# VSCode
+.vscode/
 
 # Python
 __pycache__/
 *.pyc
-.venv/
 
-# VSCode
-.vscode/settings.json
+# Logs
+*.log
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
