@@ -4,23 +4,23 @@
 
 Ambient Physical AI é um projeto de pesquisa e engenharia que explora como IA moderna, consciência contextual, computação de borda e ambientes físicos podem ser integrados em um ecossistema cognitivo distribuído.
 
-O projeto combina sistemas embarcados, Edge AI, Large Language Models (LLMs), interação multimodal, sensoriamento contextual e conceitos de computação ubíqua para criar ambientes capazes de perceber, compreender e adaptar-se à presença e à intenção humana.
+O projeto combina sistemas embarcados, Edge AI, Large Language Models (LLMs), interação multimodal, sensoriamento contextual e conceitos de computação ambiente para criar ambientes capazes de perceber, compreender e adaptar-se à presença e à intenção humana.
 
 ---
 
 # Visão
 
-O projeto é inspirado pelas ideias de **Mark Weiser**, criador da Computação Ubíqua (*Ubiquitous Computing*), e pelos desenvolvimentos posteriores nas áreas de:
+O projeto é inspirado pelas ideias de **Mark Weiser**, criador da Computação Ubíqua, e pelos desenvolvimentos posteriores nas áreas de:
 
-* Computação Sensível ao Contexto (*Context-Aware Computing*);
-* Inteligência Ambiente (*Ambient Intelligence*);
-* Edge AI;
-* Physical AI;
-* Sistemas Cognitivos Distribuídos.
+* Computação Sensível ao Contexto
+* Inteligência Ambiente
+* Edge AI
+* Physical AI
+* Sistemas Cognitivos Distribuídos
 
 Em vez de criar um único dispositivo inteligente, o Ambient Physical AI explora como a inteligência pode emergir da colaboração entre múltiplos nós especializados distribuídos pelo ambiente.
 
-O objetivo final é tornar a computação menos visível e mais integrada às experiências do cotidiano.
+O objetivo final é tornar a computação menos visível e mais integrada às experiências cotidianas.
 
 ---
 
@@ -39,7 +39,7 @@ Cognição
     ↓
 Transformação Ambiental
     ↓
-Expressão
+Experiência
 ```
 
 Cada camada contribui com uma capacidade específica para o ecossistema.
@@ -60,7 +60,7 @@ AX630C + LLM Mate
 PoE-P4
 ```
 
-Nós complementares:
+Nós de apoio:
 
 ```text
 StackChan
@@ -83,7 +83,7 @@ Futuros Sensores I2C
 
 ## Presence Node
 
-Responsável pela detecção de presença humana e atividade física.
+Responsável por detectar presença humana e atividade física.
 
 Implementação atual:
 
@@ -136,16 +136,16 @@ Responsabilidades:
 * raciocínio contextual;
 * gerenciamento de memória;
 * processamento multimodal;
-* execução do StackFlow Runtime;
+* execução do Runtime StackFlow;
 * futura integração com RAG.
 
-Capacidades já validadas:
+Capacidades validadas incluem:
 
 * Ubuntu 22.04;
 * conectividade Ethernet;
 * acesso SSH;
 * inferência local de IA;
-* StackFlow Runtime.
+* Runtime StackFlow.
 
 ---
 
@@ -182,7 +182,7 @@ PCA9548A
 
 ## Expression Node
 
-Responsável por fornecer presença física ao sistema cognitivo.
+Responsável por fornecer uma presença física ao sistema cognitivo.
 
 Implementação atual:
 
@@ -224,7 +224,7 @@ Responsabilidades:
 
 O StackFlow atua como a malha de coordenação distribuída do ecossistema.
 
-Seu propósito é conectar os Runtime Nodes e permitir o fluxo de:
+Seu propósito é conectar os runtime nodes e permitir o fluxo de:
 
 * eventos;
 * contexto;
@@ -244,12 +244,18 @@ Cognitive Runtime
     ↓
 Ambient Runtime
     ↓
-Expressão
+Experiência
 ```
 
 ---
 
 # Estrutura do Repositório
+
+Documentação detalhada da organização do repositório:
+
+```text
+docs/repository/README.md
+```
 
 ```text
 ambient-physical-ai/
@@ -271,25 +277,27 @@ ambient-physical-ai/
 
 Validados:
 
-* fundamentos da camada de Presença;
-* exploração do StackChan;
-* bring-up do AX630C;
-* descoberta do protocolo StackFlow;
-* inferência local com LLM;
-* experimentos de injeção de contexto.
+* fundamentos da camada de Presença
+* validação do hardware VL53L0X
+* detecção do VL53L0X em ESP-IDF
+* exploração do StackChan
+* bring-up do AX630C
+* descoberta do protocolo StackFlow
+* inferência local com LLM
+* experimentos de injeção de contexto
 
 Em andamento:
 
-* bring-up do Ambient Runtime Node;
-* implementação do Identity Node;
-* integração dos runtimes distribuídos.
+* bring-up do Ambient Runtime Node
+* implementação do Identity Node
+* integração dos runtimes distribuídos
 
 Planejado:
 
-* camada de memória de longo prazo;
-* serviços de recuperação contextual;
-* orquestração StackFlow multi-nós;
-* ambiente de demonstração para competição.
+* camada de memória de longo prazo
+* serviços de recuperação de contexto
+* orquestração StackFlow multinó
+* ambiente de demonstração para competição
 
 ---
 
@@ -302,7 +310,7 @@ Este projeto está sendo desenvolvido como parte da preparação para a:
 Marco interno atual:
 
 ```text
-Meta de Submissão
+Data Alvo de Submissão
 27 de Julho de 2026
 ```
 
@@ -312,9 +320,9 @@ Meta de Submissão
 
 O Ambient Physical AI não é uma coleção de dispositivos conectados.
 
-É uma exploração de como ambientes físicos podem se tornar sensíveis ao contexto, cognitivamente coordenados e capazes de interação significativa.
+É uma exploração de como ambientes físicos podem tornar-se sensíveis ao contexto, coordenados cognitivamente e capazes de interação significativa.
 
-O objetivo é criar ambientes que não apenas respondam a comandos, mas que percebam, compreendam e se adaptem às pessoas que os habitam.
+O objetivo é criar ambientes que não apenas reajam a comandos, mas que percebam, compreendam e se adaptem às pessoas que os habitam.
 
 ---
 

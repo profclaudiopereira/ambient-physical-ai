@@ -39,7 +39,7 @@ Cognition
     ↓
 Ambient Transformation
     ↓
-Expression
+Experience
 ```
 
 Each layer contributes a specific capability to the ecosystem.
@@ -244,12 +244,18 @@ Cognitive Runtime
     ↓
 Ambient Runtime
     ↓
-Expression
+Experience
 ```
 
 ---
 
 # Repository Structure
+
+Detailed repository organization documentation:
+
+```text
+docs/repository/README.md
+```
 
 ```text
 ambient-physical-ai/
@@ -272,6 +278,8 @@ ambient-physical-ai/
 Validated:
 
 * Presence Layer foundations
+* VL53L0X hardware validation
+* VL53L0X ESP-IDF detection
 * StackChan exploration
 * AX630C bring-up
 * StackFlow protocol discovery

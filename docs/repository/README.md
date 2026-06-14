@@ -4,50 +4,175 @@
 
 ### Distributed Cognitive Ecosystem Powered by StackFlow
 
-Esta documentação descreve a organização oficial do repositório do projeto Ambient Physical AI.
+This document describes the official repository organization used by the Ambient Physical AI project.
 
-O objetivo é garantir consistência, simplicidade e evolução sustentável durante o desenvolvimento do ecossistema.
-
----
-
-# Filosofia
-
-O repositório foi projetado para refletir a arquitetura conceitual do projeto.
-
-A organização prioriza:
-
-* clareza arquitetural;
-* modularidade;
-* desenvolvimento incremental;
-* demonstrações funcionais;
-* simplicidade operacional;
-* evolução guiada por protótipos reais.
-
-Princípio orientador:
-
-> Demo First. Complexity Later.
+The repository structure is intentionally aligned with the physical architecture, cognitive architecture, and development workflow of the project.
 
 ---
 
-# Estrutura Geral
+# Repository Philosophy
+
+The repository follows four core principles:
+
+## Demo First
+
+Working demonstrations have priority over architectural complexity.
+
+## Hardware First
+
+Repository structure should reflect real hardware rather than hypothetical components.
+
+## Incremental Development
+
+New folders and modules should be introduced only when justified by actual implementation needs.
+
+## Documentation Driven
+
+All significant architectural decisions, discoveries, and milestones should be documented.
+
+---
+
+# Top-Level Structure
 
 ```text
 ambient-physical-ai/
 
-├── firmware/
-├── runtime/
-├── docs/
 ├── assets/
-├── hardware/
 ├── demos/
-├── tools/
+├── docs/
+├── firmware/
+├── hardware/
+├── runtime/
 ├── scripts/
-└── .github/
+├── tools/
+└── README.md
 ```
 
 ---
 
-# Firmware
+# assets
+
+Project visual assets.
+
+Purpose:
+
+* architecture illustrations;
+* presentation material;
+* competition media;
+* screenshots;
+* project photography.
+
+## assets/cinematic
+
+Promotional and presentation images.
+
+## assets/demos
+
+Assets associated with demonstrations.
+
+## assets/diagrams
+
+Architecture diagrams and technical illustrations.
+
+## assets/photos
+
+Photographs of hardware and development activities.
+
+## assets/renders
+
+Conceptual renderings and visualizations.
+
+## assets/screenshots
+
+Screenshots captured during development.
+
+### assets/screenshots/firmware
+
+Firmware logs, terminal captures and validation results.
+
+---
+
+# demos
+
+Complete demonstration scenarios.
+
+Purpose:
+
+* competition demonstrations;
+* integration testing;
+* system validation.
+
+## demos/context-aware-cognitive-lab
+
+Experimental environment used to validate context-aware cognitive interactions.
+
+### demos/context-aware-cognitive-lab/assets
+
+Assets specific to the demonstration.
+
+---
+
+# docs
+
+Official project documentation.
+
+## docs/architecture
+
+Architecture descriptions and system-level documentation.
+
+## docs/demos
+
+Documentation related to demonstrations.
+
+## docs/discoveries
+
+Important technical discoveries made during development.
+
+Examples:
+
+* hardware behavior;
+* protocol findings;
+* integration lessons learned.
+
+## docs/hardware
+
+Hardware-related documentation.
+
+## docs/milestones
+
+Project milestones and progress tracking.
+
+## docs/notes
+
+Technical development notes and engineering journal entries.
+
+## docs/references
+
+External references, articles, specifications and supporting material.
+
+## docs/repository
+
+Repository organization documentation.
+
+## docs/snapshots
+
+Architectural snapshots and consolidated project state summaries.
+
+Purpose:
+
+* preserve project context;
+* support future onboarding;
+* record major decisions.
+
+## docs/tutorials
+
+Step-by-step tutorials and educational material.
+
+---
+
+# firmware
+
+ESP-IDF firmware projects.
 
 ```text
 firmware/
@@ -56,220 +181,279 @@ firmware/
 └── nodes/
 ```
 
-## shared
+## firmware/shared
 
-Componentes reutilizáveis entre múltiplos firmwares.
+Shared firmware resources.
 
-Exemplos futuros:
+Reserved for reusable firmware components.
 
-* MQTT helpers
-* drivers
-* abstrações de sensores
-* bibliotecas comuns
+## firmware/nodes
 
-## nodes
-
-Firmwares dos dispositivos físicos do ecossistema.
-
-Exemplos futuros:
-
-* env-node
-* voice-node
-* stackchan-node
-* presence-node
-* display-node
+Node-specific firmware implementations.
 
 ---
 
-# Runtime
+# firmware/nodes/presence-node
 
-```text
-runtime/
+Presence Layer implementation.
 
-├── cognitive/
-├── ambient/
-├── shared/
-└── infrastructure/
-```
+Purpose:
 
-## cognitive
+* human presence detection;
+* proximity awareness;
+* distance measurement.
 
-Representa o Cognitive Runtime Node.
+Hardware:
 
-Responsável por:
+* CoreS3 Lite
+* Unit Mini ToF-90
 
-* StackFlow
-* raciocínio
-* memória
-* multimodalidade
-* coordenação cognitiva
+### components/vl53l0x
 
-Hardware principal:
+VL53L0X driver and integration layer.
 
-* AX630C
+### main
+
+Application entry point and node logic.
 
 ---
 
-## ambient
+# firmware/nodes/ambient-runtime-node
 
-Representa o Ambient Runtime Node.
+Ambient Runtime implementation.
 
-Responsável por:
+Purpose:
 
-* iluminação
-* displays
-* sincronização ambiental
-* transformação física do ambiente
+* environmental sensing;
+* contextual feedback;
+* display control;
+* ambient adaptation.
 
-Hardware principal:
+Hardware:
 
 * PoE-P4
 
----
+### components/env_iv
 
-## shared
+ENV-IV environmental sensor driver.
 
-Artefatos compartilhados entre os runtimes.
+### components/oled_sh1107
 
-Exemplos:
+SH1107 OLED display driver.
 
-* contratos
-* schemas
-* definições comuns
+### main
 
----
-
-## infrastructure
-
-Infraestrutura mínima necessária ao funcionamento local.
-
-Exemplos futuros:
-
-* Mosquitto
-* configurações locais
-* scripts de implantação
+Ambient Runtime application logic.
 
 ---
 
-# Documentation
+# hardware
 
-```text
-docs/
-```
-
-Centraliza toda a documentação do projeto.
-
-Categorias previstas:
-
-* architecture
-* hardware
-* repository
-* demos
-* notes
-
----
-
-# Assets
-
-```text
-assets/
-```
-
-Contém os ativos visuais do projeto.
-
-Exemplos:
-
-* fotografias
-* diagramas
-* renders
-* screenshots
-* material de demonstração
-
----
-
-# Hardware
+Hardware documentation and organization.
 
 ```text
 hardware/
 ```
 
-Documentação específica dos dispositivos físicos.
+Purpose:
 
-Cada diretório pode conter:
+* hardware inventory;
+* validation records;
+* integration notes;
+* photographs.
+
+## hardware/ax630c
+
+AX630C documentation and experiments.
+
+## hardware/cores3-lite
+
+CoreS3 Lite documentation and investigations.
+
+## hardware/experiments
+
+Hardware experiments and temporary investigations.
+
+## hardware/m5dial
+
+M5Dial documentation.
+
+## hardware/poe-p4
+
+PoE-P4 documentation.
+
+## hardware/sensors
+
+Sensor documentation.
+
+### hardware/sensors/tof
+
+Mini ToF-90 (VL53L0X) documentation.
+
+#### photos
+
+Validation and investigation photographs.
+
+## hardware/stackchan
+
+StackChan documentation.
+
+## hardware/voice
+
+Voice subsystem documentation.
+
+---
+
+# runtime
+
+Software executed by higher-level runtime environments.
 
 ```text
-device/
+runtime/
 
-├── README.md
-├── photos/
-├── diagrams/
-├── notes/
-└── references/
+├── ambient/
+├── cognitive/
+├── infrastructure/
+└── shared/
 ```
+
+## runtime/ambient
+
+Ambient Runtime services.
+
+Responsible for physical environment adaptation.
+
+## runtime/cognitive
+
+Cognitive Runtime services.
+
+Primary target:
+
+* AX630C
+
+### runtime/cognitive/stackflow
+
+StackFlow implementation.
+
+Responsible for:
+
+* distributed coordination;
+* contextual information flow;
+* runtime communication.
+
+## runtime/infrastructure
+
+Supporting infrastructure services.
+
+Potential future examples:
+
+* MQTT broker;
+* local databases;
+* orchestration services.
+
+## runtime/shared
+
+Shared runtime libraries and common resources.
 
 ---
 
-# Demos
+# scripts
+
+Utility scripts.
+
+Examples:
+
+* automation;
+* maintenance;
+* code generation;
+* deployment support.
+
+---
+
+# tools
+
+Development support tools.
+
+Purpose:
+
+* helper utilities;
+* project-specific tooling;
+* engineering productivity support.
+
+---
+
+# Architectural Alignment
+
+The repository structure mirrors the conceptual architecture:
 
 ```text
-demos/
+Presence
+    ↓
+Identity
+    ↓
+Context
+    ↓
+Cognition
+    ↓
+Ambient Transformation
+    ↓
+Experience
 ```
 
-Contém demonstrações e cenários de apresentação.
-
-O foco do projeto é demonstrar:
-
-* inteligência contextual;
-* transformação ambiental;
-* embodiment;
-* interação natural.
+Repository modules should evolve in a way that preserves this alignment.
 
 ---
 
-# Convenções
+# Repository Evolution Rules
 
-## Estrutura
+Create new folders only when:
 
-Evitar criar diretórios sem necessidade prática.
+* a real implementation exists;
+* a documented need exists;
+* the folder will immediately contain useful content.
 
-Novas estruturas devem surgir a partir de:
+Avoid:
 
-* hardware real;
-* firmware real;
-* experimentos reais;
-* necessidades observadas.
+* speculative structures;
+* premature abstractions;
+* unused modules.
 
----
+Prefer:
 
-## Arquitetura
-
-Evitar:
-
-* overengineering;
-* abstrações prematuras;
-* organização baseada em protocolos;
-* arquitetura enterprise.
-
-Priorizar:
-
-* simplicidade;
-* clareza;
-* modularidade;
-* demonstrações funcionais.
+* simplicity;
+* traceability;
+* maintainability;
+* incremental growth.
 
 ---
 
-# Evolução
+# Current Implementation Status
 
-A arquitetura deverá evoluir gradualmente conforme o projeto avançar.
+Implemented:
 
-Mudanças estruturais significativas devem ser justificadas por necessidades observadas durante:
+* Presence Node
+* Ambient Runtime Node
+* VL53L0X component
+* ENV-IV component
+* SH1107 OLED component
 
-* integração;
-* prototipação;
-* validação de hardware;
-* construção das demonstrações.
+Validated:
 
-A organização do repositório deve permanecer alinhada com a visão central do projeto:
+* VL53L0X hardware validation
+* VL53L0X ESP-IDF detection
+* AX630C bring-up
+* StackFlow exploration
 
-**Ambient Physical AI — Distributed Cognitive Ecosystem Powered by StackFlow**
+Planned:
+
+* Identity Node
+* Voice Node
+* Expression Node
+* Camera Node
+* Auxiliary Node
+
+---
+
+**Ambient Physical AI**
+
+*Distributed Cognitive Ecosystem Powered by StackFlow*
