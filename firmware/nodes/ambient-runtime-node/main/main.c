@@ -8,7 +8,7 @@
 #include "esp_err.h"
 
 #include "env_iv.h"
-#include "oled_ssd1315.h"
+#include "oled_sh1107.h"
 
 #define I2C_SCL_GPIO 54
 #define I2C_SDA_GPIO 53
@@ -69,7 +69,27 @@ static void pahub_select_channel(uint8_t channel)
 
     ESP_LOGI(TAG, "PaHub channel %d selected", channel);
 }
+static void i2c_scan(void)
+{
+    ESP_LOGI(TAG, "Scanning I2C bus...");
 
+    for (uint8_t addr = 1; addr < 127; addr++) {
+        esp_err_t ret =
+            i2c_master_probe(
+                i2c_bus,
+                addr,
+                100);
+
+        if (ret == ESP_OK) {
+            ESP_LOGI(
+                TAG,
+                "Found I2C device at address: 0x%02X",
+                addr);
+        }
+    }
+
+    ESP_LOGI(TAG, "I2C scan complete.");
+}
 void app_main(void)
 {
     printf("\n");
@@ -82,63 +102,19 @@ void app_main(void)
 
     // Initial OLED validation
     pahub_select_channel(1);
-    oled_ssd1315_init(i2c_bus);
-    oled_ssd1315_print_status();
+    oled_sh1107_init(i2c_bus);
+    oled_sh1107_print_test();
 
-    while (1) {
 
-        // Channel 0: ENV-IV
-        pahub_select_channel(0);
+while (1) {
 
-        esp_err_t env_ret =
-            env_iv_sht40_read(
-                i2c_bus,
-                &env_data
-            );
+    pahub_select_channel(1);
 
-        if (env_ret == ESP_OK) {
-            ESP_LOGI(
-                TAG,
-                "SHT40 Temp: %.2f C  Hum: %.2f %%",
-                env_data.temperature_c,
-                env_data.humidity_percent
-            );
-        } else {
-            ESP_LOGE(
-                TAG,
-                "SHT40 read failed: %s",
-                esp_err_to_name(env_ret)
-            );
-        }
+    pahub_select_channel(1);
+    //oled_sh1107_print_test();
+    //oled_sh1107_print_ok();
+oled_sh1107_print_ambient_test();
 
-        esp_err_t bmp_ret =
-            env_iv_bmp280_read(
-                i2c_bus,
-                &bmp_data
-            );
-
-        if (bmp_ret == ESP_OK) {
-            ESP_LOGI(
-                TAG,
-                "BMP280 Temp: %.2f C  Press: %.2f hPa",
-                bmp_data.temperature_c,
-                bmp_data.pressure_hpa
-            );
-        } else {
-            ESP_LOGE(
-                TAG,
-                "BMP280 read failed: %s",
-                esp_err_to_name(bmp_ret)
-            );
-        }
-
-        // Channel 1: OLED
-        pahub_select_channel(1);
-
-        oled_ssd1315_print_status();
-
-        ESP_LOGI(TAG, "OLED status updated");
-
-        vTaskDelay(pdMS_TO_TICKS(5000));
-    }
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
 }
