@@ -1,187 +1,331 @@
-# Hardware
+# Ambient Physical AI
 
-## Ambient Physical AI
+## Distributed Cognitive Ecosystem Powered by StackFlow
 
-### Distributed Cognitive Ecosystem Powered by StackFlow
+Ambient Physical AI is a research and engineering project that explores how modern AI, contextual awareness, edge computing and physical environments can be integrated into a distributed cognitive ecosystem.
 
-Esta pasta centraliza a documentação, referências, fotografias, observações técnicas e experimentos relacionados ao hardware utilizado no projeto Ambient Physical AI.
-
-O objetivo é manter uma visão organizada dos dispositivos físicos que compõem o ecossistema cognitivo distribuído.
+The project combines embedded systems, Edge AI, Large Language Models (LLMs), multimodal interaction, contextual sensing and ambient computing concepts to create environments capable of perceiving, understanding and adapting to human presence and intent.
 
 ---
 
-# Filosofia
+# Vision
 
-O projeto não trata os dispositivos apenas como componentes eletrônicos isolados.
+The project is inspired by the ideas of **Mark Weiser**, the creator of Ubiquitous Computing, and by subsequent developments in:
 
-Cada dispositivo possui um papel arquitetural dentro do ecossistema:
+* Context-Aware Computing
+* Ambient Intelligence
+* Edge AI
+* Physical AI
+* Distributed Cognitive Systems
 
-* percepção;
-* identidade;
-* cognição;
-* transformação ambiental;
-* embodiment;
-* interação contextual.
+Rather than creating a single intelligent device, Ambient Physical AI explores how intelligence can emerge from the collaboration of multiple specialized nodes distributed throughout an environment.
+
+The ultimate objective is to make computing less visible and more integrated into everyday experiences.
 
 ---
 
-# Arquitetura Conceitual
+# Architectural Principles
+
+Ambient Physical AI follows a layered cognitive model:
 
 ```text
 Presence
-→ Identity
-→ Cognition
-→ Ambient Transformation
-→ Experience
+    ↓
+Identity
+    ↓
+Context
+    ↓
+Cognition
+    ↓
+Ambient Transformation
+    ↓
+Expression
 ```
+
+Each layer contributes a specific capability to the ecosystem.
 
 ---
 
-# Estrutura
+# Reference Architecture
 
 ```text
-hardware/
-
-├── ax630c/
-├── poe-p4/
-├── cores3-lite/
-├── stackchan/
-├── m5dial/
-├── voice/
-├── sensors/
-└── experiments/
+PERSON
+    ↓
+Unit Mini ToF
+    ↓ I2C
+M5Dial
+    ↓ Wi-Fi
+AX630C + LLM Mate
+    ↓ Ethernet
+PoE-P4
 ```
 
----
-
-# Dispositivos Principais
-
-## AX630C
-
-Papel arquitetural:
-
-**Cognitive Runtime Node**
-
-Responsável por:
-
-* raciocínio contextual;
-* memória;
-* coordenação cognitiva;
-* multimodalidade;
-* execução do StackFlow Runtime;
-* futuras capacidades de RAG.
-
----
-
-## PoE-P4
-
-Papel arquitetural:
-
-**Ambient Runtime Node**
-
-Responsável por:
-
-* transformação ambiental;
-* sincronização espacial;
-* displays;
-* iluminação;
-* futuras expansões ambientais.
-
----
-
-## M5Dial
-
-Papel arquitetural:
-
-**Identity & Contextual Interaction Node**
-
-Responsável por:
-
-* identificação de usuários;
-* autenticação NFC/RFID;
-* troca de modos;
-* interação contextual;
-* entrada intencional do usuário.
-
----
-
-## CoreS3 Lite
-
-Papel arquitetural:
-
-**Interaction Node**
-
-Responsável por:
-
-* interfaces visuais;
-* interação local;
-* prototipação rápida;
-* testes de integração.
-
----
-
-## StackChan
-
-Papel arquitetural:
-
-**Embodiment Node**
-
-Responsável por:
-
-* presença física da IA;
-* expressão visual;
-* interação humano-computador;
-* demonstrações imersivas.
-
----
-
-## Voice Nodes
-
-Responsáveis por:
-
-* captura de voz;
-* interação conversacional;
-* percepção sonora;
-* experiências multimodais.
-
----
-
-## Sensors
-
-Incluem:
-
-* ToF;
-* ENV IV;
-* RFID/NFC;
-* sensores contextuais;
-* futuros sensores ambientais.
-
-Responsáveis pela camada de:
-
-**Presence & Physical Context**
-
----
-
-# Organização Recomendada
-
-Cada diretório de hardware pode conter:
+Supporting nodes:
 
 ```text
-device/
+StackChan
+Voice Pyramid + AtomS3R
+Atom Matrix
+CoreS3 Lite
+```
 
-├── README.md
-├── photos/
-├── diagrams/
-├── notes/
-└── references/
+Environmental peripherals:
+
+```text
+ENV-IV
+Unit Mini OLED
+Future I2C Sensors
 ```
 
 ---
 
-# Objetivo
+# Runtime Nodes
 
-O hardware não é apenas suporte para software.
+## Presence Node
 
-No Ambient Physical AI, o hardware é parte fundamental da experiência cognitiva e da transformação contextual do ambiente.
+Responsible for detecting human presence and physical activity.
 
-Cada dispositivo contribui para a construção de um ecossistema vivo, responsivo e distribuído.
+Current implementation:
+
+```text
+Unit Mini ToF-90
+```
+
+Functions:
+
+* presence detection;
+* proximity awareness;
+* physical activity sensing.
+
+---
+
+## Identity Node
+
+Responsible for user identification and contextual personalization.
+
+Current implementation:
+
+```text
+M5Dial V1.1
++
+NFC
+```
+
+Functions:
+
+* NFC identification;
+* contextual mode selection;
+* user intent input.
+
+---
+
+## Cognitive Runtime Node
+
+The cognitive core of the architecture.
+
+Current implementation:
+
+```text
+AX630C
++
+LLM Mate
+```
+
+Responsibilities:
+
+* contextual reasoning;
+* memory management;
+* multimodal processing;
+* StackFlow Runtime execution;
+* future RAG integration.
+
+Validated capabilities include:
+
+* Ubuntu 22.04;
+* Ethernet networking;
+* SSH access;
+* local AI inference;
+* StackFlow Runtime.
+
+---
+
+## Ambient Runtime Node
+
+Responsible for transforming the physical environment according to contextual decisions.
+
+Current implementation:
+
+```text
+PoE-P4
+```
+
+Responsibilities:
+
+* environmental adaptation;
+* contextual feedback;
+* sensor aggregation;
+* display control;
+* future lighting and ambient orchestration.
+
+Current local architecture:
+
+```text
+PoE-P4
+    ↓
+PCA9548A
+    ├── ENV-IV
+    ├── Unit Mini OLED
+    └── Future I2C Devices
+```
+
+---
+
+## Expression Node
+
+Responsible for giving a physical presence to the cognitive system.
+
+Current implementation:
+
+```text
+StackChan
+```
+
+Responsibilities:
+
+* visual expression;
+* embodiment;
+* contextual interaction;
+* emotional communication.
+
+---
+
+## Voice Node
+
+Responsible for conversational interaction.
+
+Current implementation:
+
+```text
+Voice Pyramid
++
+AtomS3R
+```
+
+Responsibilities:
+
+* speech input;
+* speech output;
+* conversational experiences;
+* multimodal interaction.
+
+---
+
+# StackFlow
+
+StackFlow acts as the distributed coordination fabric of the ecosystem.
+
+Its purpose is to connect runtime nodes and enable the flow of:
+
+* events;
+* context;
+* decisions;
+* environmental actions.
+
+Conceptually:
+
+```text
+Presence
+    ↓
+Identity
+    ↓
+Context Package
+    ↓
+Cognitive Runtime
+    ↓
+Ambient Runtime
+    ↓
+Expression
+```
+
+---
+
+# Repository Structure
+
+```text
+ambient-physical-ai/
+
+├── firmware/
+├── runtime/
+├── hardware/
+├── docs/
+├── demos/
+├── assets/
+├── tools/
+├── scripts/
+└── README.md
+```
+
+---
+
+# Current Status
+
+Validated:
+
+* Presence Layer foundations
+* StackChan exploration
+* AX630C bring-up
+* StackFlow protocol discovery
+* Local LLM inference
+* Context injection experiments
+
+In Progress:
+
+* Ambient Runtime Node bring-up
+* Identity Node implementation
+* Distributed runtime integration
+
+Planned:
+
+* Long-term memory layer
+* Context retrieval services
+* Multi-node StackFlow orchestration
+* Competition demonstration environment
+
+---
+
+# Competition
+
+This project is being developed as part of the preparation for the:
+
+**M5Stack Global Innovation Contest 2026**
+
+Current internal milestone:
+
+```text
+Target Submission Date
+27 July 2026
+```
+
+---
+
+# Philosophy
+
+Ambient Physical AI is not a collection of connected devices.
+
+It is an exploration of how physical environments can become context-aware, cognitively coordinated and capable of meaningful interaction.
+
+The goal is to create environments that do not merely react to commands, but that perceive, understand and adapt to the people who inhabit them.
+
+---
+
+## Author
+
+Claudio Pereira
+
+Embedded Systems Engineer • Electronics Engineer • Professor
+
+---
+
+**Ambient Physical AI**
+
+*Distributed Cognitive Ecosystem Powered by StackFlow*
