@@ -21,7 +21,7 @@ static const char *TAG = "ambient-runtime";
 static i2c_master_bus_handle_t i2c_bus = NULL;
 
 static env_iv_sht40_data_t env_data;
-// static env_iv_bmp280_data_t bmp_data; // habilitar quando o BMP280 estiver implementado
+static env_iv_bmp280_data_t bmp_data;
 
 static void i2c_init(void)
 {
@@ -75,7 +75,7 @@ void app_main(void)
     printf("\n");
     printf("=====================================\n");
     printf(" Ambient Runtime Node\n");
-    printf(" M004.5 - ENV-IV + OLED Bringup\n");
+    printf(" M004.6 - ENV-IV Full Readings\n");
     printf("=====================================\n");
 
     i2c_init();
@@ -99,7 +99,7 @@ void app_main(void)
         if (env_ret == ESP_OK) {
             ESP_LOGI(
                 TAG,
-                "Temp: %.2f C  Hum: %.2f %%",
+                "SHT40 Temp: %.2f C  Hum: %.2f %%",
                 env_data.temperature_c,
                 env_data.humidity_percent
             );
@@ -108,6 +108,27 @@ void app_main(void)
                 TAG,
                 "SHT40 read failed: %s",
                 esp_err_to_name(env_ret)
+            );
+        }
+
+        esp_err_t bmp_ret =
+            env_iv_bmp280_read(
+                i2c_bus,
+                &bmp_data
+            );
+
+        if (bmp_ret == ESP_OK) {
+            ESP_LOGI(
+                TAG,
+                "BMP280 Temp: %.2f C  Press: %.2f hPa",
+                bmp_data.temperature_c,
+                bmp_data.pressure_hpa
+            );
+        } else {
+            ESP_LOGE(
+                TAG,
+                "BMP280 read failed: %s",
+                esp_err_to_name(bmp_ret)
             );
         }
 
