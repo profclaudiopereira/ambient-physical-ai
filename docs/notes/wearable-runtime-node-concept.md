@@ -22,12 +22,14 @@ During the development of the Ambient Physical AI project, a possible wearable e
 ```text
 StickS3
 +
-Watch / wrist strap kit
+Watch / Wrist Strap Kit
 +
 Vibration HAT
 ```
 
-This combination creates a compact wearable node capable of providing visual and haptic feedback to the user.
+This combination creates a compact wearable node capable of providing visual and haptic feedback directly to the user.
+
+The concept emerged from the observation that Ambient Physical AI already supports environmental and conversational interactions, but could eventually extend its interaction model to include personal tactile feedback.
 
 ---
 
@@ -42,7 +44,7 @@ Instead of interacting only through:
 * StackChan;
 * ambient lighting;
 
-the system could also communicate directly with the user through tactile feedback.
+the system could also communicate directly with the user through haptic feedback.
 
 ---
 
@@ -70,7 +72,7 @@ The current Ambient Physical AI demonstration already explores:
 
 ```text
 Vision
-→ display, OLED, Atom Matrix, StackChan
+→ Display, OLED, Atom Matrix, StackChan
 ```
 
 ```text
@@ -82,7 +84,7 @@ The wearable node adds:
 
 ```text
 Touch
-→ vibration / haptic feedback
+→ Vibration / Haptic Feedback
 ```
 
 This creates a stronger multimodal interaction model:
@@ -234,6 +236,58 @@ The wearable node is eligible for inclusion in the competition V1 only if the co
 
 ---
 
+# Previous Validation
+
+An early prototype was successfully tested using:
+
+* M5StickC Plus 2;
+* Vibration HAT;
+* M5Unified;
+* IMU acceleration readings;
+* local display feedback;
+* haptic alert feedback.
+
+The prototype implemented a simple state machine:
+
+```text
+STATE_CALM
+↓
+STATE_ALERT
+```
+
+The transition was based on IMU movement detection.
+
+When movement exceeded a predefined threshold for a specified period, the device entered alert mode, changed the screen color and activated the vibration motor.
+
+The prototype demonstrated that visual and haptic feedback can be combined effectively on a wearable M5Stack device.
+
+This validation confirms that the wearable concept is technically feasible using hardware already available in the project inventory.
+
+---
+
+# Implementation Risk
+
+The implementation risk is considered low because:
+
+* the hardware is already available;
+* display feedback has already been tested;
+* IMU readings have already been tested;
+* vibration feedback has already been tested;
+* the remaining missing piece is primarily network integration.
+
+The first network-enabled version could simply receive a command such as:
+
+```json
+{
+  "action": "vibrate",
+  "duration_ms": 300
+}
+```
+
+and immediately trigger haptic feedback.
+
+---
+
 # MASTER Decision
 
 ```text
@@ -241,7 +295,7 @@ Status:
 Approved as Parking Lot Concept
 
 V1 Competition Candidate:
-Yes, conditional
+Yes, Conditional
 
 Condition:
 Only after the main Ambient Physical AI flow is operational.
@@ -251,6 +305,10 @@ Only after the main Ambient Physical AI flow is operational.
 
 # Key Message
 
-The wearable node offers a high-impact, low-complexity path to add haptic interaction to Ambient Physical AI.
+The Wearable Runtime Node offers a high-impact, low-complexity path to introduce haptic interaction into Ambient Physical AI.
 
-It should be treated as a future enhancement and possible WOW factor, not as a required component of the current implementation roadmap.
+Unlike many future ideas that require new hardware, significant software development or architectural changes, this concept leverages hardware that already exists and has been partially validated.
+
+For this reason, it represents a realistic candidate for future inclusion if schedule margin becomes available before the competition deadline.
+
+It should be treated as a future enhancement and potential WOW factor, not as a required component of the current implementation roadmap.
