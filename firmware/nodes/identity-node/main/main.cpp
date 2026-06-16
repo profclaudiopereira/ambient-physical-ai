@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 
 #include "bsp/m5dial.h"
+
 #include "iot_knob.h"
 
 static const char *TAG = "identity-node";
@@ -55,6 +56,7 @@ extern "C" void app_main(void)
         M5.Display.println("ENC: 0");
     }
 
+
     int last_encoder_count = 0;
 
     while (true)
@@ -75,6 +77,20 @@ extern "C" void app_main(void)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(20));
+               if (M5.Touch.getCount() > 0) {
+            auto t = M5.Touch.getDetail();
+
+            ESP_LOGI(TAG, "Touch: x=%d y=%d", t.x, t.y);
+
+            M5.Display.fillRect(0, 190, 240, 30, BLACK);
+            M5.Display.setCursor(20, 190);
+            M5.Display.printf("TOUCH %d,%d", t.x, t.y);
+
+            M5.Speaker.tone(2500, 80);
+
+            vTaskDelay(pdMS_TO_TICKS(250));
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
