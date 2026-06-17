@@ -3,14 +3,9 @@
  *
  * Ambient Physical AI
  *
- * Responsibilities:
- * - Profile selection
- * - Context selection
- * - User feedback
- * - Identity package generation
- *
  * Current phase:
- * Stable M5Dial baseline without NFC driver dependency.
+ * - Stable Identity Console Core
+ * - WS1850S NFC hardware probe
  */
 
 #include "M5Unified.h"
@@ -20,6 +15,9 @@
 
 #include "bsp/m5dial.h"
 #include "iot_knob.h"
+
+#include "driver/i2c_master.h"
+#include "ws1850s.h"
 
 static const char *TAG = "identity-node";
 
@@ -47,6 +45,52 @@ static const int CONTEXT_COUNT = sizeof(contexts) / sizeof(contexts[0]);
 
 static int current_profile = 0;
 static int current_context = 0;
+
+static bool probe_nfc()
+{
+    i2c_master_bus_config_t bus_cfg = {};
+    bus_cfg.i2c_port = I2C_NUM_0;
+    bus_cfg.sda_io_num = BSP_I2C_SDA;
+    bus_cfg.scl_io_num = BSP_I2C_SCL;
+    bus_cfg.clk_source = I2C_CLK_SRC_DEFAULT;
+    bus_cfg.glitch_ignore_cnt = 7;
+    bus_cfg.flags.enable_internal_pullup = true;
+
+    i2c_master_bus_handle_t bus_handle = NULL;
+    esp_err_t ret = i2c_new_master_bus(&bus_cfg, &bus_handle);
+
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "NFC I2C bus init failed: %s", esp_err_to_name(ret));
+        return false;
+    }
+
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = WS1850S_I2C_ADDRESS;
+    dev_cfg.scl_speed_hz = 100000;
+
+    i2c_master_dev_handle_t dev_handle = NULL;
+    ret = i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle);
+
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "NFC add device failed: %s", esp_err_to_name(ret));
+        i2c_del_master_bus(bus_handle);
+        return false;
+    }
+
+    ret = ws1850s_probe(dev_handle);
+
+    i2c_master_bus_rm_device(dev_handle);
+    i2c_del_master_bus(bus_handle);
+
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "NFC/WS1850S detected at 0x28");
+        return true;
+    }
+
+    ESP_LOGW(TAG, "NFC/WS1850S not detected at 0x28: %s", esp_err_to_name(ret));
+    return false;
+}
 
 static void draw_console()
 {
@@ -94,7 +138,7 @@ extern "C" void app_main(void)
     M5.begin(cfg);
 
     ESP_LOGI(TAG, "Identity Console V1");
-    ESP_LOGI(TAG, "Core version without NFC driver dependency");
+    ESP_LOGI(TAG, "Core version with NFC hardware probe");
 
     knob_config_t knob_cfg = {
         .default_direction = 0,
@@ -112,6 +156,12 @@ extern "C" void app_main(void)
     }
 
     draw_console();
+
+    bool nfc_detected = probe_nfc();
+
+    M5.Display.setCursor(20, 225);
+    M5.Display.printf("NFC: %s", nfc_detected ? "OK" : "NO");
+
     M5.Speaker.tone(2000, 150);
 
     int last_encoder_count = 0;
@@ -143,6 +193,9 @@ extern "C" void app_main(void)
 
                 last_encoder_count = encoder_count;
                 draw_console();
+
+                M5.Display.setCursor(20, 225);
+                M5.Display.printf("NFC: %s", nfc_detected ? "OK" : "NO");
             }
         }
 
@@ -162,7 +215,13 @@ extern "C" void app_main(void)
             M5.Speaker.tone(2500, 80);
             draw_console();
 
+            M5.Display.setCursor(20, 225);
+            M5.Display.printf("NFC: %s", nfc_detected ? "OK" : "NO");
+
             generate_identity_package();
+
+            M5.Display.setCursor(20, 225);
+            M5.Display.printf("NFC: %s", nfc_detected ? "OK" : "NO");
         }
 
         last_touch_state = touch_state;
