@@ -5,14 +5,16 @@
  *
  * Current phase:
  * - Stable Identity Console Core
- * - WS1850S NFC hardware probe
- * - WS1850S continuous card presence polling
+ * - WS1850S NFC UID reading
+ * - UID to Profile mapping
  */
 
 #include "M5Unified.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <string.h>
+#include <stdio.h>
 
 #include "bsp/m5dial.h"
 #include "iot_knob.h"
@@ -50,36 +52,72 @@ static int current_context = 0;
 static bool nfc_detected = false;
 static bool nfc_card_present = false;
 
+static char last_nfc_uid[32] = "";
+
 static int nfc_yes_count = 0;
 static int nfc_no_count = 0;
+static int nfc_poll_counter = 0;
 
 static i2c_master_bus_handle_t nfc_bus_handle = NULL;
 static i2c_master_dev_handle_t nfc_dev_handle = NULL;
 
-static int nfc_poll_counter = 0;
+static int find_profile_by_uid(const char *uid)
+{
+    if (strcmp(uid, "8804DC32") == 0) {
+        return 1; // Claudio
+    }
+
+    if (strcmp(uid, "88048667") == 0) {
+        return 2; // Student
+    }
+
+    return 0; // Unknown
+}
 
 static void draw_console()
 {
     M5.Display.fillScreen(BLACK);
     M5.Display.setTextSize(2);
 
-    M5.Display.setCursor(20, 25);
+    M5.Display.setCursor(20, 20);
     M5.Display.println("Identity Console");
 
-    M5.Display.setCursor(20, 70);
+    M5.Display.setCursor(20, 60);
     M5.Display.printf("Name: %s", profiles[current_profile].name);
 
-    M5.Display.setCursor(20, 105);
+    M5.Display.setCursor(20, 90);
     M5.Display.printf("Role: %s", profiles[current_profile].role);
 
-    M5.Display.setCursor(20, 155);
+    M5.Display.setCursor(20, 125);
     M5.Display.printf("Ctx: %s", contexts[current_context]);
 
-    M5.Display.setCursor(20, 205);
+    M5.Display.setCursor(20, 165);
     M5.Display.printf("NFC: %s", nfc_detected ? "OK" : "NO");
 
-    M5.Display.setCursor(20, 225);
+    M5.Display.setCursor(20, 195);
     M5.Display.printf("Card: %s", nfc_card_present ? "YES" : "NO");
+
+    M5.Display.setCursor(20, 220);
+    if (last_nfc_uid[0] != '\0') {
+        M5.Display.printf("UID: %.8s", last_nfc_uid);
+    } else {
+        M5.Display.print("UID: none");
+    }
+}
+
+static void generate_identity_package()
+{
+    ESP_LOGI(TAG,
+             "{\"type\":\"identity_package\",\"profile\":{\"id\":\"%s\",\"name\":\"%s\",\"role\":\"%s\"},\"context\":\"%s\",\"nfc\":{\"detected\":%s,\"card_present\":%s,\"uid\":\"%s\"},\"source\":\"m5dial_identity_console_v1\"}",
+             profiles[current_profile].id,
+             profiles[current_profile].name,
+             profiles[current_profile].role,
+             contexts[current_context],
+             nfc_detected ? "true" : "false",
+             nfc_card_present ? "true" : "false",
+             last_nfc_uid);
+
+    M5.Speaker.tone(3000, 120);
 }
 
 static bool setup_nfc()
@@ -148,7 +186,6 @@ static bool setup_nfc()
     return true;
 }
 
-
 static void poll_nfc_card()
 {
     if (!nfc_detected || nfc_dev_handle == NULL) {
@@ -156,7 +193,8 @@ static void poll_nfc_card()
     }
 
     bool raw_present = false;
-ws1850s_init(nfc_dev_handle);
+
+    ws1850s_init(nfc_dev_handle);
     esp_err_t ret = ws1850s_card_present(nfc_dev_handle, &raw_present);
 
     if (ret != ESP_OK) {
@@ -172,23 +210,40 @@ ws1850s_init(nfc_dev_handle);
 
         if (!nfc_card_present) {
             nfc_card_present = true;
-uint8_t uid[10] = {0};
-uint8_t uid_len = 0;
-ws1850s_init(nfc_dev_handle);
-vTaskDelay(pdMS_TO_TICKS(50));
-esp_err_t uid_ret = ws1850s_read_uid(nfc_dev_handle, uid, &uid_len);
 
-if (uid_ret == ESP_OK) {
-    char uid_text[32] = {0};
+            uint8_t uid[10] = {0};
+            uint8_t uid_len = 0;
 
-    for (int i = 0; i < uid_len; i++) {
-        snprintf(uid_text + (i * 2), sizeof(uid_text) - (i * 2), "%02X", uid[i]);
-    }
+            ws1850s_init(nfc_dev_handle);
+            vTaskDelay(pdMS_TO_TICKS(50));
 
-    ESP_LOGI(TAG, "NFC UID: %s", uid_text);
-} else {
-    ESP_LOGW(TAG, "NFC UID read failed: %s", esp_err_to_name(uid_ret));
-}
+            esp_err_t uid_ret = ws1850s_read_uid(nfc_dev_handle, uid, &uid_len);
+
+            if (uid_ret == ESP_OK) {
+                char uid_text[32] = {0};
+
+                for (int i = 0; i < uid_len; i++) {
+                    snprintf(uid_text + (i * 2),
+                             sizeof(uid_text) - (i * 2),
+                             "%02X",
+                             uid[i]);
+                }
+
+                strncpy(last_nfc_uid, uid_text, sizeof(last_nfc_uid) - 1);
+                last_nfc_uid[sizeof(last_nfc_uid) - 1] = '\0';
+
+                current_profile = find_profile_by_uid(last_nfc_uid);
+
+                ESP_LOGI(TAG, "NFC UID: %s", last_nfc_uid);
+                ESP_LOGI(TAG, "NFC mapped profile: %s / %s",
+                         profiles[current_profile].name,
+                         profiles[current_profile].role);
+
+                generate_identity_package();
+            } else {
+                ESP_LOGW(TAG, "NFC UID read failed: %s", esp_err_to_name(uid_ret));
+            }
+
             ESP_LOGI(TAG, "NFC card stable: YES");
             M5.Speaker.tone(2800, 80);
             draw_console();
@@ -199,32 +254,13 @@ if (uid_ret == ESP_OK) {
         if (nfc_no_count >= 6 && nfc_card_present) {
             nfc_card_present = false;
             nfc_yes_count = 0;
+
             ESP_LOGI(TAG, "NFC card stable: NO");
+
             M5.Speaker.tone(1800, 80);
             draw_console();
         }
     }
-}
-
-static void generate_identity_package()
-{
-    ESP_LOGI(TAG,
-             "{\"type\":\"identity_package\",\"profile\":{\"id\":\"%s\",\"name\":\"%s\",\"role\":\"%s\"},\"context\":\"%s\",\"nfc\":{\"detected\":%s,\"card_present\":%s},\"source\":\"m5dial_identity_console_v1\"}",
-             profiles[current_profile].id,
-             profiles[current_profile].name,
-             profiles[current_profile].role,
-             contexts[current_context],
-             nfc_detected ? "true" : "false",
-             nfc_card_present ? "true" : "false");
-
-    M5.Speaker.tone(3000, 120);
-
-    M5.Display.fillRect(0, 205, 240, 35, BLACK);
-    M5.Display.setCursor(20, 205);
-    M5.Display.println("PACKAGE OK");
-
-    vTaskDelay(pdMS_TO_TICKS(500));
-    draw_console();
 }
 
 extern "C" void app_main(void)
@@ -233,7 +269,7 @@ extern "C" void app_main(void)
     M5.begin(cfg);
 
     ESP_LOGI(TAG, "Identity Console V1");
-    ESP_LOGI(TAG, "Core version with NFC continuous polling");
+    ESP_LOGI(TAG, "Core version with NFC UID profile mapping");
 
     knob_config_t knob_cfg = {
         .default_direction = 0,
