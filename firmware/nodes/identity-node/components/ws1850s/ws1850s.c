@@ -1,6 +1,7 @@
 #include "ws1850s.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <stdio.h>
 
 #define COMMAND_REG        0x01
 #define COM_IRQ_REG        0x04
@@ -134,7 +135,8 @@ esp_err_t ws1850s_card_present(i2c_master_dev_handle_t dev_handle, bool *present
 
     ret = ws1850s_set_bit_mask(dev_handle, BIT_FRAMING_REG, 0x80);
     if (ret != ESP_OK) return ret;
-
+vTaskDelay(pdMS_TO_TICKS(5));
+ws1850s_clear_bit_mask(dev_handle, BIT_FRAMING_REG, 0x80);
     for (int i = 0; i < 50; i++) {
         uint8_t irq = 0;
         ret = ws1850s_read_register(dev_handle, COM_IRQ_REG, &irq);
@@ -168,6 +170,114 @@ esp_err_t ws1850s_card_present(i2c_master_dev_handle_t dev_handle, bool *present
     if (fifo_level == 2 && valid_bits == 0) {
         *present = true;
     }
+
+    return ESP_OK;
+}
+
+#define PICC_CMD_SEL_CL1 0x93
+
+esp_err_t ws1850s_read_uid(i2c_master_dev_handle_t dev_handle, uint8_t *uid, uint8_t *uid_len)
+{
+    if (uid == NULL || uid_len == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *uid_len = 0;
+
+    esp_err_t ret = ws1850s_init(dev_handle);
+    if (ret != ESP_OK) return ret;
+
+    ret = ws1850s_write_register(dev_handle, COMMAND_REG, PCD_IDLE);
+    if (ret != ESP_OK) return ret;
+
+    ret = ws1850s_write_register(dev_handle, COM_IRQ_REG, 0x7F);
+    if (ret != ESP_OK) return ret;
+
+    ret = ws1850s_set_bit_mask(dev_handle, FIFO_LEVEL_REG, 0x80);
+    if (ret != ESP_OK) return ret;
+
+    ret = ws1850s_write_register(dev_handle, FIFO_DATA_REG, PICC_CMD_SEL_CL1);
+    if (ret != ESP_OK) return ret;
+
+    ret = ws1850s_write_register(dev_handle, FIFO_DATA_REG, 0x20);
+    if (ret != ESP_OK) return ret;
+
+    ret = ws1850s_write_register(dev_handle, BIT_FRAMING_REG, 0x00);
+    if (ret != ESP_OK) return ret;
+
+    ret = ws1850s_write_register(dev_handle, COMMAND_REG, PCD_TRANSCEIVE);
+    if (ret != ESP_OK) return ret;
+
+    ret = ws1850s_set_bit_mask(dev_handle, BIT_FRAMING_REG, 0x80);
+    if (ret != ESP_OK) return ret;
+vTaskDelay(pdMS_TO_TICKS(5));
+ws1850s_clear_bit_mask(dev_handle, BIT_FRAMING_REG, 0x80);
+    bool done = false;
+
+    for (int i = 0; i < 150; i++) {
+        uint8_t irq = 0;
+        ret = ws1850s_read_register(dev_handle, COM_IRQ_REG, &irq);
+        if (ret != ESP_OK) return ret;
+
+        if (irq & 0x30) {
+            done = true;
+            break;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(2));
+    }
+
+    if (!done) {
+    uint8_t irq = 0;
+    uint8_t error = 0;
+    uint8_t fifo_level = 0;
+    uint8_t control = 0;
+
+    ws1850s_read_register(dev_handle, COM_IRQ_REG, &irq);
+    ws1850s_read_register(dev_handle, ERROR_REG, &error);
+    ws1850s_read_register(dev_handle, FIFO_LEVEL_REG, &fifo_level);
+    ws1850s_read_register(dev_handle, CONTROL_REG, &control);
+
+    printf("UID TIMEOUT DEBUG: irq=0x%02X error=0x%02X fifo=%u control=0x%02X\n",
+           irq, error, fifo_level, control);
+
+    return ESP_ERR_TIMEOUT;
+}
+
+    uint8_t error = 0;
+    ret = ws1850s_read_register(dev_handle, ERROR_REG, &error);
+    if (ret != ESP_OK) return ret;
+
+    if (error & 0x13) {
+        return ESP_FAIL;
+    }
+
+    uint8_t fifo_level = 0;
+    ret = ws1850s_read_register(dev_handle, FIFO_LEVEL_REG, &fifo_level);
+    if (ret != ESP_OK) return ret;
+
+    if (fifo_level < 5) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    uint8_t buffer[5] = {0};
+
+    for (int i = 0; i < 5; i++) {
+        ret = ws1850s_read_register(dev_handle, FIFO_DATA_REG, &buffer[i]);
+        if (ret != ESP_OK) return ret;
+    }
+
+    uint8_t bcc = buffer[0] ^ buffer[1] ^ buffer[2] ^ buffer[3];
+
+    if (bcc != buffer[4]) {
+        return ESP_ERR_INVALID_CRC;
+    }
+
+    uid[0] = buffer[0];
+    uid[1] = buffer[1];
+    uid[2] = buffer[2];
+    uid[3] = buffer[3];
+    *uid_len = 4;
 
     return ESP_OK;
 }

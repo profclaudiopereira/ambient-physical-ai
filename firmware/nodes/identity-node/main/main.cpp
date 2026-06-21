@@ -172,6 +172,23 @@ ws1850s_init(nfc_dev_handle);
 
         if (!nfc_card_present) {
             nfc_card_present = true;
+uint8_t uid[10] = {0};
+uint8_t uid_len = 0;
+ws1850s_init(nfc_dev_handle);
+vTaskDelay(pdMS_TO_TICKS(50));
+esp_err_t uid_ret = ws1850s_read_uid(nfc_dev_handle, uid, &uid_len);
+
+if (uid_ret == ESP_OK) {
+    char uid_text[32] = {0};
+
+    for (int i = 0; i < uid_len; i++) {
+        snprintf(uid_text + (i * 2), sizeof(uid_text) - (i * 2), "%02X", uid[i]);
+    }
+
+    ESP_LOGI(TAG, "NFC UID: %s", uid_text);
+} else {
+    ESP_LOGW(TAG, "NFC UID read failed: %s", esp_err_to_name(uid_ret));
+}
             ESP_LOGI(TAG, "NFC card stable: YES");
             M5.Speaker.tone(2800, 80);
             draw_console();
