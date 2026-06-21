@@ -140,19 +140,37 @@ static esp_err_t ws1850s_transceive(
     ret = ws1850s_set_bit_mask(dev_handle, BIT_FRAMING_REG, 0x80);
     if (ret != ESP_OK) return ret;
 
+    bool irq_completed = false;
+
     for (int i = 0; i < 100; i++) {
         uint8_t irq = 0;
+
         ret = ws1850s_read_register(dev_handle, COM_IRQ_REG, &irq);
-        if (ret != ESP_OK) return ret;
+        if (ret != ESP_OK) {
+            ws1850s_clear_bit_mask(dev_handle, BIT_FRAMING_REG, 0x80);
+            ws1850s_write_register(dev_handle, COMMAND_REG, PCD_IDLE);
+            return ret;
+        }
 
         if (irq & 0x30) {
+            irq_completed = true;
             break;
         }
 
         vTaskDelay(pdMS_TO_TICKS(2));
     }
 
-    ws1850s_clear_bit_mask(dev_handle, BIT_FRAMING_REG, 0x80);
+    ret = ws1850s_clear_bit_mask(dev_handle, BIT_FRAMING_REG, 0x80);
+    if (ret != ESP_OK) {
+        ws1850s_write_register(dev_handle, COMMAND_REG, PCD_IDLE);
+        return ret;
+    }
+
+    if (!irq_completed) {
+        ws1850s_write_register(dev_handle, COMMAND_REG, PCD_IDLE);
+        *back_len = 0;
+        return ESP_ERR_TIMEOUT;
+    }
 
     uint8_t error = 0;
     ret = ws1850s_read_register(dev_handle, ERROR_REG, &error);
@@ -188,20 +206,6 @@ static esp_err_t ws1850s_transceive(
     }
 
     *back_len = count;
-
-    printf("TRANSCEIVE DEBUG: send_len=%u fifo=%u valid_bits=%u data=",
-           send_len,
-           *back_len,
-           valid_bits ? *valid_bits : 0);
-
-    if (back_data != NULL) {
-        for (int i = 0; i < *back_len; i++) {
-            printf("%02X", back_data[i]);
-        }
-    }
-
-    printf("\n");
-
     return ESP_OK;
 }
 
@@ -229,6 +233,12 @@ esp_err_t ws1850s_card_present(i2c_master_dev_handle_t dev_handle, bool *present
         &back_len,
         &valid_bits);
 
+    // In NFC polling, no response means no card, not a critical failure.
+    if (ret == ESP_ERR_TIMEOUT || ret == ESP_ERR_NOT_FOUND || ret == ESP_FAIL) {
+        *present = false;
+        return ESP_OK;
+    }
+
     if (ret != ESP_OK) {
         return ret;
     }
@@ -248,20 +258,13 @@ esp_err_t ws1850s_read_uid(i2c_master_dev_handle_t dev_handle, uint8_t *uid, uin
 
     *uid_len = 0;
 
-    esp_err_t ret = ws1850s_init(dev_handle);
-    if (ret != ESP_OK) return ret;
-
-    bool present = false;
-    ret = ws1850s_card_present(dev_handle, &present);
-    if (ret != ESP_OK) return ret;
-
-    if (!present) {
-        return ESP_ERR_NOT_FOUND;
-    }
+    // Do not call ws1850s_init() here. Initialization is owned by setup/recovery.
+    // Do not call ws1850s_card_present() here. The NFC task already reached READ_UID
+    // after a positive poll; a second REQA can disturb the anticollision sequence.
 
     vTaskDelay(pdMS_TO_TICKS(10));
 
-    ret = ws1850s_write_register(dev_handle, COLL_REG, 0x80);
+    esp_err_t ret = ws1850s_write_register(dev_handle, COLL_REG, 0x80);
     if (ret != ESP_OK) return ret;
 
     uint8_t send_data[2] = {PICC_CMD_SEL_CL1, 0x20};
@@ -280,23 +283,16 @@ esp_err_t ws1850s_read_uid(i2c_master_dev_handle_t dev_handle, uint8_t *uid, uin
         &back_len,
         &valid_bits);
 
-    printf("UID DEBUG: ret=%s back_len=%u valid_bits=%u data=",
-           esp_err_to_name(ret),
-           back_len,
-           valid_bits);
-
-    for (int i = 0; i < back_len; i++) {
-        printf("%02X", back_data[i]);
+    if (ret == ESP_ERR_TIMEOUT || ret == ESP_ERR_NOT_FOUND || ret == ESP_FAIL) {
+        return ESP_ERR_NOT_FOUND;
     }
-
-    printf("\n");
 
     if (ret != ESP_OK) {
         return ret;
     }
 
     if (back_len < 5) {
-        return ESP_ERR_INVALID_SIZE;
+        return ESP_ERR_NOT_FOUND;
     }
 
     uint8_t bcc = back_data[0] ^ back_data[1] ^ back_data[2] ^ back_data[3];

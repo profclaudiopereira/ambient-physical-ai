@@ -22,6 +22,7 @@ esp_err_t ws1850s_read_version(i2c_master_dev_handle_t dev_handle, uint8_t *vers
 esp_err_t ws1850s_init(i2c_master_dev_handle_t dev_handle);
 esp_err_t ws1850s_card_present(i2c_master_dev_handle_t dev_handle, bool *present);
 esp_err_t ws1850s_read_uid(i2c_master_dev_handle_t dev_handle, uint8_t *uid, uint8_t *uid_len);
+
 #ifdef __cplusplus
 }
 #endif
