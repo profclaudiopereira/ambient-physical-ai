@@ -378,7 +378,7 @@ NON-BLOCKING
 The issue is documented in:
 
 ```text
-docs/notes/LAB_WS1850S_001_DRIVER_RELIABILITY.md
+docs/notes/LAB_WS1850S_001_DRIVER_RELIABILITY_v2.md
 ```
 
 ---
@@ -498,7 +498,7 @@ Extended Identity Registry
 See:
 
 ```text
-LAB_WS1850S_001_DRIVER_RELIABILITY.md
+LAB_WS1850S_001_DRIVER_RELIABILITY_v2.md
 ```
 
 for ongoing NFC driver investigation.
@@ -507,13 +507,46 @@ for ongoing NFC driver investigation.
 
 ## Presence Layer Integration
 
-Future integration candidates:
+Presence sensing is no longer assigned to the M5Dial Identity Node.
+
+Approved Presence Node V1 baseline:
 
 ```text
-VL53L0X ToF
+AtomS3 Lite
++
+Unit Mini ToF-90 / VL53L0X
+```
+
+The M5Dial remains the Identity Gateway and is responsible for:
+
+```text
+NFC
+Profile Mapping
+Context Selector
+Identity Package
+Identity Visualization
+```
+
+The Presence Node V1 has been validated separately with serial distance measurements.
+
+See:
+
+```text
+docs/notes/PRESENCE_NODE_V1_BRINGUP_001.md
+```
+
+Future integration flow:
+
+```text
 Presence Node
-Context Triggering
-Ambient Runtime Interaction
+↓
+Presence Event
+↓
+Identity Node
+↓
+Identity Package
+↓
+Cognitive Runtime
 ```
 
 ---
