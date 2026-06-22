@@ -2,145 +2,322 @@
 
 ## Presence Layer
 
+### Ambient Physical AI
+
 ---
 
-# Hardware
+# Overview
 
+Este documento descreve o sensor oficial da Presence Layer do projeto Ambient Physical AI.
+
+Hardware:
+
+```text
 M5Stack Unit Mini ToF-90°
+```
 
-Sensor: VL53L0X
-Interface: I2C
-Address: 0x29
-Range: 3 cm ~ 200 cm
-Field of View: 25°
-Role: Presence Layer
+Sensor:
+
+```text
+VL53L0X
+```
+
+Papel arquitetural:
+
+```text
+Presence Layer
+```
+
+---
+
+# Hardware Specifications
+
+| Item          | Value          |
+| ------------- | -------------- |
+| Sensor        | VL53L0X        |
+| Interface     | I2C            |
+| Address       | 0x29           |
+| Range         | 3 cm ~ 200 cm  |
+| Resolution    | 1 mm           |
+| Field of View | 25°            |
+| Orientation   | Forward Facing |
+| Technology    | Time-of-Flight |
 
 ---
 
 # Architectural Role
 
-This sensor belongs to the:
+O sensor pertence à camada:
 
 ## Presence Layer
 
-Conceptual flow:
+Fluxo arquitetural:
 
 ```text
 Presence
-→ Identity
-→ Cognition
-→ Ambient Transformation
-→ Experience
+↓
+Identity
+↓
+Cognition
+↓
+Ambient Transformation
+↓
+Expression
 ```
 
-Its purpose is to detect the existence and proximity of people or objects within the environment.
+Pergunta respondida:
+
+> Existe alguém aqui?
 
 ---
 
-# Characteristics
+# Responsibilities
 
-* Time-of-Flight (ToF)
-* I2C communication
-* Range: 3 cm ~ 200 cm
-* Resolution: 1 mm
-* Fast response
-* 90° forward-facing orientation
-
----
-
-# Usage in Ambient Physical AI
-
-Initial responsibilities:
-
-* presence detection;
-* distance measurement;
-* environmental awareness;
-* contextual triggering.
-
-Future responsibilities:
-
-* occupancy estimation;
-* approach detection;
-* contextual activation;
-* ambient interaction triggers.
-
----
-
-# Integration Target
-
-Initial node:
+## Current Responsibilities
 
 ```text
-presence-node
+Presence detection
+Distance measurement
+Approach detection
+Presence events
 ```
+
+---
+
+## Future Responsibilities
+
+```text
+Occupancy estimation
+Presence confidence
+Multi-sensor fusion
+Context activation
+Ambient triggers
+```
+
+---
+
+# Approved Presence Node V1
+
+A arquitetura oficial aprovada para a Presence Layer é:
+
+```text
+AtomS3 Lite
++
+Unit Mini ToF-90
+```
+
+Status:
+
+```text
+APPROVED BASELINE
+```
+
+---
+
+# Why AtomS3 Lite
+
+Após investigações envolvendo:
+
+```text
+CoreS3 Lite
+M5Dial
+AtomS3R Cam
+AtomS3 Lite
+```
+
+a plataforma escolhida foi:
+
+```text
+AtomS3 Lite
+```
+
+Motivos:
+
+```text
+VL53L0X validated
+I2C stable
+Simple hardware
+Low cost
+Clear architectural separation
+Dedicated Presence Node
+```
+
+---
+
+# Validation History
+
+## Validation 01
 
 Platform:
 
 ```text
-CoreS3 Lite
+M5Dial
+Arduino
 ```
 
----
-
-# Status
-
-Hardware acquired.
-
-Integration planned for:
-
-Presence Node v0.2
-
-## Validation
-
-The Mini ToF-90 sensor was independently validated before integration into the Ambient Physical AI runtime.
-
-### Validation Platform
-
-* M5Dial
-* ESP32-S3
-* Arduino IDE
-
-### Validation Sketch
-
-```text
-validation/arduino/vl53l0x_validation.ino
-```
-
-### Result
-
-Successful distance measurements were obtained:
+Result:
 
 ```text
 Distance: 45 mm
 Distance: 42 mm
 Distance: 46 mm
 Distance: 43 mm
-Distance: 43 mm
-Distance: 45 mm
-Distance: 44 mm
 ```
 
-### Validation Outcome
+Validation:
 
-Confirmed operational:
+```text
+PASS
+```
 
-* VL53L0X sensor
-* Grove cable
-* Grove interface
-* power supply
-* distance measurement
+Confirmed:
 
-### Architectural Impact
+```text
+Sensor
+Cable
+Power
+Distance measurement
+```
 
-This validation confirms that the hardware layer is operational.
+---
 
-Any remaining issues observed during ESP-IDF integration are therefore considered software integration challenges and not hardware failures.
+## Validation 02
 
-### Status
+Platform:
 
-Hardware Validation: Completed
+```text
+AtomS3 Lite
+ESP-IDF
+```
 
-Milestone 002: Completed
+I2C Detection:
+
+```text
+Address: 0x29
+```
+
+Identity Registers:
+
+```text
+MODEL_ID    = 0xEE
+MODULE_TYPE = 0xAA
+REVISION_ID = 0x10
+```
+
+Validation:
+
+```text
+PASS
+```
+
+---
+
+## Validation 03
+
+Distance Measurement
+
+Observed values:
+
+```text
+Distance: 55 mm
+Distance: 50 mm
+Distance: 53 mm
+Distance: 54 mm
+Distance: 259 mm
+Distance: 179 mm
+Distance: 39 mm
+```
+
+Validation:
+
+```text
+PASS
+```
+
+---
+
+# Presence Layer Status
+
+Current status:
+
+```text
+Hardware Validation ........ COMPLETED
+Device Detection ........... COMPLETED
+Distance Measurement ....... COMPLETED
+Presence Layer Baseline .... COMPLETED
+```
+
+Classification:
+
+```text
+Operational Baseline
+```
+
+---
+
+# Firmware
+
+Official firmware:
+
+```text
+firmware/nodes/presence-node-v1
+```
+
+Legacy investigations:
+
+```text
+firmware/nodes/presence-node-legacy
+```
+
+---
+
+# Current Roadmap
+
+## Presence Node V1.1
+
+Next planned features:
+
+```text
+Presence Threshold
+Presence Debounce
+PRESENT event
+NOT_PRESENT event
+Presence State Machine
+```
+
+---
+
+## Presence → Identity Integration
+
+Target flow:
+
+```text
+Distance detected
+↓
+Presence Event
+↓
+Identity Node
+↓
+NFC Identification
+```
+
+---
+
+# Future Evolution
+
+Future platform under evaluation:
+
+```text
+AtomS3R Cam
+```
+
+Potential role:
+
+```text
+Presence + Vision Node
+```
+
+This is not part of Presence Node V1.
 
 ---
 
@@ -148,83 +325,38 @@ Milestone 002: Completed
 
 ## Hardware Reference
 
-![Mini ToF-90](photos/2026-05-31_unit-mini-tof-90_front.jpeg)
-
-Front view of the M5Stack Unit Mini ToF-90 sensor.
-
----
-
-## Investigation Setup
-
-![CoreS3 Lite + ToF](photos/2026-05-31_cores3-lite_tof-investigation.jpeg)
-
-Initial ESP-IDF integration and I2C investigation setup using CoreS3 Lite.
-
-This setup was used during the early bring-up phase of the Presence Layer.
-
----
-
-## Validation Setup
-
-![M5Dial + ToF](photos/2026-05-31_m5dial_tof-validation.jpeg)
-
-Validation setup using M5Dial.
-
-This configuration successfully validated:
-
-* VL53L0X sensor
-* Grove cable
-* Grove interface
-* power supply
-* distance measurement
-
-Observed measurements:
-
 ```text
-Distance: 45 mm
-Distance: 42 mm
-Distance: 46 mm
-Distance: 43 mm
+assets/photos/unit_mini_tof90_front.jpeg
 ```
 
 ---
 
-# ESP-IDF Integration
-
-Firmware:
+## Presence Node V1
 
 ```text
-firmware/nodes/presence-node
+assets/photos/atoms3_lite_tof_validation.jpeg
 ```
 
-Platform:
+(when available)
+
+---
+
+# Guiding Principle
+
+The ToF sensor is not responsible for identity.
+
+The ToF sensor is responsible only for:
 
 ```text
-ESP-IDF 5.4.2
+Presence
 ```
 
-Result:
+Identity remains the responsibility of:
 
 ```text
-VL53L0X detected
+M5Dial
++
+WS1850S NFC
 ```
 
-The sensor is successfully detected by the official Presence Node firmware.
-
-Current status:
-
-```text
-M002 Hardware Validation
-COMPLETED
-
-M003 Sprint 1
-Device Detection
-COMPLETED
-
-M003 Sprint 2
-Distance Measurement
-NEXT
-```
-
-
-
+This separation is a fundamental architectural decision of Ambient Physical AI.
