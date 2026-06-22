@@ -6,30 +6,28 @@
 
 Esta documentação descreve a organização oficial do repositório do projeto Ambient Physical AI.
 
-O objetivo é garantir consistência, simplicidade e evolução sustentável durante o desenvolvimento do ecossistema.
+O objetivo é garantir consistência arquitetural, simplicidade operacional e evolução sustentável durante o desenvolvimento do ecossistema.
 
 ---
 
-# Filosofia
+# Philosophy
 
-O repositório foi projetado para refletir a arquitetura conceitual do projeto.
+O repositório foi projetado para refletir diretamente a arquitetura do projeto.
 
-A organização prioriza:
+Princípios adotados:
 
-* clareza arquitetural;
-* modularidade;
-* desenvolvimento incremental;
-* demonstrações funcionais;
-* simplicidade operacional;
-* evolução guiada por protótipos reais.
+* Demo First. Complexity Later.
+* Hardware First Validation.
+* Distributed Cognition.
+* Local First.
+* Incremental Integration.
+* Real Systems Over Simulations.
 
-Princípio orientador:
-
-> Demo First. Complexity Later.
+A estrutura deve evoluir a partir de hardware real, firmware real e integrações reais.
 
 ---
 
-# Estrutura Geral
+# Repository Structure
 
 ```text
 ambient-physical-ai/
@@ -49,6 +47,8 @@ ambient-physical-ai/
 
 # Firmware
 
+Contém todos os firmwares embarcados do ecossistema.
+
 ```text
 firmware/
 
@@ -56,32 +56,136 @@ firmware/
 └── nodes/
 ```
 
-## shared
+---
 
-Componentes reutilizáveis entre múltiplos firmwares.
+## Shared
 
-Exemplos futuros:
+Componentes reutilizáveis por múltiplos nós.
 
-* MQTT helpers
-* drivers
-* abstrações de sensores
-* bibliotecas comuns
+Exemplos:
 
-## nodes
+```text
+drivers
+sensor abstractions
+common utilities
+shared contracts
+future communication helpers
+```
 
-Firmwares dos dispositivos físicos do ecossistema.
+---
 
-Exemplos futuros:
+## Nodes
 
-* env-node
-* voice-node
-* stackchan-node
-* presence-node
-* display-node
+Firmwares dos dispositivos físicos.
+
+Estado atual:
+
+```text
+firmware/nodes/
+
+├── identity-node/
+├── presence-node-v1/
+├── presence-node-legacy/
+└── ambient-runtime-node/
+```
+
+---
+
+### identity-node
+
+Hardware:
+
+```text
+M5Dial
+```
+
+Responsabilidades:
+
+```text
+NFC identification
+UID mapping
+Context selection
+Identity package generation
+Identity visualization
+```
+
+Status:
+
+```text
+Operational Baseline
+```
+
+---
+
+### presence-node-v1
+
+Hardware:
+
+```text
+AtomS3 Lite
++
+Unit Mini ToF-90 (VL53L0X)
+```
+
+Responsabilidades:
+
+```text
+Presence detection
+Distance measurement
+Presence events
+```
+
+Status:
+
+```text
+Operational Baseline
+```
+
+---
+
+### presence-node-legacy
+
+Histórico das investigações anteriores envolvendo:
+
+```text
+CoreS3 Lite
+VL53L0X
+```
+
+Mantido para referência técnica.
+
+Não representa o baseline atual.
+
+---
+
+### ambient-runtime-node
+
+Hardware:
+
+```text
+PoE-P4
+```
+
+Responsabilidades:
+
+```text
+Environmental sensing
+Ambient state management
+Displays
+Future ambient transformation
+```
+
+Status:
+
+```text
+Active Development
+```
 
 ---
 
 # Runtime
+
+Contém os componentes executados no runtime cognitivo e ambiental.
 
 ```text
 runtime/
@@ -92,62 +196,84 @@ runtime/
 └── infrastructure/
 ```
 
-## cognitive
+---
+
+## Cognitive
 
 Representa o Cognitive Runtime Node.
 
-Responsável por:
-
-* StackFlow
-* raciocínio
-* memória
-* multimodalidade
-* coordenação cognitiva
-
 Hardware principal:
 
-* AX630C
+```text
+AX630C + LLM Mate
+```
+
+Responsabilidades:
+
+```text
+Context interpretation
+Reasoning
+Memory
+Multimodal processing
+StackFlow Runtime
+Decision making
+```
+
+Status:
+
+```text
+Discovery Completed
+Integration Phase Next
+```
 
 ---
 
-## ambient
+## Ambient
 
 Representa o Ambient Runtime Node.
 
-Responsável por:
-
-* iluminação
-* displays
-* sincronização ambiental
-* transformação física do ambiente
-
 Hardware principal:
 
-* PoE-P4
+```text
+PoE-P4
+```
+
+Responsabilidades:
+
+```text
+Environmental adaptation
+Ambient displays
+Spatial synchronization
+Future contextual responses
+```
 
 ---
 
-## shared
+## Shared
 
 Artefatos compartilhados entre os runtimes.
 
 Exemplos:
 
-* contratos
-* schemas
-* definições comuns
+```text
+schemas
+contracts
+shared definitions
+```
 
 ---
 
-## infrastructure
+## Infrastructure
 
-Infraestrutura mínima necessária ao funcionamento local.
+Infraestrutura local mínima.
 
 Exemplos futuros:
 
-* Mosquitto
-* configurações locais
-* scripts de implantação
+```text
+Mosquitto
+deployment scripts
+runtime services
+```
 
 ---
 
@@ -157,15 +283,52 @@ Exemplos futuros:
 docs/
 ```
 
-Centraliza toda a documentação do projeto.
+Centraliza toda a documentação técnica do projeto.
 
-Categorias previstas:
+Estrutura atual:
 
-* architecture
-* hardware
-* repository
-* demos
-* notes
+```text
+docs/
+
+├── architecture/
+├── discoveries/
+├── notes/
+├── repository/
+└── snapshots/
+```
+
+---
+
+## architecture
+
+Arquitetura oficial do projeto.
+
+---
+
+## discoveries
+
+Registro das descobertas técnicas realizadas durante investigações.
+
+Exemplo:
+
+```text
+AX630C
+StackFlow
+Protocols
+Context behavior
+```
+
+---
+
+## notes
+
+Laboratórios, observações técnicas e investigações.
+
+---
+
+## snapshots
+
+Pontos de controle do projeto.
 
 ---
 
@@ -179,11 +342,14 @@ Contém os ativos visuais do projeto.
 
 Exemplos:
 
-* fotografias
-* diagramas
-* renders
-* screenshots
-* material de demonstração
+```text
+photos
+diagrams
+renders
+screenshots
+competition material
+posters
+```
 
 ---
 
@@ -195,7 +361,7 @@ hardware/
 
 Documentação específica dos dispositivos físicos.
 
-Cada diretório pode conter:
+Estrutura recomendada:
 
 ```text
 device/
@@ -215,61 +381,133 @@ device/
 demos/
 ```
 
-Contém demonstrações e cenários de apresentação.
+Contém cenários de demonstração e validação do ecossistema.
 
-O foco do projeto é demonstrar:
+Objetivos:
 
-* inteligência contextual;
-* transformação ambiental;
-* embodiment;
-* interação natural.
-
----
-
-# Convenções
-
-## Estrutura
-
-Evitar criar diretórios sem necessidade prática.
-
-Novas estruturas devem surgir a partir de:
-
-* hardware real;
-* firmware real;
-* experimentos reais;
-* necessidades observadas.
+```text
+Contextual Intelligence
+Ambient Transformation
+Identity Recognition
+Embodied AI
+Natural Interaction
+```
 
 ---
 
-## Arquitetura
+# Architectural Model
+
+O projeto é organizado em camadas funcionais:
+
+```text
+Presence
+↓
+Identity
+↓
+Cognition
+↓
+Ambient Transformation
+↓
+Expression
+```
+
+---
+
+## Presence Layer
+
+Baseline atual:
+
+```text
+AtomS3 Lite
++
+VL53L0X
+```
+
+---
+
+## Identity Layer
+
+Baseline atual:
+
+```text
+M5Dial
++
+WS1850S NFC
+```
+
+---
+
+## Cognitive Layer
+
+Baseline atual:
+
+```text
+AX630C
++
+LLM Mate
++
+StackFlow
+```
+
+---
+
+## Ambient Layer
+
+Baseline atual:
+
+```text
+PoE-P4
+```
+
+---
+
+## Expression Layer
+
+Dispositivos atuais:
+
+```text
+StackChan
+Voice Pyramid
+```
+
+---
+
+# Repository Evolution Policy
 
 Evitar:
 
-* overengineering;
-* abstrações prematuras;
-* organização baseada em protocolos;
-* arquitetura enterprise.
+```text
+Overengineering
+Premature abstractions
+Enterprise-style architecture
+Protocol-driven directory structures
+```
 
 Priorizar:
 
-* simplicidade;
-* clareza;
-* modularidade;
-* demonstrações funcionais.
+```text
+Clarity
+Modularity
+Incremental evolution
+Functional demonstrations
+Real hardware validation
+```
+
+Mudanças estruturais significativas devem surgir apenas a partir de necessidades observadas durante integração e validação real.
 
 ---
 
-# Evolução
+# Guiding Principle
 
-A arquitetura deverá evoluir gradualmente conforme o projeto avançar.
+## Demo First. Complexity Later.
 
-Mudanças estruturais significativas devem ser justificadas por necessidades observadas durante:
+Toda evolução do repositório deve ser guiada por:
 
-* integração;
-* prototipação;
-* validação de hardware;
-* construção das demonstrações.
+* hardware real;
+* firmware real;
+* integração real;
+* experiências reais.
 
-A organização do repositório deve permanecer alinhada com a visão central do projeto:
+A organização deve permanecer alinhada com a visão central do projeto:
 
 **Ambient Physical AI — Distributed Cognitive Ecosystem Powered by StackFlow**
