@@ -3,7 +3,7 @@
  *
  * Ambient Physical AI
  *
- * FreeRTOS Runtime Stabilized Baseline V5
+ * FreeRTOS Runtime Stabilized Baseline V6
  *
  * Architecture:
  * - UI Task owns M5.update(), Display, Touch, Encoder, Buzzer
@@ -122,6 +122,10 @@ static bool nfc_card_present = false;
 
 static char last_nfc_uid[32] = "";
 static char last_nfc_status[64] = "NFC: starting";
+
+static bool identity_visual_active = false;
+static TickType_t identity_visual_until = 0;
+static const TickType_t IDENTITY_VISUAL_DURATION = pdMS_TO_TICKS(3000);
 
 // -----------------------------------------------------------------------------
 // NFC Runtime State
@@ -247,6 +251,79 @@ static void draw_console()
     M5.Display.setCursor(20, 245);
     M5.Display.setTextSize(1);
     M5.Display.printf("%s", last_nfc_status);
+}
+
+
+static void draw_identity_visualization(int profile_index, const char *uid)
+{
+    if (profile_index < 0 || profile_index >= PROFILE_COUNT) {
+        profile_index = 0;
+    }
+
+    const Profile &profile = profiles[profile_index];
+    const char *initial = "?";
+
+    if (strcmp(profile.id, "claudio") == 0) {
+        initial = "C";
+    } else if (strcmp(profile.id, "student") == 0) {
+        initial = "S";
+    }
+
+    M5.Display.fillScreen(BLACK);
+
+    M5.Display.setTextDatum(middle_center);
+
+    M5.Display.setTextSize(2);
+    M5.Display.drawString("IDENTITY", 120, 22);
+
+    M5.Display.drawRoundRect(15, 45, 210, 185, 14, WHITE);
+
+    M5.Display.fillCircle(120, 82, 28, DARKGREY);
+    M5.Display.drawCircle(120, 82, 29, WHITE);
+
+    M5.Display.setTextSize(3);
+    M5.Display.drawString(initial, 120, 82);
+
+    M5.Display.setTextSize(2);
+    M5.Display.drawString(profile.name, 120, 125);
+
+    M5.Display.setTextSize(1);
+    M5.Display.drawString(profile.role, 120, 150);
+
+    char context_line[48] = {0};
+    snprintf(context_line, sizeof(context_line), "Context: %s", contexts[current_context]);
+    M5.Display.drawString(context_line, 120, 178);
+
+    char uid_line[48] = {0};
+    if (uid != NULL && uid[0] != '\0') {
+        snprintf(uid_line, sizeof(uid_line), "UID: %.8s", uid);
+    } else {
+        snprintf(uid_line, sizeof(uid_line), "UID: none");
+    }
+    M5.Display.drawString(uid_line, 120, 202);
+
+    M5.Display.setTextDatum(top_left);
+}
+
+static void show_identity_visualization(int profile_index, const char *uid)
+{
+    identity_visual_active = true;
+    identity_visual_until = xTaskGetTickCount() + IDENTITY_VISUAL_DURATION;
+    draw_identity_visualization(profile_index, uid);
+}
+
+static void update_identity_visualization_timeout()
+{
+    if (!identity_visual_active) {
+        return;
+    }
+
+    TickType_t now = xTaskGetTickCount();
+
+    if (((int32_t)(identity_visual_until - now)) <= 0) {
+        identity_visual_active = false;
+        draw_console();
+    }
 }
 
 static void generate_identity_package()
@@ -679,7 +756,7 @@ static void ui_task(void *param)
     M5.begin(cfg);
 
     ESP_LOGI(TAG, "Identity Console V1");
-    ESP_LOGI(TAG, "FreeRTOS runtime stabilized baseline V5 + fast NFC acquisition");
+    ESP_LOGI(TAG, "FreeRTOS runtime stabilized baseline V6 + identity visualization");
 
     knob_config_t knob_cfg = {
         .default_direction = 0,
@@ -736,11 +813,13 @@ static void ui_task(void *param)
                 request_nfc_quiet_window(pdMS_TO_TICKS(350));
 
                 last_encoder_count = encoder_count;
-                draw_console();
+                if (!identity_visual_active) {
+                    draw_console();
+                }
             }
         }
 
-        if (touch_state > 0 && last_touch_state == 0) {
+        if (touch_state > 0 && last_touch_state == 0 && !identity_visual_active) {
             current_profile++;
 
             if (current_profile >= PROFILE_COUNT) {
@@ -773,6 +852,7 @@ static void ui_task(void *param)
 
                 case EVENT_NFC_CARD_REMOVED:
                     nfc_card_present = false;
+                    identity_visual_active = false;
                     last_nfc_uid[0] = '\0';
 
                     strncpy(last_nfc_status, "Card removed", sizeof(last_nfc_status) - 1);
@@ -802,7 +882,7 @@ static void ui_task(void *param)
                              profiles[current_profile].name,
                              profiles[current_profile].role);
 
-                    draw_console();
+                    show_identity_visualization(current_profile, last_nfc_uid);
                     M5.Speaker.tone(2800, 80);
                     generate_identity_package();
                     break;
@@ -810,6 +890,7 @@ static void ui_task(void *param)
                 case EVENT_NFC_ERROR:
                     nfc_detected = false;
                     nfc_card_present = false;
+                    identity_visual_active = false;
 
                     if (event.message[0] != '\0') {
                         strncpy(last_nfc_status, event.message, sizeof(last_nfc_status) - 1);
@@ -844,6 +925,8 @@ static void ui_task(void *param)
                     break;
             }
         }
+
+        update_identity_visualization_timeout();
 
         vTaskDelay(pdMS_TO_TICKS(40));
     }

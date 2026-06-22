@@ -28,3 +28,4 @@ esp_err_t ws1850s_read_uid(i2c_master_dev_handle_t dev_handle, uint8_t *uid, uin
 #endif
 
 #endif
+
