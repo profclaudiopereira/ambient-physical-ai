@@ -29,6 +29,18 @@
 #include "esp_log.h"
 #include "esp_err.h"
 
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "nvs_flash.h"
+
+#include "lwip/sockets.h"
+#include "lwip/inet.h"
+#include "lwip/err.h"
+#include "lwip/sys.h"
+
+#include <sys/socket.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -44,6 +56,12 @@
 #include "ws1850s.h"
 
 static const char *TAG = "identity-node";
+
+#define WIFI_SSID "CAZAZUL"
+#define WIFI_PASS "H10CAZAZUL"
+
+#define UDP_LISTEN_PORT 3333
+#define UDP_RX_BUFFER_SIZE 256
 
 // -----------------------------------------------------------------------------
 // Profiles / Contexts
@@ -81,6 +99,7 @@ enum IdentityEventType {
     EVENT_NFC_UID_READ,
     EVENT_NFC_ERROR,
     EVENT_NFC_RECOVERED,
+    EVENT_PRESENCE_RECEIVED,
 };
 
 struct IdentityEvent {
@@ -127,6 +146,10 @@ static bool identity_visual_active = false;
 static TickType_t identity_visual_until = 0;
 static const TickType_t IDENTITY_VISUAL_DURATION = pdMS_TO_TICKS(3000);
 
+static bool presence_prompt_active = false;
+static TickType_t presence_prompt_until = 0;
+static const TickType_t PRESENCE_PROMPT_DURATION = pdMS_TO_TICKS(5000);
+
 // -----------------------------------------------------------------------------
 // NFC Runtime State
 // -----------------------------------------------------------------------------
@@ -156,6 +179,12 @@ static const TickType_t NFC_LONG_COOLDOWN    = pdMS_TO_TICKS(3000);
 static const int CARD_REMOVED_CONFIRM_COUNT = 5;
 static const int NFC_UID_READ_ATTEMPTS = 8;
 static const TickType_t NFC_UID_RETRY_DELAY = pdMS_TO_TICKS(60);
+
+// -----------------------------------------------------------------------------
+// Network Runtime State
+// -----------------------------------------------------------------------------
+
+static volatile bool wifi_connected = false;
 
 // -----------------------------------------------------------------------------
 // I2C lock helpers
@@ -215,6 +244,152 @@ static void send_simple_event(IdentityEventType type, const char *message = "")
 }
 
 // -----------------------------------------------------------------------------
+// Wi-Fi STA + UDP Listener
+// -----------------------------------------------------------------------------
+
+static void wifi_event_handler(void *arg,
+                               esp_event_base_t event_base,
+                               int32_t event_id,
+                               void *event_data)
+{
+    (void)arg;
+
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+        esp_wifi_connect();
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        wifi_connected = false;
+        ESP_LOGW(TAG, "Wi-Fi disconnected, reconnecting...");
+        esp_wifi_connect();
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
+        wifi_connected = true;
+        ESP_LOGI(TAG, "Wi-Fi connected. IP: " IPSTR, IP2STR(&event->ip_info.ip));
+    }
+}
+
+static void wifi_init_sta()
+{
+    esp_err_t ret = nvs_flash_init();
+
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    } else {
+        ESP_ERROR_CHECK(ret);
+    }
+
+    ESP_ERROR_CHECK(esp_netif_init());
+
+    ret = esp_event_loop_create_default();
+    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
+        ESP_ERROR_CHECK(ret);
+    }
+
+    esp_netif_create_default_wifi_sta();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT,
+        ESP_EVENT_ANY_ID,
+        &wifi_event_handler,
+        NULL,
+        NULL
+    ));
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        IP_EVENT,
+        IP_EVENT_STA_GOT_IP,
+        &wifi_event_handler,
+        NULL,
+        NULL
+    ));
+
+    wifi_config_t wifi_config = {};
+    strncpy((char *)wifi_config.sta.ssid, WIFI_SSID, sizeof(wifi_config.sta.ssid));
+    strncpy((char *)wifi_config.sta.password, WIFI_PASS, sizeof(wifi_config.sta.password));
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI(TAG, "Wi-Fi STA started. SSID: %s", WIFI_SSID);
+}
+
+static bool is_presence_event_payload(const char *payload)
+{
+    if (payload == NULL) {
+        return false;
+    }
+
+    return strstr(payload, "\"type\":\"presence_event\"") != NULL &&
+           strstr(payload, "\"state\":\"PRESENT\"") != NULL &&
+           strstr(payload, "\"source\":\"presence_node_v1\"") != NULL;
+}
+
+static void udp_listener_task(void *param)
+{
+    (void)param;
+
+    char rx_buffer[UDP_RX_BUFFER_SIZE] = {0};
+
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock < 0) {
+        ESP_LOGE(TAG, "Unable to create UDP listener socket");
+        vTaskDelete(NULL);
+        return;
+    }
+
+    struct sockaddr_in listen_addr = {};
+    listen_addr.sin_family = AF_INET;
+    listen_addr.sin_port = htons(UDP_LISTEN_PORT);
+    listen_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    int ret = bind(sock, (struct sockaddr *)&listen_addr, sizeof(listen_addr));
+    if (ret < 0) {
+        ESP_LOGE(TAG, "UDP bind failed on port %d", UDP_LISTEN_PORT);
+        close(sock);
+        vTaskDelete(NULL);
+        return;
+    }
+
+    ESP_LOGI(TAG, "UDP listener ready on port %d", UDP_LISTEN_PORT);
+
+    while (true) {
+        struct sockaddr_in source_addr = {};
+        socklen_t socklen = sizeof(source_addr);
+
+        int len = recvfrom(
+            sock,
+            rx_buffer,
+            sizeof(rx_buffer) - 1,
+            0,
+            (struct sockaddr *)&source_addr,
+            &socklen
+        );
+
+        if (len < 0) {
+            ESP_LOGW(TAG, "UDP receive failed");
+            vTaskDelay(pdMS_TO_TICKS(100));
+            continue;
+        }
+
+        rx_buffer[len] = '\0';
+
+        ESP_LOGI(TAG, "UDP RX from " IPSTR ":%d -> %s",
+                 IP2STR((ip4_addr_t *)&source_addr.sin_addr.s_addr),
+                 ntohs(source_addr.sin_port),
+                 rx_buffer);
+
+        if (is_presence_event_payload(rx_buffer)) {
+            send_simple_event(EVENT_PRESENCE_RECEIVED, "Presence detected");
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
 // UI
 // -----------------------------------------------------------------------------
 
@@ -251,6 +426,45 @@ static void draw_console()
     M5.Display.setCursor(20, 245);
     M5.Display.setTextSize(1);
     M5.Display.printf("%s", last_nfc_status);
+}
+
+static void draw_presence_prompt()
+{
+    M5.Display.fillScreen(BLACK);
+    M5.Display.setTextDatum(middle_center);
+
+    M5.Display.setTextSize(2);
+    M5.Display.drawString("Presence detected", 120, 105);
+
+    M5.Display.setTextSize(2);
+    M5.Display.drawString("Tap NFC card", 120, 145);
+
+    M5.Display.setTextDatum(top_left);
+}
+
+static void show_presence_prompt()
+{
+    presence_prompt_active = true;
+    presence_prompt_until = xTaskGetTickCount() + PRESENCE_PROMPT_DURATION;
+
+    identity_visual_active = false;
+
+    draw_presence_prompt();
+    M5.Speaker.tone(2200, 80);
+}
+
+static void update_presence_prompt_timeout()
+{
+    if (!presence_prompt_active) {
+        return;
+    }
+
+    TickType_t now = xTaskGetTickCount();
+
+    if (((int32_t)(presence_prompt_until - now)) <= 0) {
+        presence_prompt_active = false;
+        draw_console();
+    }
 }
 
 
@@ -813,13 +1027,13 @@ static void ui_task(void *param)
                 request_nfc_quiet_window(pdMS_TO_TICKS(350));
 
                 last_encoder_count = encoder_count;
-                if (!identity_visual_active) {
+                if (!identity_visual_active && !presence_prompt_active) {
                     draw_console();
                 }
             }
         }
 
-        if (touch_state > 0 && last_touch_state == 0 && !identity_visual_active) {
+        if (touch_state > 0 && last_touch_state == 0 && !identity_visual_active && !presence_prompt_active) {
             current_profile++;
 
             if (current_profile >= PROFILE_COUNT) {
@@ -918,7 +1132,14 @@ static void ui_task(void *param)
 
                     ESP_LOGI(TAG, "NFC recovered: %s", last_nfc_status);
 
-                    draw_console();
+                    if (!presence_prompt_active) {
+                        draw_console();
+                    }
+                    break;
+
+                case EVENT_PRESENCE_RECEIVED:
+                    ESP_LOGI(TAG, "Presence event received: show NFC prompt");
+                    show_presence_prompt();
                     break;
 
                 default:
@@ -926,7 +1147,11 @@ static void ui_task(void *param)
             }
         }
 
-        update_identity_visualization_timeout();
+        update_presence_prompt_timeout();
+
+        if (!presence_prompt_active) {
+            update_identity_visualization_timeout();
+        }
 
         vTaskDelay(pdMS_TO_TICKS(40));
     }
@@ -946,6 +1171,9 @@ extern "C" void app_main(void)
         return;
     }
 
+    wifi_init_sta();
+
     xTaskCreatePinnedToCore(ui_task,  "ui_task",  8192, NULL, 5, NULL, 1);
     xTaskCreatePinnedToCore(nfc_task, "nfc_task", 8192, NULL, 4, NULL, 1);
+    xTaskCreatePinnedToCore(udp_listener_task, "udp_listener_task", 4096, NULL, 3, NULL, 0);
 }

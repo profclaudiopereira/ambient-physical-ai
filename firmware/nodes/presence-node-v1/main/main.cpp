@@ -3,6 +3,19 @@
 #include "freertos/task.h"
 #include "driver/i2c_master.h"
 
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "nvs_flash.h"
+
+#include "lwip/sockets.h"
+#include "lwip/inet.h"
+#include "lwip/err.h"
+#include "lwip/sys.h"
+
+#include <string.h>
+#include <sys/socket.h>
+
 static const char *TAG = "presence-tof";
 
 #define I2C_PORT I2C_NUM_0
@@ -10,6 +23,15 @@ static const char *TAG = "presence-tof";
 #define I2C_SCL  GPIO_NUM_1
 
 #define VL53L0X_ADDR 0x29
+
+#define WIFI_SSID "CAZAZUL"
+#define WIFI_PASS "H10CAZAZUL"
+
+#define UDP_BROADCAST_IP "192.168.0.255"
+#define UDP_PORT 3333
+
+#define PRESENCE_THRESHOLD_MM     600
+#define NOT_PRESENT_THRESHOLD_MM  800
 
 #define SYSRANGE_START                  0x00
 #define SYSTEM_SEQUENCE_CONFIG          0x01
@@ -25,6 +47,158 @@ static const char *TAG = "presence-tof";
 static i2c_master_bus_handle_t bus_handle = NULL;
 static i2c_master_dev_handle_t tof_handle = NULL;
 static uint8_t stop_variable = 0;
+
+static int udp_socket_fd = -1;
+static struct sockaddr_in udp_dest_addr = {};
+static bool presence_state = false;
+static volatile bool wifi_connected = false;
+static bool pending_presence_udp = false;
+static uint16_t pending_presence_distance_mm = 0;
+
+// -----------------------------------------------------------------------------
+// Wi-Fi STA + UDP Broadcast
+// -----------------------------------------------------------------------------
+
+static void wifi_event_handler(void *arg,
+                               esp_event_base_t event_base,
+                               int32_t event_id,
+                               void *event_data)
+{
+    (void)arg;
+    (void)event_data;
+
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+        esp_wifi_connect();
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        wifi_connected = false;
+        ESP_LOGW(TAG, "Wi-Fi disconnected, reconnecting...");
+        esp_wifi_connect();
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
+        wifi_connected = true;
+        ESP_LOGI(TAG, "Wi-Fi connected. IP: " IPSTR, IP2STR(&event->ip_info.ip));
+    }
+}
+
+static void wifi_init_sta()
+{
+    esp_err_t ret = nvs_flash_init();
+
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    } else {
+        ESP_ERROR_CHECK(ret);
+    }
+
+    ESP_ERROR_CHECK(esp_netif_init());
+
+    ret = esp_event_loop_create_default();
+    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
+        ESP_ERROR_CHECK(ret);
+    }
+
+    esp_netif_create_default_wifi_sta();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT,
+        ESP_EVENT_ANY_ID,
+        &wifi_event_handler,
+        NULL,
+        NULL
+    ));
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        IP_EVENT,
+        IP_EVENT_STA_GOT_IP,
+        &wifi_event_handler,
+        NULL,
+        NULL
+    ));
+
+    wifi_config_t wifi_config = {};
+    strncpy((char *)wifi_config.sta.ssid, WIFI_SSID, sizeof(wifi_config.sta.ssid));
+    strncpy((char *)wifi_config.sta.password, WIFI_PASS, sizeof(wifi_config.sta.password));
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI(TAG, "Wi-Fi STA started. SSID: %s", WIFI_SSID);
+}
+
+static void udp_broadcast_init()
+{
+    udp_socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+
+    if (udp_socket_fd < 0) {
+        ESP_LOGE(TAG, "Unable to create UDP socket");
+        return;
+    }
+
+    int broadcast_enable = 1;
+    int ret = setsockopt(
+        udp_socket_fd,
+        SOL_SOCKET,
+        SO_BROADCAST,
+        &broadcast_enable,
+        sizeof(broadcast_enable)
+    );
+
+    if (ret < 0) {
+        ESP_LOGW(TAG, "Failed to enable UDP broadcast");
+    }
+
+    udp_dest_addr = {};
+    udp_dest_addr.sin_family = AF_INET;
+    udp_dest_addr.sin_port = htons(UDP_PORT);
+    udp_dest_addr.sin_addr.s_addr = inet_addr(UDP_BROADCAST_IP);
+
+    ESP_LOGI(TAG, "UDP broadcast configured: %s:%d", UDP_BROADCAST_IP, UDP_PORT);
+}
+
+static bool send_presence_event_udp(uint16_t distance_mm)
+{
+    if (!wifi_connected) {
+        ESP_LOGW(TAG, "UDP send postponed: Wi-Fi not connected yet");
+        return false;
+    }
+
+    if (udp_socket_fd < 0) {
+        ESP_LOGW(TAG, "UDP socket not ready");
+        return false;
+    }
+
+    char payload[160] = {0};
+
+    snprintf(
+        payload,
+        sizeof(payload),
+        "{\"type\":\"presence_event\",\"state\":\"PRESENT\",\"distance_mm\":%u,\"source\":\"presence_node_v1\"}",
+        distance_mm
+    );
+
+    int sent = sendto(
+        udp_socket_fd,
+        payload,
+        strlen(payload),
+        0,
+        (struct sockaddr *)&udp_dest_addr,
+        sizeof(udp_dest_addr)
+    );
+
+    if (sent < 0) {
+        ESP_LOGW(TAG, "UDP send failed");
+        return false;
+    }
+
+    ESP_LOGI(TAG, "UDP presence_event sent: %s", payload);
+    return true;
+}
 
 static esp_err_t write8(uint8_t reg, uint8_t value)
 {
@@ -301,33 +475,73 @@ static esp_err_t vl53l0x_init()
 
 static esp_err_t read_distance_mm(uint16_t *distance)
 {
-    write8(0x80, 0x01);
-    write8(0xFF, 0x01);
-    write8(0x00, 0x00);
-    write8(0x91, stop_variable);
-    write8(0x00, 0x01);
-    write8(0xFF, 0x00);
-    write8(0x80, 0x00);
+    esp_err_t ret = ESP_OK;
 
-    write8(SYSRANGE_START, 0x01);
+    ret = write8(0x80, 0x01);
+    if (ret != ESP_OK) return ret;
+
+    ret = write8(0xFF, 0x01);
+    if (ret != ESP_OK) return ret;
+
+    ret = write8(0x00, 0x00);
+    if (ret != ESP_OK) return ret;
+
+    ret = write8(0x91, stop_variable);
+    if (ret != ESP_OK) return ret;
+
+    ret = write8(0x00, 0x01);
+    if (ret != ESP_OK) return ret;
+
+    ret = write8(0xFF, 0x00);
+    if (ret != ESP_OK) return ret;
+
+    ret = write8(0x80, 0x00);
+    if (ret != ESP_OK) return ret;
+
+    ret = write8(SYSRANGE_START, 0x01);
+    if (ret != ESP_OK) return ret;
 
     for (int i = 0; i < 100; i++) {
         uint8_t sysrange = 0;
-        read8(SYSRANGE_START, &sysrange);
-        if ((sysrange & 0x01) == 0) break;
+
+        ret = read8(SYSRANGE_START, &sysrange);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+
+        if ((sysrange & 0x01) == 0) {
+            break;
+        }
+
         vTaskDelay(pdMS_TO_TICKS(10));
 
-        if (i == 99) return ESP_ERR_TIMEOUT;
+        if (i == 99) {
+            return ESP_ERR_TIMEOUT;
+        }
     }
 
     for (int i = 0; i < 100; i++) {
         uint8_t status = 0;
-        read8(RESULT_INTERRUPT_STATUS, &status);
+
+        ret = read8(RESULT_INTERRUPT_STATUS, &status);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+
         if ((status & 0x07) != 0) {
-            read16(RESULT_RANGE_STATUS + 10, distance);
-            write8(SYSTEM_INTERRUPT_CLEAR, 0x01);
+            ret = read16(RESULT_RANGE_STATUS + 10, distance);
+            if (ret != ESP_OK) {
+                return ret;
+            }
+
+            ret = write8(SYSTEM_INTERRUPT_CLEAR, 0x01);
+            if (ret != ESP_OK) {
+                return ret;
+            }
+
             return ESP_OK;
         }
+
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
@@ -359,8 +573,17 @@ extern "C" void app_main(void)
 {
     ESP_LOGI(TAG, "PRESENCE_NODE_V1_MILESTONE_001");
     ESP_LOGI(TAG, "AtomS3 Lite + Unit Mini ToF-90 / VL53L0X");
-    ESP_LOGI(TAG, "Goal: Distance(mm) in serial");
+    ESP_LOGI(TAG, "Goal: Distance(mm) in serial + UDP broadcast on PRESENT transition");
     ESP_LOGI(TAG, "I2C: SDA=GPIO2 SCL=GPIO1");
+    ESP_LOGI(TAG, "Wi-Fi SSID: %s", WIFI_SSID);
+    ESP_LOGI(TAG, "UDP broadcast: %s:%d", UDP_BROADCAST_IP, UDP_PORT);
+    ESP_LOGI(TAG, "Presence threshold: PRESENT < %d mm, NOT_PRESENT > %d mm",
+             PRESENCE_THRESHOLD_MM,
+             NOT_PRESENT_THRESHOLD_MM);
+
+    // Preservation-first boot order:
+    // initialize the validated ToF/I2C baseline before enabling Wi-Fi radio.
+    // Starting Wi-Fi before VL53L0X init caused early I2C NACK bursts on AtomS3 Lite.
 
     esp_err_t ret = setup_i2c();
     if (ret != ESP_OK) {
@@ -374,6 +597,10 @@ extern "C" void app_main(void)
         return;
     }
 
+    ESP_LOGI(TAG, "ToF baseline initialized. Starting Wi-Fi/UDP after VL53L0X init.");
+    wifi_init_sta();
+    udp_broadcast_init();
+
     while (true) {
         uint16_t distance = 0;
 
@@ -381,6 +608,26 @@ extern "C" void app_main(void)
 
         if (ret == ESP_OK) {
             ESP_LOGI(TAG, "Distance: %u mm", distance);
+
+            if (!presence_state && distance < PRESENCE_THRESHOLD_MM) {
+                presence_state = true;
+                pending_presence_distance_mm = distance;
+                ESP_LOGI(TAG, "PRESENT");
+
+                if (!send_presence_event_udp(distance)) {
+                    pending_presence_udp = true;
+                }
+            } else if (presence_state && distance > NOT_PRESENT_THRESHOLD_MM) {
+                presence_state = false;
+                pending_presence_udp = false;
+                ESP_LOGI(TAG, "NOT_PRESENT");
+            }
+
+            if (presence_state && pending_presence_udp && wifi_connected) {
+                if (send_presence_event_udp(pending_presence_distance_mm)) {
+                    pending_presence_udp = false;
+                }
+            }
         } else {
             ESP_LOGW(TAG, "Distance read failed: %s", esp_err_to_name(ret));
         }
