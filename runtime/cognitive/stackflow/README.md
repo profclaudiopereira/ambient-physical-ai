@@ -310,3 +310,125 @@ MQTT Integration
 ```
 
 These capabilities belong to future milestones.
+
+---
+
+## Current Laboratory Status
+
+### Identity Package Listener
+
+```text
+Identity Package reception ........ PASS
+```
+
+### Context Builder
+
+```text
+Context Builder .................. PASS
+```
+
+Implemented artifacts:
+
+```text
+context_builder.py
+identity_udp_listener.py
+identity_udp_listener_baseline.py
+```
+
+### Human-readable Message Builder
+
+```text
+Human-readable Message ........... PASS
+```
+
+Example:
+
+```text
+Olá Claudio, bem-vindo ao laboratório.
+Contexto: Lab.
+```
+
+### StackChan Notification Prototype
+
+```text
+stackchan_notifier.py
+```
+
+Status:
+
+```text
+Prototype implemented
+```
+
+---
+
+## Laboratory Suspension Status
+
+```text
+Identity Package received ........ PASS
+Context Builder .................. PASS
+Human-readable Message ........... PASS
+
+StackChan Delivery ............... SUSPENDED
+```
+
+Reason:
+
+```text
+Pending MCP protocol investigation.
+```
+
+During this laboratory a significant architectural discovery was made:
+
+```text
+StackChan appears to operate through:
+
+Personality
++
+Memory
++
+MCP
++
+LLM
+```
+
+Observed MCP endpoint:
+
+```text
+wss://api.xiaozhi.me/mcp/?token=...
+```
+
+Because of this discovery, direct StackChan delivery validation was suspended pending a dedicated MCP investigation.
+
+See:
+
+```text
+docs/discoveries/STACKCHAN_MCP_DISCOVERY_001.md
+docs/discoveries/STACKCHAN_INTEGRATION_SUSPENSION_001.md
+```
+
+---
+
+## Suspension Status
+
+```text
+PARTIALLY VALIDATED
+
+SUSPENDED BY ARCHITECTURAL DECISION
+```
+
+Resumption condition:
+
+```text
+LAB_STACKCHAN_MCP_001
+```
+
+Required answers:
+
+```text
+MCP protocol
+Authentication model
+Context injection capability
+API availability
+Local MCP alternatives
+```
