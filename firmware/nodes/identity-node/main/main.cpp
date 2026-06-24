@@ -57,11 +57,13 @@
 
 static const char *TAG = "identity-node";
 
-#define WIFI_SSID "CAZAZUL"
-#define WIFI_PASS "H10CAZAZUL"
+#define WIFI_SSID "OKFIBRA-Claudio_2GHz"
+#define WIFI_PASS "15120813"
 
 #define UDP_LISTEN_PORT 3333
 #define UDP_RX_BUFFER_SIZE 256
+#define AX630C_IP "192.168.77.15"
+#define AX630C_UDP_PORT 4444
 
 // -----------------------------------------------------------------------------
 // Profiles / Contexts
@@ -540,11 +542,59 @@ static void update_identity_visualization_timeout()
     }
 }
 
+
+static void send_identity_package_udp(const char *json_payload)
+{
+    if (json_payload == NULL || json_payload[0] == '\0') {
+        ESP_LOGW(TAG, "Identity UDP TX skipped: empty payload");
+        return;
+    }
+
+    if (!wifi_connected) {
+        ESP_LOGW(TAG, "Identity UDP TX skipped: Wi-Fi not connected");
+        return;
+    }
+
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock < 0) {
+        ESP_LOGE(TAG, "Identity UDP TX socket creation failed");
+        return;
+    }
+
+    struct sockaddr_in dest_addr = {};
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(AX630C_UDP_PORT);
+    inet_pton(AF_INET, AX630C_IP, &dest_addr.sin_addr);
+
+    int sent = sendto(
+        sock,
+        json_payload,
+        strlen(json_payload),
+        0,
+        (struct sockaddr *)&dest_addr,
+        sizeof(dest_addr)
+    );
+
+    if (sent < 0) {
+        ESP_LOGE(TAG, "Identity UDP TX failed");
+    } else {
+        ESP_LOGI(TAG, "Identity Package sent to AX630C %s:%d",
+                 AX630C_IP,
+                 AX630C_UDP_PORT);
+    }
+
+    close(sock);
+}
+
+
 static void generate_identity_package()
 {
     const char *package_uid = nfc_card_present ? last_nfc_uid : "";
 
-    ESP_LOGI(TAG,
+    char identity_json[512] = {0};
+
+    snprintf(identity_json,
+             sizeof(identity_json),
              "{\"type\":\"identity_package\",\"profile\":{\"id\":\"%s\",\"name\":\"%s\",\"role\":\"%s\"},\"context\":\"%s\",\"nfc\":{\"detected\":%s,\"card_present\":%s,\"uid\":\"%s\"},\"source\":\"m5dial_identity_console_v1\"}",
              profiles[current_profile].id,
              profiles[current_profile].name,
@@ -553,8 +603,11 @@ static void generate_identity_package()
              nfc_detected ? "true" : "false",
              nfc_card_present ? "true" : "false",
              package_uid);
-}
 
+    ESP_LOGI(TAG, "%s", identity_json);
+
+    send_identity_package_udp(identity_json);
+}
 // -----------------------------------------------------------------------------
 // NFC Setup / Reset
 // -----------------------------------------------------------------------------
