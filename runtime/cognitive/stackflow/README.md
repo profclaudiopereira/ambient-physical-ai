@@ -1,8 +1,14 @@
-# Identity Package UDP Listener
+# StackFlow Cognitive Runtime
 
 ## Ambient Physical AI
 
 **Distributed Cognitive Ecosystem Powered by StackFlow**
+
+---
+
+This directory contains the experimental laboratories developed for the Ambient Physical AI Cognitive Runtime.
+
+The laboratories are organized as incremental engineering milestones, preserving validation evidence, reproducibility and architectural decisions throughout the project.
 
 ---
 
@@ -409,26 +415,167 @@ docs/discoveries/STACKCHAN_INTEGRATION_SUSPENSION_001.md
 
 ---
 
-## Suspension Status
+# Milestone 2 — StackChan MCP Discovery
+
+## Objective
+
+Investigate whether the AX630C Cognitive Runtime can safely operate as an MCP Tool Provider for the StackChan/XiaoZhi ecosystem.
+
+This laboratory resumed the previous StackChan integration work after the architectural discovery that StackChan communicates through an MCP broker.
+
+---
+
+## Experimental Results
+
+### WebSocket Connection
+
+PASS
+
+### MCP Handshake
+
+Validated:
 
 ```text
-PARTIALLY VALIDATED
-
-SUSPENDED BY ARCHITECTURAL DECISION
+initialize
+notifications/initialized
 ```
 
-Resumption condition:
+### Tool Discovery
+
+Validated:
 
 ```text
-LAB_STACKCHAN_MCP_001
+tools/list
 ```
 
-Required answers:
+### Tool Invocation
+
+Validated:
 
 ```text
-MCP protocol
-Authentication model
-Context injection capability
-API availability
-Local MCP alternatives
+tools/call
 ```
+
+### Keepalive
+
+Validated:
+
+```text
+ping
+```
+
+---
+
+## Validation Evidence
+
+A semantic MCP tool was exposed by the AX630C:
+
+```text
+GetCurrentCountry
+```
+
+The StackChan successfully requested the tool through the XiaoZhi MCP Broker.
+
+The tool returned:
+
+```text
+Brazil
+```
+
+This experiment successfully demonstrated the complete semantic MCP interaction:
+
+```text
+User
+↓
+StackChan
+↓
+LLM
+↓
+XiaoZhi MCP Broker
+↓
+AX630C MCP Tool Provider
+↓
+Semantic Tool
+↓
+LLM
+↓
+StackChan Response
+```
+
+The response presented by StackChan originated from the AX630C MCP Tool Provider.
+
+---
+
+## Current MCP Validation Status
+
+| Capability | Status |
+|------------|--------|
+| WebSocket | PASS |
+| MCP Handshake | PASS |
+| Tool Discovery | PASS |
+| Tool Invocation | PASS |
+| StackChan Response | PASS |
+| Context Push | NOT VALIDATED |
+
+---
+
+## Implemented Discovery Scripts
+
+```text
+stackchan_mcp_probe.py
+stackchan_mcp_tools_empty_probe.py
+stackchan_mcp_dummy_tool_probe.py
+stackchan_mcp_dummy_tool_ping_probe.py
+stackchan_mcp_country_tool_probe.py
+```
+
+---
+
+## Important Notes
+
+This laboratory validated MCP Tool Provider integration only.
+
+The following capabilities were intentionally **not** investigated during this milestone:
+
+```text
+Context Push
+Streaming
+Resources
+Prompts
+Production Tool Set
+```
+
+These topics belong to future milestones.
+
+---
+
+## Architectural Conclusion
+
+The AX630C has been experimentally validated as an MCP Tool Provider for the StackChan/XiaoZhi ecosystem.
+
+The laboratory demonstrated that semantic information can be supplied by the Cognitive Runtime Node through MCP tools, without requiring any modification to the StackChan firmware.
+
+Validated communication flow:
+
+```text
+StackChan
+↓
+LLM
+↓
+XiaoZhi MCP Broker
+↓
+AX630C MCP Tool Provider
+↓
+Semantic Tool
+↓
+LLM
+↓
+StackChan Response
+```
+
+This milestone confirms that the Ambient Physical AI Cognitive Runtime can extend StackChan capabilities through MCP Tool Providers.
+
+The next milestone is to replace fixed responses with real Ambient Physical AI runtime services, including Identity, Presence, Context and future Cognitive Runtime capabilities.
+
+---
+
