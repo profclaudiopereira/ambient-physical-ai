@@ -631,3 +631,78 @@ The Context Package becomes the primary semantic object of the Ambient Physical 
 Human-readable messages remain available only for debugging and validation compatibility.
 
 StackChan delivery remains suspended pending the dedicated MCP integration laboratory.
+
+## Runtime Context Registry
+
+The Cognitive Runtime now maintains the latest validated Context Package as its current semantic state.
+
+The Context Registry introduces the concept of a Current Runtime Context, allowing the runtime to preserve the latest validated semantic representation in memory.
+
+Current execution flow:
+
+```text
+Identity Node (M5Dial)
+        │
+        ▼
+Identity Package
+        │
+        ▼
+UDP Transport
+        │
+        ▼
+Context Builder
+        │
+        ▼
+5W Context Package
+        │
+        ▼
+Context Registry
+        │
+        ▼
+Current Runtime Context
+```
+
+### Responsibilities
+
+The Context Registry is responsible for:
+
+- Storing the latest validated Context Package.
+- Replacing the current context whenever a new validated Identity Package is received.
+- Providing a single semantic source for future Cognitive Runtime services.
+- Decoupling semantic knowledge from transport and hardware events.
+
+### Validation Results
+
+The following runtime behavior has been validated using real hardware.
+
+```text
+Student
+        │
+        ▼
+Current Runtime Context = Student
+
+Claudio
+        │
+        ▼
+Current Runtime Context = Claudio
+
+Student
+        │
+        ▼
+Current Runtime Context = Student
+```
+
+This confirms that the Cognitive Runtime correctly updates its semantic state whenever the active identity changes.
+
+Current status:
+
+```text
+Context Registry ................. PASS
+Current Runtime Context .......... PASS
+Dynamic identity update .......... PASS
+Semantic state replacement ....... PASS
+```
+
+The Context Registry is intentionally lightweight and stores only the latest validated semantic state.
+
+Future MCP services will consume this runtime context instead of accessing hardware components directly.

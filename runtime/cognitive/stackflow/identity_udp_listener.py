@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 
 from context_builder import build_context, build_human_message
+from context_registry import update_context, get_current_context
 from stackchan_notifier import StackChanNotifier
 
 
@@ -43,16 +44,19 @@ while True:
         print("UID:", payload.get("nfc", {}).get("uid"))
         print("Source:", payload.get("source"))
 
+        
         context = build_context(payload)
-        message = build_human_message(context)
+        update_context(context)
+        current_context = get_current_context()
+        message = build_human_message(current_context)
 
         print("\nContext object generated:")
-        print(json.dumps(context, ensure_ascii=False, indent=2))
+        print(json.dumps(current_context, ensure_ascii=False, indent=2))
 
         print("\nHuman-readable message generated:")
         print(message)
 
-        delivered = notifier.notify(message, context)
+        delivered = notifier.notify(message, current_context)
 
         if delivered:
             print("StackChan notification sent: PASS")
