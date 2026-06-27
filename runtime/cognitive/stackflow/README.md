@@ -706,3 +706,17 @@ Semantic state replacement ....... PASS
 The Context Registry is intentionally lightweight and stores only the latest validated semantic state.
 
 Future MCP services will consume this runtime context instead of accessing hardware components directly.
+
+## Local Semantic Services
+
+The Cognitive Runtime now exposes local semantic services over the Current Runtime Context.
+
+These services are not MCP tools yet. They provide a stable local interface that future MCP tools can reuse without accessing transport or hardware details directly.
+
+Validated services:
+
+```text
+get_runtime_status()
+get_current_identity()
+get_current_environment()
+get_current_activity()
