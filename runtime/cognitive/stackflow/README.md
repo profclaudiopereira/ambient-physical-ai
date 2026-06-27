@@ -720,3 +720,18 @@ get_runtime_status()
 get_current_identity()
 get_current_environment()
 get_current_activity()
+
+## Semantic MCP Tool Layer
+
+The Cognitive Runtime now provides an MCP-style tool layer over the local semantic services.
+
+This layer does not implement WebSocket transport yet. It maps validated semantic services to MCP-compatible tool definitions and tool calls.
+
+Validated tools:
+
+```text
+get_runtime_status
+get_current_identity
+get_current_environment
+get_current_activity
+get_current_context
