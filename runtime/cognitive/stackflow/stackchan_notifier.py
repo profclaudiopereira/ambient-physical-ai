@@ -16,10 +16,10 @@ class StackChanNotifier:
             "type": "stackchan_notification",
             "message": message,
             "source": "ax630c_cognitive_runtime",
-            "context": {
-                "active_user": context.get("active_user"),
-                "role": context.get("role"),
-                "environment_context": context.get("environment_context"),
+           "context": {
+                "active_user": context.get("who", {}).get("name"),
+                "role": context.get("who", {}).get("role"),
+                "environment_context": context.get("where", {}).get("environment"),
             },
         }
 
