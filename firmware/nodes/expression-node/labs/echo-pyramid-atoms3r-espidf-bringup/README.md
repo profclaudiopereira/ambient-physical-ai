@@ -2,7 +2,7 @@
 
 ## Ambient Physical AI
 
-### Expression Layer — E01 Boot Serial Baseline
+### Expression Layer — ESP-IDF Bring-up Laboratory
 
 ---
 
@@ -12,15 +12,21 @@ This laboratory marks the first ESP-IDF firmware developed for the Echo Pyramid 
 
 Unlike the previous Arduino laboratory, this project represents the beginning of the official Expression Layer implementation used by Ambient Physical AI.
 
-The objective is intentionally minimal:
+The objective of this laboratory is to incrementally develop and validate the official ESP-IDF baseline for the Expression Layer.
 
-* validate the ESP-IDF development environment;
-* validate firmware build;
-* validate firmware flashing;
-* validate serial communication;
-* establish the first reproducible ESP-IDF baseline.
+Each milestone extends the previous one while preserving reproducibility and hardware validation.
 
-No hardware peripherals are validated in this milestone.
+The laboratory follows the Ambient Physical AI engineering workflow:
+
+Implement
+↓
+Validate on Hardware
+↓
+Document
+↓
+Commit
+↓
+Ready for Integration
 
 ---
 
@@ -110,26 +116,32 @@ Boot + Serial
         │
         ▼
 E02
-Echo Pyramid Initialization
+Semantic Event Mock
         │
         ▼
 E03
-RGB Control
+Echo Pyramid Initialization
         │
         ▼
 E04
-Wi-Fi Connectivity
+RGB Control
         │
         ▼
 E05
-Semantic Event Reception
+Wi-Fi Connectivity
         │
         ▼
 E06
+Semantic Event Reception
+        │
+        ▼
+E07
+Voice Rendering
+        │
+        ▼
+E08
 Expression Layer Integration
 ```
-
-Each milestone should remain independently reproducible and fully documented before moving to the next one.
 
 ---
 
@@ -150,14 +162,94 @@ These remain private cognitive representations inside the Cognitive Runtime.
 
 ---
 
-# Status
+# Current Status
 
-Current milestone:
-
-**E01 — Boot Serial Baseline**
+## E01 — Boot Serial Baseline
 
 Status:
 
-**Validated on hardware**
+✅ Validated on hardware
 
-Once validated, this laboratory becomes the official ESP-IDF baseline for the Expression Layer.
+Validated:
+
+- ESP-IDF project
+- Build
+- Flash
+- Boot
+- Serial monitor
+- Runtime heartbeat
+
+---
+
+## E02 — Semantic Event Mock
+
+Status:
+
+✅ Validated on hardware
+
+Validated:
+
+- Semantic Event structure
+- Expression Layer event handler
+- Event dispatch
+- Mock Semantic Event processing
+
+Current demonstration:
+
+```text
+Semantic Event
+        │
+        ▼
+Expression Layer
+        │
+        ▼
+RGB_WELCOME_PENDING
+```
+
+(The RGB reaction will be implemented in the next milestone.)
+
+---
+
+## Current Laboratory Status
+
+The laboratory has successfully completed:
+
+- E01
+- E02
+
+Next milestone:
+
+**E03 — Echo Pyramid Initialization**
+
+# Demonstration Evolution
+
+Each completed milestone extends the final Ambient Physical AI demonstration.
+
+Current demonstration:
+
+```text
+Semantic Event
+        │
+        ▼
+Serial Log
+```
+
+Next demonstration:
+
+```text
+Semantic Event
+        │
+        ▼
+RGB
+        │
+        ▼
+Voice
+        │
+        ▼
+StackChan
+        │
+        ▼
+Ambient Runtime
+```
+
+The laboratory will continue evolving until it becomes the official Expression Layer firmware.
