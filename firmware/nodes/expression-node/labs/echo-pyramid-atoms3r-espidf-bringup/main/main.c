@@ -5,9 +5,19 @@
 #include "freertos/task.h"
 
 #include "driver/i2c_master.h"
+
 #include "esp_chip_info.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_system.h"
+
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "esp_wifi.h"
+#include "nvs_flash.h"
+
+#define WIFI_SSID "OKFIBRA-Claudio_2GHz"
+#define WIFI_PASS "15120813"
 
 #define I2C_PORT        I2C_NUM_0
 #define I2C_SDA_GPIO    38
@@ -21,9 +31,10 @@
 #define RGB1_STATUS_REG_ADDR      0x20
 #define RGB2_STATUS_REG_ADDR      0x60
 
-static const char *TAG = "expression_e04";
+static const char *TAG = "expression_e05_1";
 
 static i2c_master_bus_handle_t i2c_bus = NULL;
+static volatile bool wifi_connected = false;
 
 typedef struct {
     const char *type;
@@ -31,6 +42,88 @@ typedef struct {
     const char *target;
     const char *message;
 } semantic_event_t;
+
+/* ================= Wi-Fi ================= */
+
+static void wifi_event_handler(void *arg,
+                               esp_event_base_t event_base,
+                               int32_t event_id,
+                               void *event_data)
+{
+    (void)arg;
+
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+        esp_wifi_connect();
+
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        wifi_connected = false;
+        ESP_LOGW(TAG, "Wi-Fi disconnected, reconnecting...");
+        esp_wifi_connect();
+
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
+        wifi_connected = true;
+        ESP_LOGI(TAG, "Wi-Fi connected. IP: " IPSTR, IP2STR(&event->ip_info.ip));
+    }
+}
+
+static void wifi_init_sta(void)
+{
+    esp_err_t ret = nvs_flash_init();
+
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    } else {
+        ESP_ERROR_CHECK(ret);
+    }
+
+    ESP_ERROR_CHECK(esp_netif_init());
+
+    ret = esp_event_loop_create_default();
+    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
+        ESP_ERROR_CHECK(ret);
+    }
+
+    esp_netif_create_default_wifi_sta();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT,
+        ESP_EVENT_ANY_ID,
+        &wifi_event_handler,
+        NULL,
+        NULL));
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        IP_EVENT,
+        IP_EVENT_STA_GOT_IP,
+        &wifi_event_handler,
+        NULL,
+        NULL));
+
+    wifi_config_t wifi_config = {0};
+
+    strncpy((char *)wifi_config.sta.ssid,
+            WIFI_SSID,
+            sizeof(wifi_config.sta.ssid));
+
+    strncpy((char *)wifi_config.sta.password,
+            WIFI_PASS,
+            sizeof(wifi_config.sta.password));
+
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI(TAG, "Wi-Fi STA started. SSID: %s", WIFI_SSID);
+}
+
+/* ================= I2C / RGB ================= */
 
 static esp_err_t init_i2c_bus(void)
 {
@@ -129,34 +222,16 @@ static void expression_rgb_welcome(void)
 {
     ESP_LOGI(TAG, "Expression action: RGB_WELCOME");
 
-    esp_err_t ret;
+    ESP_ERROR_CHECK(set_brightness(1, 100));
+    ESP_ERROR_CHECK(set_brightness(2, 100));
 
-    ret = set_brightness(1, 100);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set RGB channel 1 brightness: %s", esp_err_to_name(ret));
-        return;
-    }
-
-    ret = set_brightness(2, 100);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set RGB channel 2 brightness: %s", esp_err_to_name(ret));
-        return;
-    }
-
-    ret = set_rgb(1, 0, 0, 255, 0);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set RGB CH1 LED0: %s", esp_err_to_name(ret));
-        return;
-    }
-
-    ret = set_rgb(2, 0, 0, 255, 0);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set RGB CH2 LED0: %s", esp_err_to_name(ret));
-        return;
-    }
+    ESP_ERROR_CHECK(set_rgb(1, 0, 0, 255, 0));
+    ESP_ERROR_CHECK(set_rgb(2, 0, 0, 255, 0));
 
     ESP_LOGI(TAG, "RGB welcome reaction sent to Echo Pyramid.");
 }
+
+/* ================= Semantic Event ================= */
 
 static void handle_semantic_event(const semantic_event_t *event)
 {
@@ -173,6 +248,8 @@ static void handle_semantic_event(const semantic_event_t *event)
     }
 }
 
+/* ================= Main ================= */
+
 void app_main(void)
 {
     esp_chip_info_t chip_info;
@@ -180,16 +257,18 @@ void app_main(void)
 
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "Ambient Physical AI");
-    ESP_LOGI(TAG, "Expression Layer - E04 Semantic Event RGB");
+    ESP_LOGI(TAG, "Expression Layer - E05.1 Wi-Fi Connect");
     ESP_LOGI(TAG, "Hardware: Echo Pyramid + AtomS3R");
     ESP_LOGI(TAG, "Target: ESP32-S3");
-    ESP_LOGI(TAG, "Purpose: Semantic Event to RGB reaction");
+    ESP_LOGI(TAG, "Purpose: Wi-Fi connection + Semantic Event RGB baseline");
     ESP_LOGI(TAG, "========================================");
 
     ESP_LOGI(TAG, "Chip cores: %d", chip_info.cores);
     ESP_LOGI(TAG, "Silicon revision: %d", chip_info.revision);
 
     ESP_ERROR_CHECK(init_i2c_bus());
+
+    wifi_init_sta();
 
     semantic_event_t welcome_event = {
         .type = "semantic_event",
@@ -201,7 +280,10 @@ void app_main(void)
     int counter = 0;
 
     while (true) {
-        ESP_LOGI(TAG, "Expression node heartbeat: %d", counter++);
+        ESP_LOGI(TAG,
+                 "Expression node heartbeat: %d | Wi-Fi: %s",
+                 counter++,
+                 wifi_connected ? "connected" : "not connected");
 
         if (counter == 3) {
             handle_semantic_event(&welcome_event);

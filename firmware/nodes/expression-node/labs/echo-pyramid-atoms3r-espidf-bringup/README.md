@@ -253,3 +253,68 @@ Ambient Runtime
 ```
 
 The laboratory will continue evolving until it becomes the official Expression Layer firmware.
+
+## E03 — Echo Pyramid I2C Detection
+
+Status:
+
+✅ Validated on hardware
+
+Validated:
+
+- I2C bus initialization
+- Echo Pyramid STM32 detection
+- STM32 detected at address `0x1A`
+- Required condition: Echo Pyramid base powered through USB-C
+
+---
+
+## E04 — Semantic Event to RGB
+
+Status:
+
+✅ Validated on hardware
+
+Validated:
+
+- Semantic Event mock
+- Expression event handler
+- I2C write to STM32 controller
+- RGB reaction on Echo Pyramid
+
+Current demonstration:
+
+```text
+Semantic Event
+        │
+        ▼
+Expression Handler
+        │
+        ▼
+Echo Pyramid RGB
+
+## E05.1 — Wi-Fi Connectivity
+
+Status:
+
+✅ Validated on hardware
+
+Validated:
+
+- Wi-Fi Station mode
+- Automatic connection
+- IP address acquisition
+- Wi-Fi status integrated into the runtime heartbeat
+- Previous E04 RGB functionality preserved
+
+Current demonstration:
+
+```text
+Semantic Event
+        │
+        ▼
+Expression Handler
+        │
+        ├───────────────┐
+        ▼               ▼
+Echo Pyramid RGB     Wi-Fi Connected
