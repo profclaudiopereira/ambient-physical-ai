@@ -1,4 +1,5 @@
 idf_component_register(
-    SRCS "main.c"
-    REQUIRES env_iv oled_sh1107
+    SRCS "main.cpp"
+    REQUIRES
+        tab5_platform
 )
