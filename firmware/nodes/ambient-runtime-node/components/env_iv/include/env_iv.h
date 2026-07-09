@@ -3,6 +3,10 @@
 #include "esp_err.h"
 #include "driver/i2c_master.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     float temperature_c;
     float humidity_percent;
@@ -27,3 +31,7 @@ esp_err_t env_iv_bmp280_read(
     i2c_master_bus_handle_t bus,
     env_iv_bmp280_data_t *data
 );
+
+#ifdef __cplusplus
+}
+#endif

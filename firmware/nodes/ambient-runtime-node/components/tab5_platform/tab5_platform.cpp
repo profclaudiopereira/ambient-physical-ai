@@ -53,8 +53,11 @@ static esp_ldo_channel_handle_t phy_pwr_chan = nullptr;
 static esp_lcd_dsi_bus_handle_t dsi_bus = nullptr;
 static esp_lcd_panel_io_handle_t dbi_io = nullptr;
 static esp_lcd_panel_handle_t panel = nullptr;
+static i2c_master_bus_handle_t port_a_i2c_bus = nullptr;
+
 
 static bool platform_initialized = false;
+static esp_err_t tab5_port_a_i2c_init(void);
 
 static esp_err_t tab5_i2c_init(void)
 {
@@ -205,6 +208,7 @@ esp_err_t tab5_platform_init(void)
     ESP_LOGI(TAG, "Tab5 platform init based on H020 baseline");
 
     ESP_RETURN_ON_ERROR(tab5_i2c_init(), TAG, "I2C init failed");
+ESP_RETURN_ON_ERROR(tab5_port_a_i2c_init(), TAG, "PORT A I2C init failed");
     ESP_RETURN_ON_ERROR(tab5_pi4ioe1_init(), TAG, "PI4IOE1 init failed");
     ESP_RETURN_ON_ERROR(tab5_reset_lcd_touch(), TAG, "LCD/TP reset failed");
 
@@ -316,4 +320,29 @@ esp_err_t tab5_platform_fill(uint16_t color)
     heap_caps_free(frame);
 
     return ret;
+}
+
+i2c_master_bus_handle_t tab5_platform_get_i2c_bus(void)
+{
+    return tab5_i2c_bus;
+}
+
+
+static esp_err_t tab5_port_a_i2c_init(void)
+{
+    ESP_LOGI(TAG, "init PORT A I2C bus SDA=53 SCL=54");
+
+    i2c_master_bus_config_t cfg = {};
+    cfg.clk_source = I2C_CLK_SRC_DEFAULT;
+    cfg.sda_io_num = GPIO_NUM_53;
+    cfg.scl_io_num = GPIO_NUM_54;
+    cfg.i2c_port = 1;
+    cfg.glitch_ignore_cnt = 7;
+    cfg.flags.enable_internal_pullup = true;
+
+    return i2c_new_master_bus(&cfg, &port_a_i2c_bus);
+}
+i2c_master_bus_handle_t tab5_platform_get_port_a_i2c_bus(void)
+{
+    return port_a_i2c_bus;
 }

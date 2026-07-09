@@ -1,6 +1,9 @@
 #pragma once
 
 #include "esp_err.h"
+#include "driver/i2c_master.h"
+
+
 #include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
@@ -30,3 +33,6 @@ esp_err_t tab5_platform_fill(uint16_t color);
 #ifdef __cplusplus
 }
 #endif
+
+i2c_master_bus_handle_t tab5_platform_get_i2c_bus(void);
+i2c_master_bus_handle_t tab5_platform_get_port_a_i2c_bus(void);
