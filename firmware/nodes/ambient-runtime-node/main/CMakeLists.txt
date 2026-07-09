@@ -4,4 +4,5 @@ idf_component_register(
         tab5_platform
         pahub
         env_iv
+        oled_sh1107
 )
