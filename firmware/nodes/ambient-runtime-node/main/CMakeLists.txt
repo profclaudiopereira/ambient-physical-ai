@@ -5,4 +5,5 @@ idf_component_register(
         pahub
         env_iv
         oled_sh1107
+	dlight
 )

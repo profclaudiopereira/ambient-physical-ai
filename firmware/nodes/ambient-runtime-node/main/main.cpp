@@ -2,7 +2,7 @@
 #include "freertos/task.h"
 #include "env_iv.h"
 #include "oled_sh1107.h"
-
+#include "dlight.h"
 #include "driver/i2c_master.h"
 #include "esp_log.h"
 
@@ -42,6 +42,17 @@ extern "C" void app_main(void)
 
     ESP_ERROR_CHECK(tab5_platform_fill(0xF800));
     ESP_ERROR_CHECK(tab5_platform_backlight_set(100));
+
+ESP_ERROR_CHECK(pahub_select_channel(bus, 2));
+
+float lux = 0.0f;
+esp_err_t lux_ret = dlight_read_lux(bus, &lux);
+
+if (lux_ret == ESP_OK) {
+    ESP_LOGI("ambient-runtime", "DLight Lux: %.2f lx", lux);
+} else {
+    ESP_LOGW("ambient-runtime", "DLight read failed: %s", esp_err_to_name(lux_ret));
+}
 
     while (true) {
         ESP_LOGI("ambient-runtime", "Tab5 Platform + PaHub + ENV-IV + OLED Alive");
