@@ -1,9 +1,12 @@
 idf_component_register(
-    SRCS "main.cpp"
+    SRCS
+        "main.cpp"
+
     REQUIRES
         tab5_platform
         pahub
         env_iv
         oled_sh1107
-	dlight
+        dlight
+        ambient_console
 )

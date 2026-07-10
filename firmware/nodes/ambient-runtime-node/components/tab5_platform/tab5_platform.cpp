@@ -322,6 +322,35 @@ esp_err_t tab5_platform_fill(uint16_t color)
     return ret;
 }
 
+esp_err_t tab5_platform_draw_bitmap(
+    int x,
+    int y,
+    int w,
+    int h,
+    const uint16_t *pixels
+)
+{
+    if (!platform_initialized || panel == nullptr) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (pixels == nullptr || w <= 0 || h <= 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return esp_lcd_panel_draw_bitmap(
+        panel,
+        x,
+        y,
+        x + w,
+        y + h,
+        pixels
+    );
+}
+
+
+
+
 i2c_master_bus_handle_t tab5_platform_get_i2c_bus(void)
 {
     return tab5_i2c_bus;
@@ -346,3 +375,5 @@ i2c_master_bus_handle_t tab5_platform_get_port_a_i2c_bus(void)
 {
     return port_a_i2c_bus;
 }
+
+
