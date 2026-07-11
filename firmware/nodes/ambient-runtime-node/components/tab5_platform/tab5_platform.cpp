@@ -28,14 +28,17 @@ static const char *TAG = "tab5-platform";
 #define TAB5_I2C_SCL GPIO_NUM_32
 
 #define I2C_DEV_ADDR_PI4IOE1 0x43
+#define I2C_DEV_ADDR_PI4IOE2 0x44
 #define I2C_MASTER_TIMEOUT_MS 50
 
 #define PI4IO_REG_CHIP_RESET 0x01
 #define PI4IO_REG_IO_DIR     0x03
 #define PI4IO_REG_OUT_SET    0x05
 #define PI4IO_REG_OUT_H_IM   0x07
+#define PI4IO_REG_IN_DEF_STA 0x09
 #define PI4IO_REG_PULL_EN    0x0B
 #define PI4IO_REG_PULL_SEL   0x0D
+#define PI4IO_REG_INT_MASK   0x11
 
 #define TAB5_LCD_BACKLIGHT GPIO_NUM_22
 #define LCD_LEDC_CH LEDC_CHANNEL_1
@@ -48,6 +51,7 @@ static const char *TAG = "tab5-platform";
 
 static i2c_master_bus_handle_t tab5_i2c_bus = nullptr;
 static i2c_master_dev_handle_t pi4ioe1 = nullptr;
+static i2c_master_dev_handle_t pi4ioe2 = nullptr;
 
 static esp_ldo_channel_handle_t phy_pwr_chan = nullptr;
 static esp_lcd_dsi_bus_handle_t dsi_bus = nullptr;
@@ -117,6 +121,237 @@ static esp_err_t tab5_pi4ioe1_init(void)
 
     return ESP_OK;
 }
+
+static esp_err_t tab5_pi4ioe2_init(void)
+{
+    ESP_LOGI(
+        TAG,
+        "init PI4IOE2 at I2C address 0x%02X",
+        I2C_DEV_ADDR_PI4IOE2
+    );
+
+    if (tab5_i2c_bus == nullptr) {
+        ESP_LOGE(TAG, "Internal I2C bus is not initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (pi4ioe2 != nullptr) {
+        ESP_LOGW(TAG, "PI4IOE2 already initialized");
+        return ESP_OK;
+    }
+
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = I2C_DEV_ADDR_PI4IOE2;
+    dev_cfg.scl_speed_hz = 400000;
+
+    ESP_RETURN_ON_ERROR(
+        i2c_master_bus_add_device(
+            tab5_i2c_bus,
+            &dev_cfg,
+            &pi4ioe2
+        ),
+        TAG,
+        "add PI4IOE2 failed"
+    );
+
+    uint8_t write_buf[2] = {};
+    uint8_t read_buf[1] = {};
+
+    /*
+     * Reset do expansor.
+     */
+    write_buf[0] = PI4IO_REG_CHIP_RESET;
+    write_buf[1] = 0xFF;
+
+    ESP_RETURN_ON_ERROR(
+        i2c_master_transmit(
+            pi4ioe2,
+            write_buf,
+            2,
+            I2C_MASTER_TIMEOUT_MS
+        ),
+        TAG,
+        "PI4IOE2 reset failed"
+    );
+
+    /*
+     * Leitura após reset, conforme sequência oficial.
+     */
+    write_buf[0] = PI4IO_REG_CHIP_RESET;
+
+    ESP_RETURN_ON_ERROR(
+        i2c_master_transmit_receive(
+            pi4ioe2,
+            write_buf,
+            1,
+            read_buf,
+            1,
+            I2C_MASTER_TIMEOUT_MS
+        ),
+        TAG,
+        "PI4IOE2 reset verification failed"
+    );
+
+    /*
+     * P0, P3, P4, P5 e P7 configurados como saída.
+     */
+    write_buf[0] = PI4IO_REG_IO_DIR;
+    write_buf[1] = 0b10111001;
+
+    ESP_RETURN_ON_ERROR(
+        i2c_master_transmit(
+            pi4ioe2,
+            write_buf,
+            2,
+            I2C_MASTER_TIMEOUT_MS
+        ),
+        TAG,
+        "PI4IOE2 direction configuration failed"
+    );
+
+    /*
+     * Configuração de alta impedância.
+     */
+    write_buf[0] = PI4IO_REG_OUT_H_IM;
+    write_buf[1] = 0b00000110;
+
+    ESP_RETURN_ON_ERROR(
+        i2c_master_transmit(
+            pi4ioe2,
+            write_buf,
+            2,
+            I2C_MASTER_TIMEOUT_MS
+        ),
+        TAG,
+        "PI4IOE2 high-impedance configuration failed"
+    );
+
+    /*
+     * Seleção dos resistores pull-up/pull-down.
+     */
+    write_buf[0] = PI4IO_REG_PULL_SEL;
+    write_buf[1] = 0b10111001;
+
+    ESP_RETURN_ON_ERROR(
+        i2c_master_transmit(
+            pi4ioe2,
+            write_buf,
+            2,
+            I2C_MASTER_TIMEOUT_MS
+        ),
+        TAG,
+        "PI4IOE2 pull selection failed"
+    );
+
+    /*
+     * Habilitação dos resistores.
+     */
+    write_buf[0] = PI4IO_REG_PULL_EN;
+    write_buf[1] = 0b11111001;
+
+    ESP_RETURN_ON_ERROR(
+        i2c_master_transmit(
+            pi4ioe2,
+            write_buf,
+            2,
+            I2C_MASTER_TIMEOUT_MS
+        ),
+        TAG,
+        "PI4IOE2 pull configuration failed"
+    );
+
+    /*
+     * Estado padrão de entrada do P6.
+     */
+    write_buf[0] = PI4IO_REG_IN_DEF_STA;
+    write_buf[1] = 0b01000000;
+
+    ESP_RETURN_ON_ERROR(
+        i2c_master_transmit(
+            pi4ioe2,
+            write_buf,
+            2,
+            I2C_MASTER_TIMEOUT_MS
+        ),
+        TAG,
+        "PI4IOE2 default input state failed"
+    );
+
+    /*
+     * Máscara de interrupção do P6.
+     */
+    write_buf[0] = PI4IO_REG_INT_MASK;
+    write_buf[1] = 0b10111111;
+
+    ESP_RETURN_ON_ERROR(
+        i2c_master_transmit(
+            pi4ioe2,
+            write_buf,
+            2,
+            I2C_MASTER_TIMEOUT_MS
+        ),
+        TAG,
+        "PI4IOE2 interrupt mask failed"
+    );
+
+    /*
+     * Estado inicial oficial:
+     *
+     * P0 = WLAN_PWR_EN
+     * P3 = USB5V_EN
+     *
+     * WLAN_PWR_EN fica ativo.
+     */
+    write_buf[0] = PI4IO_REG_OUT_SET;
+    write_buf[1] = 0b00001001;
+
+    ESP_RETURN_ON_ERROR(
+        i2c_master_transmit(
+            pi4ioe2,
+            write_buf,
+            2,
+            I2C_MASTER_TIMEOUT_MS
+        ),
+        TAG,
+        "PI4IOE2 output configuration failed"
+    );
+
+    /*
+     * Confirma o estado efetivamente gravado.
+     */
+    write_buf[0] = PI4IO_REG_OUT_SET;
+
+    ESP_RETURN_ON_ERROR(
+        i2c_master_transmit_receive(
+            pi4ioe2,
+            write_buf,
+            1,
+            read_buf,
+            1,
+            I2C_MASTER_TIMEOUT_MS
+        ),
+        TAG,
+        "PI4IOE2 output verification failed"
+    );
+
+    ESP_LOGI(
+        TAG,
+        "PI4IOE2 output state: 0x%02X",
+        read_buf[0]
+    );
+
+    if ((read_buf[0] & 0x01U) == 0) {
+        ESP_LOGE(TAG, "WLAN power enable bit is not active");
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "ESP32-C6 Wi-Fi power enabled");
+
+    return ESP_OK;
+}
+
+
 
 static esp_err_t tab5_reset_lcd_touch(void)
 {
@@ -208,6 +443,20 @@ esp_err_t tab5_platform_init(void)
     ESP_LOGI(TAG, "Tab5 platform init based on H020 baseline");
 
     ESP_RETURN_ON_ERROR(tab5_i2c_init(), TAG, "I2C init failed");
+
+ESP_RETURN_ON_ERROR(
+    tab5_pi4ioe2_init(),
+    TAG,
+    "PI4IOE2 init failed"
+);
+
+/*
+ * Tempo mínimo para estabilização da alimentação
+ * do coprocessador ESP32-C6.
+ */
+vTaskDelay(pdMS_TO_TICKS(200));
+
+
 ESP_RETURN_ON_ERROR(tab5_port_a_i2c_init(), TAG, "PORT A I2C init failed");
     ESP_RETURN_ON_ERROR(tab5_pi4ioe1_init(), TAG, "PI4IOE1 init failed");
     ESP_RETURN_ON_ERROR(tab5_reset_lcd_touch(), TAG, "LCD/TP reset failed");

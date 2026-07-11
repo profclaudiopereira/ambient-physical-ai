@@ -1,4 +1,6 @@
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -9,6 +11,7 @@
 #include "esp_log.h"
 
 #include "ambient_console.h"
+#include "ambient_network.h"
 #include "dlight.h"
 #include "env_iv.h"
 #include "oled_sh1107.h"
@@ -33,12 +36,13 @@ extern "C" void app_main(void)
 
     /*
      * ---------------------------------------------------------
-     * 1. Tab5 platform and primary console
+     * 1. Tab5 platform, console and network layer
      * ---------------------------------------------------------
      */
     ESP_ERROR_CHECK(tab5_platform_init());
     ESP_ERROR_CHECK(ambient_console_init());
     ESP_ERROR_CHECK(tab5_platform_backlight_set(100));
+    ESP_ERROR_CHECK(ambient_network_init());
 
     i2c_master_bus_handle_t bus =
         tab5_platform_get_port_a_i2c_bus();
@@ -221,10 +225,15 @@ extern "C" void app_main(void)
 
         /*
          * -----------------------------------------------------
+         * Network state snapshot
+         * -----------------------------------------------------
+         */
+        ambient_network_status_t network =
+            ambient_network_get_status();
+
+        /*
+         * -----------------------------------------------------
          * Ambient Runtime Console
-         *
-         * Wi-Fi permanece explicitamente PENDING.
-         * A integração será retomada em laboratório separado.
          * -----------------------------------------------------
          */
         ambient_console_data_t console = {};
@@ -242,7 +251,34 @@ extern "C" void app_main(void)
             lux;
 
         console.wifi_connected =
-            false;
+            network.connected;
+
+        console.network_ready =
+            network.network_ready;
+
+        snprintf(
+            console.ipv4,
+            sizeof(console.ipv4),
+            "%s",
+            network.ipv4
+        );
+
+        snprintf(
+            console.netmask,
+            sizeof(console.netmask),
+            "%s",
+            network.netmask
+        );
+
+        snprintf(
+            console.gateway,
+            sizeof(console.gateway),
+            "%s",
+            network.gateway
+        );
+
+        console.rssi_dbm =
+            network.rssi_dbm;
 
         console.cognitive_connected =
             false;
@@ -275,11 +311,21 @@ extern "C" void app_main(void)
             TAG,
             "Ambient Runtime alive | "
             "Platform=OK | I2C=%s | ENV-IV=%s | "
-            "DLight=%s | OLED=%s | Wi-Fi=PENDING",
+            "DLight=%s | OLED=%s | Wi-Fi=%s | "
+            "IP=%s | Mask=%s | GW=%s | RSSI=%d dBm | "
+            "STATUS=%s",
             pahub_ok ? "OK" : "ERROR",
             env_iv_ok ? "OK" : "ERROR",
             dlight_ok ? "OK" : "ERROR",
-            mini_oled_ok ? "OK" : "ERROR"
+            mini_oled_ok ? "OK" : "ERROR",
+            network.connected ? "CONNECTED" : "PENDING",
+            network.ipv4,
+            network.netmask,
+            network.gateway,
+            (int)network.rssi_dbm,
+            network.network_ready
+                ? "NETWORK READY"
+                : "WAITING"
         );
 
         vTaskDelay(RUNTIME_UPDATE_INTERVAL);

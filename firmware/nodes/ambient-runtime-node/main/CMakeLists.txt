@@ -9,4 +9,5 @@ idf_component_register(
         oled_sh1107
         dlight
         ambient_console
+        ambient_network
 )

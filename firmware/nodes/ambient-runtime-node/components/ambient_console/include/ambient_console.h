@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
-
+#include <stdint.h>
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -15,15 +15,21 @@ typedef struct {
     float light_lux;
 
     bool wifi_connected;
+    bool network_ready;
+
+    char ipv4[16];
+    char netmask[16];
+    char gateway[16];
+    int8_t rssi_dbm;
+
     bool cognitive_connected;
 
     bool pahub_ok;
     bool env_iv_ok;
     bool dlight_ok;
     bool mini_oled_ok;
-    
-} ambient_console_data_t;
 
+} ambient_console_data_t;
 /**
  * Inicializa o framebuffer e os recursos do Ambient Runtime Console.
  */

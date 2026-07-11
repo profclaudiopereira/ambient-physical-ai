@@ -11,7 +11,7 @@ This implementation runs on the **M5Stack Tab5**, based on the **ESP32-P4**, and
 - presenting the official Ambient Runtime Console;
 - controlling auxiliary displays;
 - representing the operational state of the physical environment;
-- serving as the network endpoint for integration with the remaining Ambient Physical AI nodes.
+- serving as the future network endpoint for integration with the remaining Ambient Physical AI nodes.
 
 The current implementation replaces the original PoE-P4 host while preserving the architectural responsibility of the Ambient Runtime.
 
@@ -38,14 +38,9 @@ Validated capabilities include:
 - Mini OLED SH1107;
 - periodic sensor acquisition;
 - text-oriented Ambient Runtime Console;
-- runtime health visualization;
-- ESP32-C6 power sequencing through PI4IOE2;
-- ESP-Hosted over 4-bit SDIO;
-- Wi-Fi Station association;
-- DHCP IPv4 configuration;
-- netmask and default gateway reporting;
-- RSSI monitoring;
-- `NETWORK READY` runtime state.
+- runtime health visualization.
+
+Wi-Fi integration remains intentionally documented as pending.
 
 ---
 
@@ -73,7 +68,7 @@ Physical Environment
 
 The Ambient Runtime receives future semantic decisions and converts them into physical or visual environmental changes.
 
-In the current milestone, the node operates with a validated local runtime and a validated Wi-Fi network layer. The Cognitive Runtime connection remains a separate future integration.
+In the current milestone, the node operates in local standalone mode.
 
 ---
 
@@ -91,15 +86,8 @@ M5Stack Tab5
 │
 ├── Internal I²C
 │   ├── PI4IOE1
-│   ├── PI4IOE2
-│   │   └── WLAN_PWR_EN for ESP32-C6
 │   ├── LCD control
 │   └── Touch controller
-│
-├── ESP32-C6
-│   ├── ESP-Hosted firmware
-│   ├── 4-bit SDIO link
-│   └── Wi-Fi 2.4 GHz
 │
 └── PORT A I²C
     └── PaHub
@@ -117,13 +105,12 @@ M5Stack Tab5
 |---|---|---|---|
 | M5Stack Tab5 | Main Ambient Runtime platform | ESP32-P4 | Validated |
 | ST7121 display | Primary Runtime Console | MIPI DSI | Validated |
-| PI4IOE1 | Internal GPIO expander for display-related control | Internal I²C | Validated |
-| PI4IOE2 | Internal GPIO expander for board power/control signals | Internal I²C | Validated |
+| PI4IOE1 | Internal GPIO expander | Internal I²C | Validated |
 | PaHub | I²C multiplexer | PORT A I²C | Validated |
 | ENV-IV | Temperature, humidity and pressure | PaHub CH0 | Validated |
 | Mini OLED SH1107 | Auxiliary distributed display | PaHub CH1 | Validated |
 | DLight | Ambient light measurement | PaHub CH2 | Validated |
-| ESP32-C6 | Wi-Fi coprocessor | ESP-Hosted over SDIO | Validated |
+| ESP32-C6 | Wi-Fi coprocessor | SDIO | Pending integration |
 
 ---
 
@@ -210,9 +197,9 @@ AMBIENT PHYSICAL AI
 AMBIENT RUNTIME CONSOLE
 
 SYSTEM
-WI-FI ............ CONNECTED
-IP ............... 192.168.x.x
-MASK ............. 255.255.255.0
+WI-FI ............ PENDING
+COGNITIVE ......... WAITING
+MODE .............. STANDALONE
 
 ENVIRONMENT
 TEMPERATURE ....... xx.x C
@@ -227,13 +214,13 @@ DLIGHT ............ OK
 MINI OLED ......... OK
 
 STATUS
-NETWORK READY
-GW 192.168.x.1  RSSI -xx dBm
+LOCAL READY
+WI-FI INTEGRATION PENDING
 ```
 
-`LOCAL READY` means that the local hardware, sensors, display and I²C network are operational while the network layer is still connecting.
+`LOCAL READY` means that the local hardware, sensors, display and I²C network are operational.
 
-`NETWORK READY` means that the local hardware is operational, Wi-Fi association has completed, DHCP has assigned an IPv4 address, and network information is available to the Runtime Console.
+`WI-FI INTEGRATION PENDING` means that network integration is not yet part of the validated baseline.
 
 ---
 
@@ -385,7 +372,6 @@ ambient-runtime-node/
 └── components/
     ├── README.md
     ├── ambient_console/
-    ├── ambient_network/
     ├── dlight/
     ├── env_iv/
     ├── esp_lcd_st7121/
@@ -403,7 +389,6 @@ ambient-runtime-node/
 | `tab5_platform` | Tab5 initialization, display, backlight and I²C buses |
 | `esp_lcd_st7121` | ST7121 panel driver |
 | `ambient_console` | Framebuffer, font rendering and Runtime Console |
-| `ambient_network` | Wi-Fi Station, DHCP, IPv4, netmask, gateway and RSSI |
 | `pahub` | I²C multiplexer channel selection |
 | `env_iv` | SHT40 and BMP280 measurements |
 | `dlight` | Ambient light measurement |
@@ -422,8 +407,6 @@ Responsibilities:
 - internal I²C initialization;
 - PORT A I²C initialization;
 - PI4IOE1 initialization;
-- PI4IOE2 initialization;
-- ESP32-C6 power enable through `WLAN_PWR_EN`;
 - LCD and touch reset;
 - MIPI DSI PHY LDO configuration;
 - MIPI DSI bus creation;
@@ -527,9 +510,6 @@ Ctrl + ]
 Ambient Physical AI - Ambient Runtime Console
 Tab5 platform init based on H020 baseline
 init internal I2C bus SDA=31 SCL=32
-init PI4IOE2 at I2C address 0x44
-PI4IOE2 output state: 0x09
-ESP32-C6 Wi-Fi power enabled
 init PORT A I2C bus SDA=53 SCL=54
 init PI4IOE1 at I2C address 0x43
 Acquire MIPI DSI PHY LDO
@@ -540,12 +520,6 @@ Create ST7121 panel
 Tab5 platform init OK
 Ambient Runtime Console init
 Console framebuffer allocated: 1843200 bytes
-Ambient Network Wi-Fi Station initialization
-Received INIT event from ESP32 peripheral
-Wi-Fi Station started
-Wi-Fi associated with access point
-DHCP IPv4 assigned
-STATUS: NETWORK READY
 Mini OLED initialized
 SHT40 Temp: ...
 BMP280 Temp: ...
@@ -564,11 +538,8 @@ After boot:
 3. temperature, humidity and pressure are read;
 4. ambient light is read;
 5. PaHub devices are checked;
-6. the ESP32-C6 connects to the configured Wi-Fi network;
-7. DHCP assigns IPv4, netmask and gateway;
-8. RSSI is updated;
-9. the console is updated every three seconds;
-10. the serial log reports the current hardware and network state.
+6. the console is updated every three seconds;
+7. the serial log reports the current hardware state.
 
 Example:
 
@@ -579,12 +550,7 @@ I2C=OK |
 ENV-IV=OK |
 DLight=OK |
 OLED=OK |
-Wi-Fi=CONNECTED |
-IP=192.168.x.x |
-Mask=255.255.255.0 |
-GW=192.168.x.1 |
-RSSI=-xx dBm |
-STATUS=NETWORK READY
+Wi-Fi=PENDING
 ```
 
 ---
@@ -615,9 +581,13 @@ const bool hardware_ready =
 
 # Wi-Fi Status
 
-Wi-Fi integration is validated and complete for the Ambient Runtime Node.
+Wi-Fi integration is currently:
 
-The Tab5 network path is:
+```text
+PENDING
+```
+
+The Tab5 uses:
 
 ```text
 ESP32-P4
@@ -626,139 +596,85 @@ ESP32-P4
 ESP-Hosted
     │
     ▼
-4-bit SDIO at 40 MHz
+SDIO
     │
     ▼
 ESP32-C6
     │
     ▼
-Wi-Fi Station
-    │
-    ▼
-DHCP / IPv4
+Wi-Fi network
 ```
 
-Validated component versions:
+A dedicated integration laboratory used:
 
 - `espressif/esp_hosted` 1.4.0;
-- `espressif/esp_wifi_remote` 0.8.5.
+- `espressif/esp_wifi_remote` 0.8.5;
+- SDIO 4-bit at 40 MHz;
+- GPIO8 through GPIO13;
+- GPIO15 as ESP32-C6 reset.
 
-Validated SDIO configuration:
-
-| Signal | GPIO |
-|---|---:|
-| Reset | 15 |
-| CMD | 13 |
-| CLK | 12 |
-| D0 | 11 |
-| D1 | 10 |
-| D2 | 9 |
-| D3 | 8 |
-
-Bus configuration:
-
-```text
-Width: 4 bits
-Clock: 40 MHz
-Reset polarity: active low
-```
-
-## Critical Discovery: ESP32-C6 Power Enable
-
-The central discovery of this laboratory was that correct ESP-Hosted and SDIO configuration is not sufficient by itself. The ESP32-C6 must first be explicitly powered by the Tab5 internal PI4IOE2 GPIO expander.
-
-The relevant board-level path is:
-
-```text
-ESP32-P4 internal I²C
-        │
-        ▼
-PI4IOE2 at address 0x44
-        │
-        ▼
-P0 = WLAN_PWR_EN
-        │
-        ▼
-ESP32-C6 power rail enabled
-```
-
-Before this correction, the host performed the following steps successfully:
+The custom project reached:
 
 ```text
 ESP-Hosted host initialized
+        │
+        ▼
 Remote Wi-Fi channels registered
-ESP32-C6 reset pulse issued on GPIO15
-SDIO controller configured
+        │
+        ▼
+ESP32-C6 reset executed
+        │
+        ▼
+SDIO initialization attempted
+        │
+        ▼
+sdmmc_init_ocr timeout
 ```
 
-However, the ESP32-C6 did not answer because its power-enable signal had never been asserted. The observed failure was:
+Observed error:
 
 ```text
-sdmmc_init_ocr: send_op_cond returned 0x107
-sdio card init failed
+sdmmc_init_ocr:
+send_op_cond returned 0x107
 ```
 
-This failure was initially easy to misinterpret as one of the following:
+The official M5Tab5 UserDemo successfully created `M5Tab5-UserDemo-WiFi` on the same hardware, validating the ESP32-C6 hardware, firmware, physical SDIO connection and official ESP-Hosted stack.
 
-- incorrect SDIO pin mapping;
-- incompatible ESP32-C6 firmware;
-- incorrect reset polarity;
-- ESP-Hosted initialization failure.
+The Wi-Fi laboratory was intentionally removed from the stable Runtime build.
 
-The official M5Stack BSP revealed the missing prerequisite: PI4IOE2 must be initialized and its output register must set bit 0. The official initial output value used by the project is:
+---
+
+# Wi-Fi Pending Mission
 
 ```text
-PI4IOE2 OUT_SET = 0x09
+TAB5_WIFI_REMOTE_PENDING_001
 ```
 
-`0x09` sets:
-
-- bit 0: `WLAN_PWR_EN`;
-- bit 3: `USB5V_EN`.
-
-The Ambient Runtime reproduced the official PI4IOE2 initialization sequence inside `tab5_platform`, including:
-
-1. adding PI4IOE2 at I²C address `0x44`;
-2. resetting the expander;
-3. configuring direction, high-impedance, pull and interrupt registers;
-4. writing `0x09` to the output register;
-5. reading the register back;
-6. verifying that bit 0 is active;
-7. waiting briefly for ESP32-C6 power stabilization;
-8. starting the Ambient Network layer.
-
-After the correction, the log changed to:
+Objective:
 
 ```text
-PI4IOE2 output state: 0x09
-ESP32-C6 Wi-Fi power enabled
-Received INIT event from ESP32 peripheral
-Base transport is set-up
-Wi-Fi Station started
-Wi-Fi associated with access point
-DHCP IPv4 assigned
-STATUS: NETWORK READY
+Connect the Ambient Runtime Node to the local Wi-Fi network
+and obtain:
+
+- IPv4 address
+- network mask
+- default gateway
+- RSSI
 ```
 
-This establishes a clear engineering boundary:
-
-- `tab5_platform` owns board-level power sequencing and PI4IOE2;
-- `ambient_network` owns Wi-Fi Station, DHCP and network state.
-
-## Validated Network Result
-
-Example validation output:
+Expected future console state:
 
 ```text
-Wi-Fi=CONNECTED
-IP=192.168.77.13
-Mask=255.255.255.0
-GW=192.168.77.1
-RSSI=-30 dBm
-STATUS=NETWORK READY
-```
+SYSTEM
 
-The former pending mission `TAB5_WIFI_REMOTE_PENDING_001` is now complete.
+WI-FI ............ CONNECTED
+IP ............... 192.168.x.x
+MASK ............. 255.255.255.0
+GATEWAY .......... 192.168.x.1
+RSSI ............. -xx DBM
+COGNITIVE ........ WAITING
+MODE ............. STANDALONE
+```
 
 ---
 
@@ -766,7 +682,7 @@ The former pending mission `TAB5_WIFI_REMOTE_PENDING_001` is now complete.
 
 | Item | Status |
 |---|---|
-| Wi-Fi | Validated |
+| Wi-Fi | Pending |
 | Cognitive Runtime connection | Waiting / not implemented |
 | MQTT | Out of scope |
 | Semantic Events | Out of scope |
@@ -827,10 +743,8 @@ LOCAL READY
 from:
 
 ```text
-NETWORK READY
+WI-FI INTEGRATION PENDING
 ```
-
-`LOCAL READY` confirms the local hardware baseline. `NETWORK READY` additionally confirms Wi-Fi association and DHCP configuration.
 
 ---
 
@@ -848,9 +762,6 @@ NETWORK READY
 | Internal I²C | PASS |
 | PORT A I²C | PASS |
 | PI4IOE1 | PASS |
-| PI4IOE2 | PASS |
-| ESP32-C6 power enable | PASS |
-| ESP-Hosted SDIO transport | PASS |
 | PaHub | PASS |
 | ENV-IV SHT40 | PASS |
 | ENV-IV BMP280 | PASS |
@@ -859,12 +770,10 @@ NETWORK READY
 | Periodic runtime loop | PASS |
 | Real sensor data on console | PASS |
 | Local hardware health | PASS |
-| Wi-Fi Station | PASS |
-| IPv4 address | PASS |
-| Netmask | PASS |
-| Gateway | PASS |
-| RSSI | PASS |
-| NETWORK READY state | PASS |
+| Wi-Fi Station | PENDING |
+| IPv4 address | PENDING |
+| Netmask | PENDING |
+| Gateway | PENDING |
 | Cognitive Runtime connection | NOT IMPLEMENTED |
 | MQTT | OUT OF SCOPE |
 | Semantic Events | OUT OF SCOPE |
@@ -930,22 +839,22 @@ components/
 # Suggested Commit Scope
 
 ```text
-feat(ambient-runtime): complete Tab5 network runtime
+feat(ambient-runtime): complete Tab5 local console baseline
 ```
 
 Suggested description:
 
 ```text
-- add ambient_network ESP-IDF component
-- integrate ESP-Hosted 1.4.0 and esp_wifi_remote 0.8.5
-- initialize PI4IOE2 and enable ESP32-C6 WLAN power
-- validate 4-bit SDIO transport at 40 MHz
-- connect the Tab5 in Wi-Fi Station mode
-- obtain DHCP IPv4, netmask and gateway
-- expose RSSI to the Runtime Console
-- report NETWORK READY state
-- preserve the validated display, sensor and I²C baseline
-- document the ESP32-C6 power-sequencing discovery
+- finalize Tab5 Ambient Runtime Console
+- add periodic ENV-IV sensor acquisition
+- add periodic DLight lux acquisition
+- validate PaHub channel topology
+- keep Mini OLED as auxiliary display
+- display local hardware health
+- report LOCAL READY state
+- document Wi-Fi integration as pending
+- restore stable build without ESP-Hosted runtime dependency
+- update Ambient Runtime documentation
 ```
 
 ---
@@ -964,11 +873,7 @@ Tab5
     ├── Mini OLED ........... OK
     ├── Runtime Console ..... OK
     ├── Periodic Updates .... OK
-    └── Wi-Fi ............... CONNECTED
-        ├── IPv4 ............. ASSIGNED
-        ├── Gateway .......... ASSIGNED
-        ├── RSSI ............. VISIBLE
-        └── Status ........... NETWORK READY
+    └── Wi-Fi ............... PENDING
 ```
 
 The validated baseline is suitable for:
@@ -979,7 +884,7 @@ The validated baseline is suitable for:
 - future system integration;
 - continued development of the Ambient Physical AI architecture.
 
-The Ambient Runtime Node network milestone is complete. The next project priority is the AX630C Cognitive Runtime.
+The next blocking integration task is the dedicated Tab5 Wi-Fi Station mission.
 
 ---
 
@@ -989,7 +894,7 @@ The Ambient Runtime Node network milestone is complete. The next project priorit
 Validated Local Runtime
         │
         ▼
-Validated Network Runtime
+Wi-Fi Integration
         │
         ▼
 Cognitive Runtime Connection

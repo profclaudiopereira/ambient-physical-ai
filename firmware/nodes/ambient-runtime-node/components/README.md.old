@@ -14,7 +14,6 @@ Each component encapsulates a single hardware peripheral or platform service, fo
 components/
 
 ├── ambient_console/
-├── ambient_network/
 ├── dlight/
 ├── env_iv/
 ├── oled_sh1107/
@@ -31,7 +30,6 @@ Each component exposes a clean public API through its `include/` directory while
 | Component | Purpose | Status |
 |-----------|---------|--------|
 | ambient_console | Graphical Ambient Runtime dashboard rendered on the Tab5 LCD | Stable |
-| ambient_network | Wi-Fi Station, DHCP, IPv4, netmask, gateway and RSSI through ESP-Hosted | Stable |
 | tab5_platform | Tab5 platform abstraction (display, backlight, framebuffer, Port A I²C) | Stable |
 | pahub | M5Stack PaHub I²C multiplexer driver | Stable |
 | env_iv | Driver for the ENV-IV environmental sensor unit (SHT40 + BMP280) | Stable |
@@ -64,52 +62,12 @@ Current information displayed:
 - Humidity
 - Pressure
 - Ambient Light
-- Wi-Fi connection state
-- IPv4 address
-- Network mask
-- Default gateway
-- RSSI
 - Hardware Status
 - Runtime Status
 
 The console is intentionally independent from the hardware drivers.
 
 It only consumes an `ambient_console_data_t` structure provided by the application.
-
----
-
-## ambient_network
-
-### Responsibility
-
-Implements the Ambient Runtime network layer using the Tab5 ESP32-C6 coprocessor through ESP-Hosted and Wi-Fi Remote.
-
-Current responsibilities include:
-
-- NVS initialization
-- `esp_netif` initialization
-- default event loop creation
-- Wi-Fi Station mode
-- access-point association
-- DHCP IPv4 acquisition
-- netmask and default gateway capture
-- RSSI monitoring
-- minimal automatic reconnection
-- public network-state snapshot through `ambient_network_status_t`
-
-The component exposes network state without coupling the application loop to ESP-Hosted internals.
-
-Validated runtime progression:
-
-```text
-PENDING
-   ↓
-CONNECTED
-   ↓
-NETWORK READY
-```
-
-`NETWORK READY` means that Wi-Fi association and DHCP configuration have both completed successfully.
 
 ---
 
@@ -125,10 +83,6 @@ Provides:
 - MIPI DSI panel setup
 - Framebuffer rendering
 - Backlight control
-- internal I²C initialization
-- PI4IOE1 initialization
-- PI4IOE2 initialization
-- ESP32-C6 Wi-Fi power enable (`WLAN_PWR_EN`)
 - Port A I²C initialization
 - PSRAM framebuffer allocation
 
@@ -222,7 +176,6 @@ Every component follows the same engineering principles:
 | Component | Status |
 |-----------|--------|
 | ambient_console | Stable |
-| ambient_network | Stable |
 | tab5_platform | Stable |
 | pahub | Stable |
 | env_iv | Stable |
@@ -235,6 +188,7 @@ Every component follows the same engineering principles:
 
 The following components are planned for future development:
 
+- Wi-Fi Remote (ESP-Hosted)
 - MQTT
 - Cognitive Runtime Client
 - Semantic Event Client
@@ -257,40 +211,3 @@ Keeping each hardware feature inside an independent ESP-IDF component significan
 - long-term scalability
 
 This organization also aligns with the modular architecture adopted by the Ambient Physical AI project.
-
----
-
-# Critical Tab5 Wi-Fi Power Discovery
-
-The Tab5 ESP32-C6 wireless coprocessor is not usable through SDIO until its power rail is explicitly enabled by the second internal GPIO expander, PI4IOE2 at I²C address `0x44`.
-
-The validated initialization sequence is:
-
-```text
-Internal I²C
-    ↓
-PI4IOE2 initialization
-    ↓
-Set PI4IOE2 P0 = 1
-    ↓
-WLAN_PWR_EN active
-    ↓
-ESP32-C6 powered
-    ↓
-ESP-Hosted reset on GPIO15
-    ↓
-SDIO handshake
-    ↓
-Wi-Fi Station
-```
-
-Without `WLAN_PWR_EN`, the ESP32-P4 can configure the SDIO controller and pulse the ESP32-C6 reset line, but the coprocessor does not answer. The observed failure was:
-
-```text
-sdmmc_init_ocr: send_op_cond returned 0x107
-sdio card init failed
-```
-
-The fix was implemented in `tab5_platform`, not in `ambient_network`, because powering board-level hardware is a platform responsibility. The official M5Stack PI4IOE2 configuration was reproduced, including the initial output value `0x09`, whose bit 0 enables `WLAN_PWR_EN`.
-
-After this correction, the ESP32-C6 was detected over SDIO and the complete network path reached `NETWORK READY`.

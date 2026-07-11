@@ -284,52 +284,39 @@ esp_err_t ambient_console_render(
         COLOR_TEXT
     );
 
-    snprintf(
-        value,
-        sizeof(value),
-        "WI-FI ............ %s",
-        data->wifi_connected ? "CONNECTED" : "PENDING"
-    );
+snprintf(
+    value,
+    sizeof(value),
+    "WI-FI ............ %s",
+    data->wifi_connected ? "CONNECTED" : "PENDING"
+);
 
-    draw_text(
-        40,
-        190,
-        value,
-        2,
-        COLOR_TEXT
-    );
+draw_text(40, 190, value, 2, COLOR_TEXT);
 
-    snprintf(
-        value,
-        sizeof(value),
-        "COGNITIVE ........ %s",
-        data->cognitive_connected ? "CONNECTED" : "WAITING"
-    );
+snprintf(
+    value,
+    sizeof(value),
+    "IP ............... %s",
+    data->ipv4
+);
 
-    draw_text(
-        40,
-        225,
-        value,
-        2,
-        COLOR_TEXT
-    );
+draw_text(40, 225, value, 2, COLOR_TEXT);
 
-    draw_text(
-        40,
-        260,
-        "MODE .............. STANDALONE",
-        2,
-        COLOR_TEXT
-    );
+snprintf(
+    value,
+    sizeof(value),
+    "MASK ............. %s",
+    data->netmask
+);
 
-    draw_horizontal_line(
-        40,
-        300,
-        640,
-        2,
-        COLOR_TEXT
-    );
-
+draw_text(40, 260, value, 2, COLOR_TEXT);
+   draw_horizontal_line(
+    40,
+    300,
+    640,
+    2,
+    COLOR_TEXT
+);
     /*
      * ENVIRONMENT
      */
@@ -505,22 +492,34 @@ esp_err_t ambient_console_render(
     data->dlight_ok &&
     data->mini_oled_ok;
 
+const bool runtime_ready =
+    hardware_ready &&
+    data->network_ready;
+
 draw_text(
     40,
     805,
+    runtime_ready ? "NETWORK READY" :
     hardware_ready ? "LOCAL READY" : "DEGRADED",
     4,
     COLOR_TEXT
 );
 
+snprintf(
+    value,
+    sizeof(value),
+    "GW %s  RSSI %d DBM",
+    data->gateway,
+    (int)data->rssi_dbm
+);
+
 draw_text(
     40,
     860,
-    "WI-FI INTEGRATION PENDING",
+    value,
     2,
     COLOR_TEXT
 );
-
     return tab5_platform_draw_bitmap(
         0,
         0,
