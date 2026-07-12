@@ -4,7 +4,7 @@
 
 ### Distributed Cognitive Ecosystem Powered by StackFlow
 
-> "Percebe. Contextualiza. Pensa. Responde. Transforma o ambiente."
+> "Percebe. Identifica. Compreende. Decide. Transforma. Expressa."
 
 ---
 
@@ -25,23 +25,28 @@ O objetivo é criar:
 * inteligência contextual;
 * interação natural;
 * transformação ambiental;
+* embodiment físico;
 * experiências memoráveis.
 
 ---
 
-# Arquitetura Conceitual
+# Architectural Flow
 
 O ecossistema opera através do seguinte fluxo:
 
 ```text
 Presence
-→ Identity
-→ Cognition
-→ Ambient Transformation
-→ Experience
+↓
+Identity
+↓
+Cognition
+↓
+Ambient Transformation
+↓
+Expression
 ```
 
-Cada etapa possui responsabilidades específicas dentro da arquitetura.
+Cada camada possui responsabilidades específicas dentro da arquitetura.
 
 ---
 
@@ -49,16 +54,32 @@ Cada etapa possui responsabilidades específicas dentro da arquitetura.
 
 Responsável por perceber que existe alguém ou algo no ambiente.
 
-Exemplos:
-
-* ToF
-* sensores ambientais
-* sensores de presença
-* sensores contextuais
-
 Pergunta respondida:
 
 > Existe alguém aqui?
+
+## Baseline Atual
+
+Hardware:
+
+```text
+AtomS3 Lite
++
+Unit Mini ToF-90 (VL53L0X)
+```
+
+Responsabilidades:
+
+* detecção de presença;
+* medição de distância;
+* eventos de aproximação;
+* gatilhos contextuais iniciais.
+
+Status:
+
+```text
+Operational Baseline
+```
 
 ---
 
@@ -66,17 +87,44 @@ Pergunta respondida:
 
 Responsável por identificar quem está interagindo com o ambiente.
 
-Exemplo principal:
-
-* M5Dial
-* NFC
-* RFID
-* touch interaction
-* mode switching
-
 Pergunta respondida:
 
 > Quem está aqui?
+
+## Baseline Atual
+
+Hardware:
+
+```text
+M5Dial
++
+WS1850S NFC
+```
+
+Responsabilidades:
+
+* identificação NFC;
+* leitura de UID;
+* mapeamento UID → perfil;
+* seleção de contexto;
+* geração de Identity Package;
+* visualização da identidade.
+
+Exemplo:
+
+```text
+UID
+↓
+Profile
+↓
+Identity Package
+```
+
+Status:
+
+```text
+Operational Baseline
+```
 
 ---
 
@@ -84,31 +132,43 @@ Pergunta respondida:
 
 Responsável por compreender contexto e tomar decisões.
 
-Implementação principal:
-
-## Cognitive Runtime Node
-
-Hardware principal:
-
-* AX630C
-
-Software principal:
-
-* StackFlow
-
-Responsabilidades:
-
-* raciocínio contextual;
-* memória;
-* coordenação semântica;
-* multimodalidade;
-* inferência local;
-* futuras capacidades de RAG;
-* tomada de decisão.
-
 Pergunta respondida:
 
 > O que significa esta situação?
+
+````
+
+## Cognitive Runtime Node
+
+Hardware:
+
+```text
+AX630C
++
+LLM Mate
+````
+
+Software:
+
+```text
+StackFlow Runtime
+```
+
+Responsabilidades:
+
+* interpretação contextual;
+* coordenação cognitiva;
+* inferência local;
+* multimodalidade;
+* memória;
+* tomada de decisão;
+* futuras capacidades de RAG.
+
+Status:
+
+```text
+Integration Phase Next
+```
 
 ---
 
@@ -116,45 +176,67 @@ Pergunta respondida:
 
 Responsável por transformar fisicamente o ambiente.
 
-Implementação principal:
-
-## Ambient Runtime Node
-
-Hardware principal:
-
-* PoE-P4
-
-Responsabilidades:
-
-* iluminação;
-* displays;
-* sincronização espacial;
-* estados ambientais;
-* resposta contextual;
-* adaptação do ambiente.
-
 Pergunta respondida:
 
 > Como o ambiente deve responder?
 
+## Ambient Runtime Node
+
+Hardware:
+
+```text
+PoE-P4
+```
+
+Responsabilidades:
+
+* adaptação ambiental;
+* displays;
+* sincronização espacial;
+* estados ambientais;
+* feedback contextual;
+* futuras transformações físicas.
+
+Status:
+
+```text
+Active Development
+```
+
 ---
 
-# Experience Layer
+# Expression Layer
 
-Representa a experiência percebida pelo usuário.
-
-Pode envolver:
-
-* StackChan
-* displays
-* voz
-* iluminação
-* animações
-* feedback contextual
+Representa a forma como a inteligência do ambiente se manifesta para o usuário.
 
 Pergunta respondida:
 
-> O que o usuário percebe?
+> Como o ambiente se expressa?
+
+Exemplos:
+
+```text
+StackChan
+Voice Pyramid
+Displays
+Lighting
+Animations
+Audio Feedback
+```
+
+Responsabilidades:
+
+* embodiment;
+* comunicação;
+* feedback visual;
+* feedback sonoro;
+* interação natural.
+
+Status:
+
+```text
+Future Integration
+```
 
 ---
 
@@ -162,10 +244,10 @@ Pergunta respondida:
 
 StackFlow não é:
 
-* uma camada MQTT;
-* um middleware;
-* um barramento de mensagens;
-* uma abstração de firmware.
+* MQTT;
+* middleware;
+* barramento de mensagens;
+* abstração de firmware.
 
 StackFlow é uma:
 
@@ -173,12 +255,19 @@ StackFlow é uma:
 
 Responsável por coordenar:
 
-* percepção;
-* identidade;
-* cognição;
-* embodiment;
-* transformação ambiental;
-* interação contextual.
+```text
+Presence
+↓
+Identity
+↓
+Cognition
+↓
+Ambient Transformation
+↓
+Expression
+```
+
+através de eventos, contexto e coordenação cognitiva distribuída.
 
 ---
 
@@ -199,17 +288,46 @@ runtime/
 
 ---
 
-# Architectural Roles
+# Current Architectural Roles
 
-| Componente  | Papel                                     |
-| ----------- | ----------------------------------------- |
-| ToF         | Presence Node                             |
-| M5Dial      | Identity Node                             |
-| AX630C      | Cognitive Runtime Node                    |
-| PoE-P4      | Ambient Runtime Node                      |
-| StackChan   | Embodiment Node                           |
-| ESP32 Nodes | Perception & Interaction Nodes            |
-| StackFlow   | Distributed Cognitive Coordination Fabric |
+| Component             | Role                                      |
+| --------------------- | ----------------------------------------- |
+| AtomS3 Lite + VL53L0X | Presence Node                             |
+| M5Dial                | Identity Node                             |
+| AX630C + LLM Mate     | Cognitive Runtime Node                    |
+| PoE-P4                | Ambient Runtime Node                      |
+| StackChan             | Expression Node                           |
+| Voice Pyramid         | Voice Expression Node                     |
+| StackFlow             | Distributed Cognitive Coordination Fabric |
+
+---
+
+# Current Project Position
+
+## Operational Baselines
+
+Validated:
+
+```text
+Presence Layer
+Identity Layer
+```
+
+In Progress:
+
+```text
+Ambient Layer
+```
+
+Next:
+
+```text
+Presence
+↓
+Identity
+↓
+AX630C Cognitive Runtime
+```
 
 ---
 
@@ -221,8 +339,8 @@ Priorizar:
 * modularidade;
 * cognição distribuída;
 * interação contextual;
-* demonstrações funcionais;
-* inteligência ambiental.
+* validação em hardware real;
+* demonstrações funcionais.
 
 Evitar:
 
@@ -234,23 +352,6 @@ Evitar:
 
 ---
 
-# Current Status
-
-Fase atual:
-
-## FOUNDATION PHASE
-
-Prioridades:
-
-1. Estruturação do repositório;
-2. Hardware bringup;
-3. Primeiros firmwares;
-4. Runtime StackFlow;
-5. Integração cognitiva;
-6. Primeira demonstração funcional.
-
----
-
 # Guiding Principle
 
 ## Demo First. Complexity Later.
@@ -258,8 +359,36 @@ Prioridades:
 Toda evolução arquitetural deve ser validada através de:
 
 * hardware real;
-* protótipos reais;
+* firmware real;
 * integração real;
 * experiências reais.
 
 A arquitetura deve evoluir a partir da prática e não de abstrações prematuras.
+
+---
+
+# Current Milestone
+
+O projeto concluiu com sucesso as primeiras camadas operacionais:
+
+```text
+Presence
+✓
+
+Identity
+✓
+```
+
+O próximo marco arquitetural é:
+
+```text
+Presence Event
+↓
+Identity Package
+↓
+AX630C Cognitive Runtime
+↓
+Decision
+```
+
+estabelecendo a primeira integração fim-a-fim do ecossistema Ambient Physical AI.

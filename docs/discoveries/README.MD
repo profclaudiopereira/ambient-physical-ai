@@ -2,19 +2,46 @@
 
 ## Ambient Physical AI
 
-### AX630C + StackFlow Discovery Archive
+### Cognitive Runtime Discovery Archive
 
-Esta pasta centraliza todas as descobertas técnicas realizadas durante a exploração do Runtime Cognitivo StackFlow executando sobre a plataforma AX630C.
+Esta área centraliza as descobertas técnicas realizadas durante a exploração das tecnologias que compõem o Cognitive Runtime do projeto Ambient Physical AI.
+
+O objetivo não é armazenar documentação definitiva nem arquitetura final.
+
+Seu propósito é preservar conhecimento adquirido durante investigações, validações e experimentos realizados antes da integração oficial ao ecossistema.
+
+---
+
+# Philosophy
 
 Princípio adotado:
 
 ```text
-Explore First.
-Understand First.
-Integrate Later.
+Explore First
+Understand First
+Validate First
+Integrate Later
 ```
 
-O objetivo desta área não é armazenar documentação de firmware ou arquitetura final, mas registrar o conhecimento adquirido durante a investigação do sistema.
+Toda descoberta registrada nesta área deve contribuir para decisões arquiteturais futuras baseadas em evidências práticas.
+
+---
+
+# Scope
+
+Esta área concentra principalmente investigações relacionadas a:
+
+```text
+AX630C
+LLM Mate
+StackFlow Runtime
+Context Processing
+Memory
+ASR
+TTS
+Vision
+Multimodal Services
+```
 
 ---
 
@@ -22,120 +49,226 @@ O objetivo desta área não é armazenar documentação de firmware ou arquitetu
 
 ## 2026-06
 
-### Discovery 01 — StackFlow Protocol
-
-Objetivo:
-
-Identificar como acessar programaticamente o Runtime Cognitivo.
-
-Resultados:
-
-* Porta TCP 10001 identificada
-* Serviço llm_sys identificado
-* Serviço llm_llm identificado
-* Protocolo JSON over TCP validado
-* Fluxo Setup → Inference → Streaming → Exit validado
-* Primeiro cliente Python validado
-
-Arquivos:
-
-* DISCOVERY_REPORT_STACKFLOW_PROTOCOL_V1_PT-BR.md
-* DISCOVERY_REPORT_STACKFLOW_PROTOCOL_V1_EN.md
-* DISCOVERY_REPORT_STACKFLOW_PROTOCOL_V1_DETAILED_PT-BR.md
-* DISCOVERY_REPORT_STACKFLOW_PROTOCOL_V1_DETAILED_EN.md
-
-Principais descobertas:
-
-```text
-TCP 10001
-    ↓
-llm_sys
-    ↓
-llm_llm
-    ↓
-Qwen2.5-0.5B
-```
-
 ---
 
-### Discovery 02 — Context and Session Behavior
+## Discovery 01 — StackFlow Protocol
 
-Objetivo:
+### Objective
 
-Compreender:
+Identificar como acessar programaticamente o Cognitive Runtime.
 
-* ciclo de vida da sessão
-* contexto
-* memória
-* comportamento multi-turn
-
-Resultados:
+### Results
 
 Validado:
 
-* criação de sessão
-* context injection
-* inferência single-turn
-* streaming response
-
-Não validado:
-
-* memória multi-turn
-* persistência de contexto
-* estado conversacional interno
-
-Arquivos:
-
-* DISCOVERY_REPORT_STACKFLOW_CONTEXT_V1_PT-BR_COMPLETE.md
-* DISCOVERY_REPORT_STACKFLOW_CONTEXT_V1_EN_COMPLETE.md
-
-Hipótese atual:
-
 ```text
-Evento
-    ↓
-Pacote de Contexto
-    ↓
-Inferência
-    ↓
-Resposta
+TCP Port 10001
+llm_sys service
+llm_llm service
+JSON over TCP protocol
+Session setup
+Inference request
+Streaming response
+Session termination
 ```
 
-em vez de:
+### Architecture Insight
 
 ```text
-Conversação
-    ↓
-Memória Persistente
-    ↓
-Resposta
+Client
+↓
+TCP 10001
+↓
+llm_sys
+↓
+llm_llm
+↓
+Qwen2.5-0.5B
+```
+
+### Status
+
+```text
+COMPLETED
 ```
 
 ---
 
-# Discovery Status
+## Discovery 02 — Context and Session Behavior
 
-| Discovery   | Status    |
-| ----------- | --------- |
-| Protocol V1 | Completed |
-| Context V1  | Partial   |
-| Memory V1   | Planned   |
-| ASR V1      | Planned   |
-| TTS V1      | Planned   |
-| VLM V1      | Planned   |
-| YOLO V1     | Planned   |
+### Objective
+
+Compreender:
+
+```text
+Session lifecycle
+Context injection
+Multi-turn behavior
+Memory behavior
+```
+
+### Validated
+
+```text
+Session creation
+Context injection
+Single-turn inference
+Streaming responses
+```
+
+### Not Yet Validated
+
+```text
+Persistent memory
+Long-term context retention
+Internal conversational state
+```
+
+### Current Hypothesis
+
+```text
+Event
+↓
+Context Package
+↓
+Inference
+↓
+Response
+```
+
+mais do que:
+
+```text
+Conversation
+↓
+Persistent Memory
+↓
+Response
+```
+
+### Status
+
+```text
+PARTIAL
+```
+
+---
+
+## Discovery 03 — Presence and Identity Baselines
+
+### Objective
+
+Estabelecer as primeiras camadas físicas do ecossistema.
+
+### Results
+
+Presence Layer validated:
+
+```text
+AtomS3 Lite
++
+Unit Mini ToF-90
+(VL53L0X)
+```
+
+Identity Layer validated:
+
+```text
+M5Dial
++
+WS1850S NFC
+```
+
+### Architectural Impact
+
+O projeto agora possui duas camadas operacionais independentes:
+
+```text
+Presence
+↓
+Identity
+```
+
+criando a base necessária para integração com o Cognitive Runtime.
+
+### Status
+
+```text
+COMPLETED
+```
+
+---
+
+# Current Discovery Status
+
+| Discovery               | Status    |
+| ----------------------- | --------- |
+| StackFlow Protocol V1   | Completed |
+| Context Behavior V1     | Partial   |
+| Presence Layer Baseline | Completed |
+| Identity Layer Baseline | Completed |
+| Memory V1               | Planned   |
+| ASR V1                  | Planned   |
+| TTS V1                  | Planned   |
+| VLM V1                  | Planned   |
+| YOLO V1                 | Planned   |
+
+---
+
+# Next Investigation Phase
+
+O próximo objetivo do projeto não é mais validar hardware isoladamente.
+
+O próximo objetivo é validar integração entre camadas.
+
+Fluxo alvo:
+
+```text
+Presence Event
+↓
+Identity Package
+↓
+AX630C Cognitive Runtime
+↓
+Decision
+```
+
+---
+
+## Cognitive Integration V1
+
+Primeira integração prevista:
+
+```text
+Presence Layer
+↓
+Identity Layer
+↓
+AX630C
+```
+
+Objetivos:
+
+```text
+Receive Identity Package
+Inject Context
+Execute Inference
+Generate Decision
+```
+
+Status:
+
+```text
+NEXT
+```
 
 ---
 
 # Future Discoveries
 
-Próximas investigações previstas:
-
 ## Memory V1
 
 Objetivo:
-
-Determinar:
 
 ```text
 Session
@@ -151,36 +284,26 @@ e seus limites.
 
 ## ASR V1
 
-Objetivo:
-
-Mapear o serviço:
+Investigar:
 
 ```text
 llm_asr
 ```
 
-e seu protocolo.
-
 ---
 
 ## TTS V1
 
-Objetivo:
-
-Mapear:
+Investigar:
 
 ```text
 llm_tts
 llm_melotts
 ```
 
-e integração de síntese de voz.
-
 ---
 
 ## VLM V1
-
-Objetivo:
 
 Investigar:
 
@@ -189,13 +312,9 @@ llm_vlm
 llm_camera
 ```
 
-e capacidades multimodais.
-
 ---
 
 ## YOLO V1
-
-Objetivo:
 
 Investigar:
 
@@ -203,24 +322,42 @@ Investigar:
 llm_yolo
 ```
 
-e capacidades de detecção visual.
-
 ---
 
 # Architectural Relevance
 
-As descobertas registradas nesta pasta fundamentam diretamente a evolução da arquitetura:
+As descobertas desta pasta fundamentam diretamente a evolução do ecossistema:
 
 ```text
 Presence
-    ↓
+↓
 Identity
-    ↓
-Context
-    ↓
+↓
 Cognition
-    ↓
+↓
 Ambient Transformation
+↓
+Expression
 ```
 
-Todo conhecimento obtido nesta área deve ser considerado insumo para futuras integrações do projeto Ambient Physical AI.
+Todo conhecimento registrado aqui deve servir como base para futuras integrações e decisões arquiteturais do Ambient Physical AI.
+
+---
+
+# Current Project Position
+
+```text
+Presence Layer ............ Operational Baseline
+Identity Layer ............ Operational Baseline
+Cognitive Layer ........... Integration Phase Next
+Ambient Layer ............. Active Development
+Expression Layer .......... Future Integration
+```
+
+---
+
+# Guiding Principle
+
+## Discover. Validate. Integrate.
+
+Nenhuma integração deve ocorrer sem compreensão prévia do comportamento real dos sistemas envolvidos.
