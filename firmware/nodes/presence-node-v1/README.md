@@ -1,190 +1,239 @@
-# Presence Node V1
+# Presence Layer --- Presence Node
 
 ## Ambient Physical AI
 
-### Presence Layer Runtime Node
+The **Presence Layer** is the first perception node of the Ambient
+Physical AI architecture.
 
-The Presence Node V1 is responsible for measuring physical proximity and generating the first presence signals for the Ambient Physical AI ecosystem.
+Its responsibility is simple:
 
-This node is intentionally simple and focused only on distance measurement at this stage.
+``` text
+Detect Human Presence
+        ↓
+Generate presence_event
+        ↓
+Notify Identity Layer
+```
 
----
+Current implementation:
 
-# Baseline Hardware
-
-```text
+``` text
 AtomS3 Lite
 +
-Unit Mini ToF-90 / VL53L0X
+HLK-LD2410C Radar
++
+ESP-IDF
++
+Wi-Fi
++
+UDP Broadcast
 ```
 
----
+Status:
 
-# Purpose
-
-The Presence Node provides:
-
-```text
-Distance Measurement
-↓
-Presence Detection
-↓
-Presence Event
-↓
-Future Identity Node Trigger
-```
-
----
-
-# Project Status
-
-```text
-Presence Node V1
+``` text
+Presence Node V2
+OFFICIAL BASELINE
 VALIDATED
 ```
 
-Current milestone:
+------------------------------------------------------------------------
 
-```text
-PRESENCE_NODE_V1_MILESTONE_001
-Serial distance measurement validated
+# Hardware
+
+  Component   Description
+  ----------- ---------------------------------
+  MCU         M5Stack AtomS3 Lite (ESP32-S3)
+  Sensor      HLK-LD2410C 24 GHz mmWave Radar
+
+UART wiring:
+
+``` text
+GPIO1 (TX) → Radar RX
+GPIO2 (RX) ← Radar TX
+GND ↔ GND
 ```
 
----
+------------------------------------------------------------------------
 
-# Hardware Configuration
+# Repository Structure
 
-```text
-AtomS3 Lite
-Unit Mini ToF-90
-VL53L0X
-Grove HY2.0-4P
+``` text
+presence-node-v1/
+├── components/
+│   └── ld2410/
+├── main/
+│   ├── main.cpp
+│   └── CMakeLists.txt
+├── README.md
+└── CMakeLists.txt
 ```
 
-I2C configuration:
+------------------------------------------------------------------------
 
-```text
-SDA = GPIO2
-SCL = GPIO1
-Address = 0x29
+# Features
+
+Validated:
+
+``` text
+HLK-LD2410C communication .... PASS
+Radar frame parser ........... PASS
+Presence State Machine ....... PASS
+Wi-Fi Station ................ PASS
+DHCP ......................... PASS
+UDP Broadcast ................ PASS
+Presence → Identity .......... PASS
 ```
 
----
+------------------------------------------------------------------------
 
-# Validated Results
+# Building
 
-VL53L0X identity registers:
+From the node directory:
 
-```text
-MODEL_ID    = 0xEE
-MODULE_TYPE = 0xAA
-REVISION_ID = 0x10
-```
-
-Distance measurement validated in serial monitor:
-
-```text
-Distance: 55 mm
-Distance: 50 mm
-Distance: 53 mm
-Distance: 54 mm
-Distance: 259 mm
-Distance: 179 mm
-```
-
----
-
-# Validated Features
-
-```text
-I2C communication ....... PASS
-VL53L0X detection ....... PASS
-Sensor initialization ... PASS
-Distance measurement .... PASS
-Serial output ........... PASS
-```
-
----
-
-# Build
-
-```bash
+``` bash
+idf.py set-target esp32s3
 idf.py build
 ```
 
----
+------------------------------------------------------------------------
 
-# Flash and Monitor
+# Flash
 
-```bash
-idf.py flash monitor
+``` bash
+idf.py -p COMx flash
 ```
 
----
+------------------------------------------------------------------------
 
-# Current Scope
+# Monitor
 
-This firmware currently provides only:
-
-```text
-Distance measurement in millimeters
-Serial logging
-Basic VL53L0X initialization
+``` bash
+idf.py -p COMx monitor
 ```
 
-No UI, MQTT, StackFlow or Identity Node communication is implemented yet.
+or
 
----
-
-# Next Steps
-
-Planned next milestone:
-
-```text
-Presence Node V1.1
+``` bash
+idf.py -p COMx flash monitor
 ```
 
-Goals:
+Exit monitor:
 
-```text
-Add threshold-based presence detection
-Print PRESENT / NOT_PRESENT events
-Debounce distance readings
-Simulate Presence → Identity flow
-Prepare future StackFlow/MQTT integration
+``` text
+Ctrl + ]
 ```
 
----
+------------------------------------------------------------------------
 
-# Architecture Decision
+# Expected Boot
 
-The M5Dial remains the Identity Gateway.
-
-```text
-Identity Node V1 = M5Dial + NFC
-Presence Node V1 = AtomS3 Lite + VL53L0X
+``` text
+LD2410 initialized
+Wi-Fi connected
+Network ready
+UDP broadcast configured
 ```
 
----
+Expected runtime:
 
-# Deferred
-
-Not part of this milestone:
-
-```text
-MQTT
-StackFlow
-AX630C integration
-Camera
-AtomS3R Cam vision
-M5Dial ToF integration
+``` text
+PRESENT
+...
+NOT_PRESENT
+...
+PRESENT
 ```
 
----
+------------------------------------------------------------------------
 
-# Related Documentation
+# UDP Event
 
-```text
-docs/notes/PRESENCE_NODE_V1_BRINGUP_001.md
-firmware/nodes/identity-node/README.md
+``` json
+{
+  "type":"presence_event",
+  "state":"PRESENT",
+  "distance_mm":3430,
+  "source":"presence_node_v1"
+}
+```
+
+------------------------------------------------------------------------
+
+# Testing
+
+1.  Flash the firmware.
+2.  Connect the node to the same Wi-Fi network as the Identity Node.
+3.  Open the serial monitor.
+4.  Walk into the radar detection area.
+5.  Verify:
+    -   `PRESENT`
+    -   UDP event transmitted.
+6.  Leave the area.
+7.  Verify:
+    -   `NOT_PRESENT`
+
+------------------------------------------------------------------------
+
+# Engineering History
+
+## V1
+
+``` text
+AtomS3 Lite
++
+VL53L0X (ToF)
+```
+
+Validated:
+
+-   I²C communication
+-   Distance measurement
+-   Threshold-based presence
+-   Initial Presence → Identity integration
+
+## V2 (Current)
+
+``` text
+AtomS3 Lite
++
+HLK-LD2410C
+```
+
+Migration goals achieved:
+
+-   Native human presence detection
+-   Reusable radar component
+-   Wi-Fi preserved
+-   UDP preserved
+-   Identity integration preserved
+
+Only the sensing subsystem changed.
+
+------------------------------------------------------------------------
+
+# Documentation
+
+Additional documentation should be placed under `docs/`, for example:
+
+``` text
+docs/
+├── architecture/
+├── hardware/
+├── discoveries/
+├── migration/
+└── testing/
+```
+
+The README intentionally remains concise and serves as the entry point
+for this node.
+
+------------------------------------------------------------------------
+
+# Related Components
+
+``` text
+firmware/nodes/identity-node/
+firmware/nodes/ambient-runtime-node/
+runtime/cognitive/stackflow/
 ```
