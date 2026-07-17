@@ -82,11 +82,26 @@ static const Profile profiles[] = {
     {"student", "Student", "learner"},
 };
 
-static const char *contexts[] = {
-    "Lab",
-    "Classroom",
-    "Demo",
-    "Meeting",
+enum ContextId {
+    CONTEXT_LAB = 0,
+    CONTEXT_RESEARCH,
+    CONTEXT_CLASSROOM,
+    CONTEXT_DEMO,
+    CONTEXT_MEETING,
+};
+
+struct ContextDefinition {
+    ContextId id;
+    const char *protocol_name;
+    const char *display_name;
+};
+
+static const ContextDefinition contexts[] = {
+    {CONTEXT_LAB,       "Lab",       "Lab"},
+    {CONTEXT_RESEARCH,  "Research",  "Research"},
+    {CONTEXT_CLASSROOM, "Classroom", "Classroom"},
+    {CONTEXT_DEMO,      "Demo",      "Demo"},
+    {CONTEXT_MEETING,   "Meeting",   "Meeting"},
 };
 
 static const int PROFILE_COUNT = sizeof(profiles) / sizeof(profiles[0]);
@@ -475,38 +490,87 @@ static void udp_listener_task(void *param)
 static void draw_console()
 {
     M5.Display.fillScreen(BLACK);
+    M5.Display.setTextDatum(middle_center);
+
+    const Profile &profile = profiles[current_profile];
+
+    const bool has_active_profile =
+        strcmp(profile.id, "unknown") != 0;
+
+    // -------------------------------------------------------------------------
+    // Header
+    // -------------------------------------------------------------------------
+
     M5.Display.setTextSize(2);
+    M5.Display.drawString("AMBIENT AI", 120, 24);
 
-    M5.Display.setCursor(20, 20);
-    M5.Display.println("Identity Console");
+    M5.Display.drawLine(52, 43, 188, 43, DARKGREY);
 
-    M5.Display.setCursor(20, 60);
-    M5.Display.printf("Name: %s", profiles[current_profile].name);
+    // -------------------------------------------------------------------------
+    // Active profile
+    // -------------------------------------------------------------------------
 
-    M5.Display.setCursor(20, 90);
-    M5.Display.printf("Role: %s", profiles[current_profile].role);
+    const char *initial = "?";
 
-    M5.Display.setCursor(20, 125);
-    M5.Display.printf("Ctx: %s", contexts[current_context]);
-
-    M5.Display.setCursor(20, 165);
-    M5.Display.printf("NFC: %s", nfc_detected ? "OK" : "NO");
-
-    M5.Display.setCursor(20, 195);
-    M5.Display.printf("Card: %s", nfc_card_present ? "YES" : "NO");
-
-    M5.Display.setCursor(20, 220);
-    if (last_nfc_uid[0] != '\0') {
-        M5.Display.printf("UID: %.8s", last_nfc_uid);
-    } else {
-        M5.Display.print("UID: none");
+    if (strcmp(profile.id, "claudio") == 0) {
+        initial = "C";
+    } else if (strcmp(profile.id, "student") == 0) {
+        initial = "S";
     }
 
-    M5.Display.setCursor(20, 245);
-    M5.Display.setTextSize(1);
-    M5.Display.printf("%s", last_nfc_status);
-}
+    M5.Display.fillCircle(120, 85, 29, DARKGREY);
+    M5.Display.drawCircle(120, 85, 30, WHITE);
 
+    M5.Display.setTextSize(3);
+    M5.Display.drawString(initial, 120, 85);
+
+    if (has_active_profile) {
+        M5.Display.setTextSize(2);
+        M5.Display.drawString(profile.name, 120, 126);
+
+        M5.Display.setTextSize(1);
+        M5.Display.drawString(profile.role, 120, 148);
+    } else {
+        M5.Display.setTextSize(1);
+        M5.Display.drawString("Waiting for identity", 120, 130);
+    }
+
+    // -------------------------------------------------------------------------
+    // Active context
+    // -------------------------------------------------------------------------
+
+    M5.Display.setTextSize(1);
+    M5.Display.drawString("ACTIVE CONTEXT", 120, 174);
+
+    M5.Display.setTextSize(2);
+    M5.Display.drawString(
+        contexts[current_context].display_name,
+        120,
+        198
+    );
+
+    // -------------------------------------------------------------------------
+    // Node state
+    // -------------------------------------------------------------------------
+
+    M5.Display.setTextSize(1);
+
+    if (nfc_detected) {
+        M5.Display.drawString(
+            "IDENTITY NODE READY",
+            120,
+            224
+        );
+    } else {
+        M5.Display.drawString(
+            "NFC INITIALIZING",
+            120,
+            224
+        );
+    }
+
+    M5.Display.setTextDatum(top_left);
+}
 static void draw_presence_prompt()
 {
     M5.Display.fillScreen(BLACK);
@@ -584,7 +648,12 @@ static void draw_identity_visualization(int profile_index, const char *uid)
     M5.Display.drawString(profile.role, 120, 150);
 
     char context_line[48] = {0};
-    snprintf(context_line, sizeof(context_line), "Context: %s", contexts[current_context]);
+    snprintf(
+    context_line,
+    sizeof(context_line),
+    "Context: %s",
+    contexts[current_context].display_name
+);
     M5.Display.drawString(context_line, 120, 178);
 
     char uid_line[48] = {0};
@@ -676,7 +745,7 @@ static void generate_identity_package()
              profiles[current_profile].id,
              profiles[current_profile].name,
              profiles[current_profile].role,
-             contexts[current_context],
+             contexts[current_context].protocol_name,
              nfc_detected ? "true" : "false",
              nfc_card_present ? "true" : "false",
              package_uid);
@@ -1152,7 +1221,11 @@ static void ui_task(void *param)
                     current_context = CONTEXT_COUNT - 1;
                 }
 
-                ESP_LOGI(TAG, "Context selected: %s", contexts[current_context]);
+                ESP_LOGI(
+    TAG,
+    "Context selected: %s",
+    contexts[current_context].display_name
+);
 
                 request_nfc_quiet_window(pdMS_TO_TICKS(350));
 
