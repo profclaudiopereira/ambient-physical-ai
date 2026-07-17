@@ -4,15 +4,19 @@
 
 ### Purpose
 
-The Expression Node is responsible for making the internal state of the Ambient Physical AI ecosystem visible to users.
+The Expression Node is responsible for making the internal state of the
+Ambient Physical AI ecosystem visible to users.
 
-While the Cognitive Runtime processes information and the Ambient Runtime transforms the environment, the Expression Layer communicates system activity through visual, auditory and future haptic feedback mechanisms.
+While the Cognitive Runtime processes information and the Ambient
+Runtime transforms the environment, the Expression Layer communicates
+system activity through visual, auditory and future haptic feedback
+mechanisms.
 
----
+------------------------------------------------------------------------
 
 # Architectural Position
 
-```text
+``` text
 Presence
 ↓
 Identity
@@ -24,27 +28,33 @@ Ambient Transformation
 Expression
 ```
 
-The Expression Layer represents the final stage of the interaction pipeline.
+The Expression Layer represents the final stage of the interaction
+pipeline.
 
-Its purpose is not to make decisions but to expose system state and responses in a human-friendly manner.
+Its purpose is not to make decisions but to expose system state and
+responses in a human-friendly manner.
 
----
+------------------------------------------------------------------------
 
 # Current Scope
 
-The Expression Node currently contains experimental implementations used to evaluate distributed feedback mechanisms.
+The Expression Node currently contains experimental implementations used
+to evaluate distributed feedback mechanisms.
 
 Repository structure:
 
-```text
+``` text
 expression-node/
 ├── README.md
 └── labs/
     ├── atom-matrix-rgb-status/
+    ├── echo-pyramid-atoms3r-arduino-bringup/
+    ├── echo-pyramid-atoms3r-espidf-bringup/
+    ├── expression-rgb-strip-node/
     └── stickc-plus2-ws2812-status/
 ```
 
----
+------------------------------------------------------------------------
 
 # Experimental Nodes
 
@@ -52,7 +62,7 @@ expression-node/
 
 Hardware:
 
-```text
+``` text
 M5Stack Atom Matrix
 +
 Atomic Battery Base
@@ -60,25 +70,25 @@ Atomic Battery Base
 
 Capabilities:
 
-* Wi-Fi connectivity
-* battery operation
-* RGB matrix visualization
-* distributed deployment
-* runtime state indication
+-   Wi-Fi connectivity
+-   battery operation
+-   RGB matrix visualization
+-   distributed deployment
+-   runtime state indication
 
 Role:
 
-```text
+``` text
 Portable Distributed RGB Feedback Node
 ```
 
----
+------------------------------------------------------------------------
 
 ## StickC Plus 2 + WS2812
 
 Hardware:
 
-```text
+``` text
 M5StickC Plus 2
 +
 WS2812 RGB Strip
@@ -86,33 +96,70 @@ WS2812 RGB Strip
 
 Capabilities:
 
-* Wi-Fi connectivity
-* integrated display
-* RGB visualization
-* battery operation
-* portable deployment
+-   Wi-Fi connectivity
+-   integrated display
+-   RGB visualization
+-   battery operation
+-   portable deployment
 
 Role:
 
-```text
+``` text
 Portable Runtime Feedback Node
 ```
 
----
+------------------------------------------------------------------------
+
+## Echo Pyramid + AtomS3R
+
+Hardware:
+
+``` text
+Voice Pyramid
++
+AtomS3R
+```
+
+Purpose:
+
+-   Arduino bring-up laboratory
+-   ESP-IDF bring-up laboratory
+-   Audio and multimodal expression experiments
+
+------------------------------------------------------------------------
+
+## AtomS3 + RGB Strip
+
+Hardware:
+
+``` text
+M5Stack AtomS3
++
+29-LED Addressable RGB Strip
+```
+
+Purpose:
+
+-   ESP-IDF RGB strip laboratory
+-   Semantic visual feedback
+-   Distributed expression experiments
+
+------------------------------------------------------------------------
 
 # Runtime State Language
 
-The Expression Node implements the Ambient Physical AI Runtime State Language.
+The Expression Node implements the Ambient Physical AI Runtime State
+Language.
 
 Reference:
 
-```text
+``` text
 docs/architecture/APAI_RUNTIME_STATE_LANGUAGE_V1.md
 ```
 
 Typical states:
 
-```text
+``` text
 Idle
 Presence
 Listening
@@ -124,25 +171,25 @@ Offline
 Learning
 ```
 
----
+------------------------------------------------------------------------
 
 # Design Goals
 
 The Expression Layer aims to:
 
-* improve system explainability;
-* provide immediate visual feedback;
-* reduce dependence on logs and dashboards;
-* enhance demonstration quality;
-* support multimodal interaction.
+-   improve system explainability;
+-   provide immediate visual feedback;
+-   reduce dependence on logs and dashboards;
+-   enhance demonstration quality;
+-   support multimodal interaction.
 
----
+------------------------------------------------------------------------
 
 # Future Integrations
 
 Potential future integrations include:
 
-```text
+``` text
 AX630C Cognitive Runtime
 PoE-P4 Ambient Runtime
 StackFlow Events
@@ -152,27 +199,31 @@ Wearable Runtime Node
 StackChan
 ```
 
----
+------------------------------------------------------------------------
 
 # Competition Status
 
 Current classification:
 
-```text
+``` text
 Experimental
 Non-Critical Path
 ```
 
 The Expression Node is not required for the core V1 architecture.
 
-However, it is considered a strong candidate for future demonstration enhancements due to its low implementation complexity and high presentation impact.
+However, it is considered a strong candidate for future demonstration
+enhancements due to its low implementation complexity and high
+presentation impact.
 
----
+------------------------------------------------------------------------
 
 # Vision
 
-Ambient Physical AI should not hide its activity inside processors, logs or network messages.
+Ambient Physical AI should not hide its activity inside processors, logs
+or network messages.
 
-The environment should visibly express what it is sensing, understanding and doing.
+The environment should visibly express what it is sensing, understanding
+and doing.
 
 The Expression Layer is the first step toward that vision.
