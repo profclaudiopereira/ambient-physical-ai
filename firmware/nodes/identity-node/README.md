@@ -1,568 +1,602 @@
-# Identity Node V1
+# Identity Layer — Identity Node V1
 
 ## Ambient Physical AI
 
-### Identity Layer Runtime Node
+### Contextual Identity Gateway
 
-The Identity Node V1 is responsible for detecting, identifying and contextualizing users within the Ambient Physical AI ecosystem.
+The **Identity Node V1** is the identity gateway of the Ambient Physical AI ecosystem.
 
-It transforms physical identity interactions (NFC cards) into structured identity events that can be consumed by higher cognitive layers.
+It receives a semantic presence trigger, prompts the user to present an NFC card, resolves the card UID to a local profile, combines that profile with the selected context and sends an `identity_package` to the Cognitive Runtime Node.
 
-The current implementation is based on M5Dial V1.1 running ESP-IDF and FreeRTOS.
-
----
-
-# Purpose
-
-The Identity Node provides:
+Official hardware:
 
 ```text
-Physical Identity
-↓
-Profile Resolution
-↓
-Context Association
-↓
-Identity Package
-↓
-Future Cognitive Runtime
+M5Stack M5Dial V1.1
++
+WS1850S NFC reader
++
+ESP-IDF
++
+FreeRTOS
++
+Wi-Fi
++
+UDP
 ```
-
-The node is designed to act as the primary identity gateway of the Ambient Physical AI architecture.
 
 ---
 
 # Project Status
 
-Current status:
-
 ```text
 Identity Node V1
-OPERATIONAL BASELINE
+OFFICIAL BASELINE
+VALIDATED
 ```
 
-Runtime architecture stabilized.
+Current milestone:
 
-Core functionality validated.
+```text
+IDENTITY_NODE_V1_MILESTONE_006
+Presence-triggered NFC identity flow validated
+```
 
-Suitable for continued development.
+Validation date:
+
+```text
+2026-07-17
+```
+
+Validated flow:
+
+```text
+Presence Node
+192.168.77.19
+      ↓ UDP unicast :3333
+Identity Node
+192.168.77.7
+      ↓
+Presence event validation
+      ↓
+“Presence detected”
+“Tap NFC card”
+      ↓
+NFC UID
+      ↓
+Profile + Context
+      ↓
+Identity Package
+      ↓ UDP :4444
+AX630C Cognitive Runtime
+```
+
+Result:
+
+```text
+PASS
+```
+
+---
+
+# Responsibilities
+
+The Identity Node provides:
+
+- reception of `presence_event`;
+- user prompt for NFC identification;
+- WS1850S NFC polling;
+- UID acquisition;
+- UID-to-profile mapping;
+- profile visualization;
+- context selection through the M5Dial encoder;
+- touch and buzzer interaction;
+- generation of the semantic `identity_package`;
+- UDP transmission to the AX630C Cognitive Runtime.
+
+The node does not perform LLM inference or ambient decision-making.
 
 ---
 
 # Hardware
 
-## Main Device
+## Processing and Interface
 
 ```text
-M5Dial V1.1
+M5Stack M5Dial V1.1
 ESP32-S3
-```
-
-## Integrated Components
-
-```text
-Touch Display
-Rotary Encoder
+Round display
+Rotary encoder
+Touch input
 Buzzer
-WS1850S NFC Controller
 ```
+
+## NFC
+
+```text
+WS1850S
+I²C address: 0x28
+Validated VersionReg: 0x15
+```
+
+Validated UIDs:
+
+| UID | Profile | Role |
+|---|---|---|
+| `8804DC32` | Claudio | owner |
+| `88048667` | Student | learner |
+| other UID | Unknown | visitor |
 
 ---
 
-# Software Stack
+# FreeRTOS Architecture
 
-## Framework
-
-```text
-ESP-IDF v5.4.2
-```
-
-## Runtime
+The stabilized runtime separates responsibilities:
 
 ```text
-FreeRTOS
-```
-
-## Architecture
-
-```text
-UI Task
-+
-NFC Task
-+
+UDP Listener Task
+        ↓
 Identity Event Queue
-```
-
----
-
-# Architecture Overview
-
-## UI Task
-
-Responsible for:
-
-```text
-M5.update()
-Display
-Touch
-Encoder
-Buzzer
-Context Selector
-Profile Visualization
-Identity Visualization
-```
-
----
-
-## NFC Task
-
-Responsible for:
-
-```text
-WS1850S Initialization
-NFC Polling
-Card Detection
-UID Acquisition
-UID Mapping
-Recovery Logic
-```
-
----
-
-## Identity Event Queue
-
-Communication flow:
-
-```text
-NFC Task
-↓
-Identity Event Queue
-↓
+        ↓
 UI Task
 ```
 
+```text
+NFC Task
+        ↓
+Identity Event Queue
+        ↓
+UI Task
+```
+
+Main ownership rules:
+
+- **UI Task** owns `M5.update()`, display, touch, encoder and buzzer behavior;
+- **NFC Task** owns WS1850S initialization, polling, UID reading and recovery;
+- **UDP Listener Task** owns the Presence Layer receive socket;
+- **Identity Event Queue** transfers semantic events safely to the UI;
+- **I²C mutex** protects short shared-bus transactions.
+
+This architecture avoids returning to a monolithic polling loop.
+
 ---
 
-# Identity Pipeline
+# Repository Structure
 
 ```text
-NFC Card
-↓
-UID
-↓
-Profile Mapping
-↓
-Identity Package
-↓
-Identity Visualization
+firmware/nodes/identity-node/
+├── CMakeLists.txt
+├── README.md
+├── main/
+│   ├── CMakeLists.txt
+│   └── main.cpp
+├── components/
+│   └── ws1850s/
+├── managed_components/
+└── sdkconfig
+```
+
+Generated directories such as `build/` must not be committed.
+
+---
+
+# Presence Event Listener
+
+## Network Configuration
+
+Validated Identity Node address:
+
+```text
+192.168.77.7
+```
+
+Listener:
+
+```text
+Bind address: 0.0.0.0
+UDP port:    3333
+```
+
+The listener waits for Wi-Fi readiness before creating and binding the socket.
+
+Validated startup sequence:
+
+```text
+UDP listener task started
+UDP listener waiting for Wi-Fi...
+Wi-Fi connected. IP: 192.168.77.7
+Wi-Fi ready; creating UDP listener
+UDP listener ready on 0.0.0.0:3333
+UDP listener waiting for packet...
+```
+
+## Accepted Semantic Contract
+
+```json
+{
+  "type": "presence_event",
+  "state": "PRESENT",
+  "distance_mm": 1950,
+  "source": "presence_node_v1"
+}
+```
+
+The current filter validates:
+
+```text
+type   = presence_event
+state  = PRESENT
+source = presence_node_v1
+```
+
+## Validated Reception
+
+```text
+UDP RX: 90 bytes from 192.168.77.19:55876
+UDP payload: {"type":"presence_event","state":"PRESENT","distance_mm":1950,"source":"presence_node_v1"}
+Valid presence_event received
+Presence event received: show NFC prompt
 ```
 
 ---
 
-# Supported Profiles
+# Presence Prompt
 
-## Claudio
+After a valid Presence Layer event, the UI displays:
 
 ```text
-UID:
-8804DC32
-
-Profile:
-Claudio
-
-Role:
-owner
+Presence detected
+Tap NFC card
 ```
+
+The prompt remains active temporarily and emits a short buzzer tone.
+
+If no NFC card is presented during the prompt window, the UI returns to the main Identity Console.
 
 ---
 
-## Student
+# NFC Runtime
+
+The NFC state machine includes:
 
 ```text
-UID:
-88048667
-
-Profile:
-Student
-
-Role:
-learner
+NFC_INIT
+NFC_IDLE
+NFC_POLL
+NFC_READ_UID
+NFC_CARD_PRESENT
+NFC_CARD_REMOVED
+NFC_ERROR
+NFC_COOLDOWN
 ```
 
----
+Validated behavior:
 
-## Unknown
+- WS1850S initialization;
+- VersionReg validation;
+- card polling;
+- UID anti-collision read;
+- card-present confirmation;
+- card-removal confirmation;
+- bounded retries;
+- I²C recovery and polling backoff;
+- mapping of known UIDs;
+- unknown-profile fallback.
 
-Any non-mapped UID is treated as:
-
-```text
-Unknown
-visitor
-```
+`ESP_ERR_NOT_FOUND` during UID acquisition is treated as card absence/removal rather than a critical hardware failure.
 
 ---
 
 # Context Selection
 
-Supported contexts:
+Available contexts:
 
 ```text
 Lab
-Meeting
 Classroom
 Demo
+Meeting
 ```
 
-The active context becomes part of the generated Identity Package.
+The encoder selects the active context.
+
+The selected context is combined with the NFC profile when generating the `identity_package`.
 
 ---
 
-# Identity Package Format
+# Identity Package
 
 Example:
 
 ```json
 {
-  "type":"identity_package",
-  "profile":{
-    "id":"claudio",
-    "name":"Claudio",
-    "role":"owner"
+  "type": "identity_package",
+  "profile": {
+    "id": "claudio",
+    "name": "Claudio",
+    "role": "owner"
   },
-  "context":"Lab",
-  "nfc":{
-    "detected":true,
-    "card_present":true,
-    "uid":"8804DC32"
+  "context": "Lab",
+  "nfc": {
+    "detected": true,
+    "card_present": true,
+    "uid": "8804DC32"
   },
-  "source":"m5dial_identity_console_v1"
+  "source": "m5dial_identity_console_v1"
 }
+```
+
+Destination:
+
+```text
+AX630C Cognitive Runtime
+IP: 192.168.77.15
+UDP port: 4444
+```
+
+Validated profiles:
+
+```text
+Claudio / owner
+Student / learner
+Unknown / visitor
 ```
 
 ---
 
 # Identity Visualization
 
-The Identity Console V1 includes a visual identity presentation layer.
+After a UID is mapped, the display temporarily presents:
 
-Upon successful card detection:
+- profile initial;
+- profile name;
+- role;
+- selected context;
+- UID.
 
-```text
-UID
-↓
-Profile Mapping
-↓
-Full Screen Identity View
-↓
-Return to Main Screen
-```
+The UI then returns to the Identity Console.
 
-Displayed information:
+---
+
+# End-to-End Architecture
 
 ```text
-Profile Name
-Role
-Context
-UID
-```
-
-Profiles:
-
-```text
-Claudio / owner
-Student / learner
-Unknown / visitor
+Human enters the environment
+        ↓
+Presence Node V2
+AtomS3 Lite + LD2410C
+        ↓
+presence_event
+UDP :3333
+        ↓
+Identity Node V1
+M5Dial + WS1850S
+        ↓
+NFC UID
+        ↓
+Profile resolution
+        ↓
+Context selection
+        ↓
+identity_package
+UDP :4444
+        ↓
+AX630C Cognitive Runtime
 ```
 
 ---
 
-# Validated Features
+# Build Requirements
 
-## Runtime
-
-```text
-Boot
-FreeRTOS Startup
-Task Scheduling
-Event Queue
-Recovery Logic
-```
-
-Status:
-
-PASS
-
----
-
-## User Interface
+Validated toolchain:
 
 ```text
-Display
-Touch
-Encoder
-Buzzer
-Context Selection
-Profile Selection
-Identity Visualization
+ESP-IDF 5.4.2
+Target: esp32s3
+CMake
+Ninja
+Git
 ```
 
-Status:
+The M5Dial requires the ESP32-S3 target.
 
-PASS
-
----
-
-## NFC
-
-```text
-WS1850S Detection
-Version Register Read
-Card Detection
-UID Reading
-UID Mapping
-Unknown UID Handling
-Card Removal Detection
-```
-
-Status:
-
-PASS
-
----
-
-## Identity
-
-```text
-Identity Package Generation
-Identity Visualization
-Context Integration
-Profile Mapping
-```
-
-Status:
-
-PASS
-
----
-
-# Known Issues
-
-Occasional errors may still appear:
-
-```text
-ESP_ERR_INVALID_STATE
-
-I2C transaction failed
-```
-
-Observed behavior:
-
-```text
-NFC polling
-↓
-I2C error
-↓
-Recovery
-↓
-WS1850S Reinitialization
-↓
-Normal operation resumes
-```
-
-Current classification:
-
-```text
-NON-BLOCKING
-```
-
-The issue is documented in:
-
-```text
-docs/notes/LAB_WS1850S_001_DRIVER_RELIABILITY_v2.md
-```
-
----
-
-# Build
+From the Identity Node directory:
 
 ```bash
+cd firmware/nodes/identity-node
+idf.py set-target esp32s3
 idf.py build
 ```
 
----
-
-# Flash
+For a clean build:
 
 ```bash
-idf.py flash
+idf.py fullclean
+idf.py set-target esp32s3
+idf.py build
 ```
 
----
-
-# Monitor
-
-```bash
-idf.py monitor
-```
-
-or
-
-```bash
-idf.py flash monitor
-```
-
----
-
-# Validation Procedure
-
-## Basic Runtime
-
-Verify:
+Confirm:
 
 ```text
-Display
-Touch
-Encoder
-Buzzer
+CONFIG_IDF_TARGET="esp32s3"
+```
+
+Do not modify the M5Dial component GPIO definitions to work around a wrong build target. GPIOs 40, 41 and 42 are valid on the ESP32-S3.
+
+---
+
+# Flash and Monitor
+
+```bash
+idf.py -p COMx flash monitor
+```
+
+Exit:
+
+```text
+Ctrl + ]
 ```
 
 ---
+
+# Expected Boot Evidence
+
+```text
+Knob encoder initialized
+NFC state: INIT
+NFC/WS1850S VersionReg: 0x15
+NFC/WS1850S initialized at 0x28
+NFC recovered: NFC ready
+UDP listener waiting for Wi-Fi...
+Wi-Fi connected. IP: 192.168.77.7
+Wi-Fi ready; creating UDP listener
+UDP listener ready on 0.0.0.0:3333
+UDP listener waiting for packet...
+```
+
+---
+
+# Validation Checklist
+
+## Hardware and UI
+
+```text
+Display initialization .............. PASS
+Touch input ......................... PASS
+Encoder input ....................... PASS
+Buzzer output ....................... PASS
+```
 
 ## NFC
 
-Present:
-
 ```text
-8804DC32
+WS1850S initialization .............. PASS
+VersionReg 0x15 ..................... PASS
+UID 8804DC32 ........................ PASS
+UID 88048667 ........................ PASS
+Known-profile mapping ............... PASS
+Unknown-profile fallback ............ PASS
+Recovery/backoff behavior ........... PASS
 ```
 
-Expected:
+## Presence Reception
 
 ```text
-Claudio / owner
+Wi-Fi connection .................... PASS
+Listener waits for Wi-Fi ............ PASS
+Socket creation ..................... PASS
+Bind 0.0.0.0:3333 ................... PASS
+UDP unicast reception ............... PASS
+Payload logging ..................... PASS
+Semantic payload validation ......... PASS
+UI prompt dispatch .................. PASS
 ```
 
----
-
-Present:
+## Cognitive Runtime Output
 
 ```text
-88048667
-```
-
-Expected:
-
-```text
-Student / learner
-```
-
----
-
-Present an unknown card.
-
-Expected:
-
-```text
-Unknown / visitor
+Identity Package generation ......... PASS
+UDP transmission to AX630C :4444 .... PASS
 ```
 
 ---
 
-Remove card.
+# Validated Integration Evidence
 
-Expected:
+Presence Node:
 
 ```text
-NFC card stable: NO
+PRESENT
+UDP presence_event sent: {"type":"presence_event","state":"PRESENT","distance_mm":1950,"source":"presence_node_v1"}
+```
+
+Identity Node:
+
+```text
+UDP RX: 90 bytes from 192.168.77.19:55876
+UDP payload: {"type":"presence_event","state":"PRESENT","distance_mm":1950,"source":"presence_node_v1"}
+Valid presence_event received
+Presence event received: show NFC prompt
+```
+
+This evidence confirms:
+
+```text
+Presence detection ................. PASS
+UDP delivery ....................... PASS
+Identity listener .................. PASS
+Semantic validation ................ PASS
+UI event queue ..................... PASS
+NFC prompt ......................... PASS
 ```
 
 ---
 
-# Future Work
+# NFC Identity Strategy
 
-## Identity Layer
-
-Potential improvements:
+The final project strategy supports two identity-resolution paths:
 
 ```text
-Profile Images
-Avatar Rendering
-NDEF Support
-Extended Identity Registry
+NFC card detected
+      ↓
+NDEF payload available?
+   ├── YES → read NDEF/JSON profile data
+   └── NO  → use UID Mapping
 ```
+
+The current validated firmware baseline uses UID Mapping.
+
+NDEF/JSON resolution remains a planned compatibility path and must not replace or break the validated UID fallback.
 
 ---
 
-## Reliability
+# Current Scope
 
-See:
+Implemented:
 
-```text
-LAB_WS1850S_001_DRIVER_RELIABILITY_v2.md
-```
+- M5Dial UI runtime;
+- FreeRTOS task separation;
+- Identity Event Queue;
+- encoder context selection;
+- WS1850S NFC;
+- UID mapping;
+- identity visualization;
+- Presence Layer UDP listener;
+- Presence-triggered NFC prompt;
+- Identity Package generation;
+- AX630C UDP transmission.
 
-for ongoing NFC driver investigation.
+Deferred or outside this milestone:
 
----
-
-## Presence Layer Integration
-
-Presence sensing is no longer assigned to the M5Dial Identity Node.
-
-Approved Presence Node V1 baseline:
-
-```text
-AtomS3 Lite
-+
-Unit Mini ToF-90 / VL53L0X
-```
-
-The M5Dial remains the Identity Gateway and is responsible for:
-
-```text
-NFC
-Profile Mapping
-Context Selector
-Identity Package
-Identity Visualization
-```
-
-The Presence Node V1 has been validated separately with serial distance measurements.
-
-See:
-
-```text
-docs/notes/PRESENCE_NODE_V1_BRINGUP_001.md
-```
-
-Future integration flow:
-
-```text
-Presence Node
-↓
-Presence Event
-↓
-Identity Node
-↓
-Identity Package
-↓
-Cognitive Runtime
-```
+- full NDEF/JSON parsing;
+- MQTT;
+- direct StackFlow orchestration on the M5Dial;
+- camera-based identity;
+- LLM inference;
+- redesign of the Identity Node architecture.
 
 ---
 
-# Repository Position
+# Security and Configuration Note
+
+Wi-Fi credentials and fixed device IP addresses are currently defined in source code for laboratory validation.
+
+Before public release:
+
+- remove private credentials from tracked files;
+- use a configuration mechanism;
+- document the required network parameters;
+- preserve the semantic UDP contracts.
+
+---
+
+# Final Status
 
 ```text
-Ambient Physical AI
-└── Identity Layer
-    └── Identity Node V1
+IDENTITY NODE V1                        VALIDATED
+WS1850S NFC RUNTIME                     VALIDATED
+PRESENCE EVENT LISTENER                 VALIDATED
+PRESENCE-TRIGGERED NFC PROMPT           VALIDATED
+IDENTITY PACKAGE TO AX630C              VALIDATED
+PRESENCE → IDENTITY INTEGRATION         VALIDATED
 ```
-
-Current maturity:
-
-```text
-Operational Baseline
-```
-
-Ready for continued development and integration with future Ambient Physical AI cognitive and contextual layers.

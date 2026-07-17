@@ -23,7 +23,7 @@ static const char *TAG = "presence-radar";
 #define WIFI_SSID "OKFIBRA-Claudio_2GHz"
 #define WIFI_PASS "15120813"
 
-#define UDP_BROADCAST_IP "192.168.77.255"
+#define UDP_BROADCAST_IP "192.168.77.7"
 #define UDP_PORT 3333
 
 static int udp_socket_fd = -1;

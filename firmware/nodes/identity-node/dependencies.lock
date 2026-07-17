@@ -1,6 +1,6 @@
 dependencies:
   espressif/button:
-    component_hash: 95babe831403e301511a22a4dfcd599abcf32cf72c7f8ac5352a61662363c9ea
+    component_hash: ad64de1d1b8aa139564810a8519b2f1ac275a560a512479ee94c1b6983469d4b
     dependencies:
     - name: espressif/cmake_utilities
       registry_url: https://components.espressif.com
@@ -12,7 +12,7 @@ dependencies:
     source:
       registry_url: https://components.espressif.com
       type: service
-    version: 4.1.7
+    version: 4.2.0
   espressif/cmake_utilities:
     component_hash: 351350613ceafba240b761b4ea991e0f231ac7a9f59a9ee901f751bddc0bb18f
     dependencies:
@@ -76,7 +76,7 @@ dependencies:
       type: service
     version: 2.8.0~1
   espressif/knob:
-    component_hash: 138ed090b4c9090a0a678f695b9d1884b368130c729b7333ed35bd7f4e8da80e
+    component_hash: b56694054cd34a683ac2a6f3661963ba00b1dab741a4f3bb59ed6666cbc9f3fb
     dependencies:
     - name: espressif/cmake_utilities
       registry_url: https://components.espressif.com
@@ -88,7 +88,7 @@ dependencies:
     source:
       registry_url: https://components.espressif.com
       type: service
-    version: 1.0.2
+    version: 1.1.0
   espressif/m5dial:
     component_hash: 9ccecdfcc0db4633eed129c97fe8fec77e6d5d128191e9bc4bef80b7ae66cfef
     dependencies:
@@ -144,12 +144,12 @@ dependencies:
       type: service
     version: 0.2.17
   m5stack/m5gfx:
-    component_hash: 96695547f4403f0864a637325b63b37276233999fcbdd5e485f4e71fd2210020
+    component_hash: 9d500616e26fa94f90819df866321f36a21b5bd66e01ae7a62860b21a295848f
     dependencies: []
     source:
       registry_url: https://components.espressif.com
       type: service
-    version: 0.2.23
+    version: 0.2.25
 direct_dependencies:
 - espressif/m5dial
 - idf

@@ -28,6 +28,7 @@
 #include "M5Unified.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include <errno.h>
 
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -335,13 +336,42 @@ static void udp_listener_task(void *param)
 {
     (void)param;
 
+    ESP_LOGI(TAG, "UDP listener task started");
+
+    while (!wifi_connected) {
+        ESP_LOGI(TAG, "UDP listener waiting for Wi-Fi...");
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+
+    ESP_LOGI(TAG, "Wi-Fi ready; creating UDP listener");
+
     char rx_buffer[UDP_RX_BUFFER_SIZE] = {0};
 
-    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
     if (sock < 0) {
-        ESP_LOGE(TAG, "Unable to create UDP listener socket");
+        ESP_LOGE(
+            TAG,
+            "Unable to create UDP listener socket, errno=%d",
+            errno
+        );
         vTaskDelete(NULL);
         return;
+    }
+
+    int reuse_addr = 1;
+
+    if (setsockopt(
+            sock,
+            SOL_SOCKET,
+            SO_REUSEADDR,
+            &reuse_addr,
+            sizeof(reuse_addr)) < 0) {
+        ESP_LOGW(
+            TAG,
+            "SO_REUSEADDR failed, errno=%d",
+            errno
+        );
     }
 
     struct sockaddr_in listen_addr = {};
@@ -349,48 +379,95 @@ static void udp_listener_task(void *param)
     listen_addr.sin_port = htons(UDP_LISTEN_PORT);
     listen_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    int ret = bind(sock, (struct sockaddr *)&listen_addr, sizeof(listen_addr));
+    int ret = bind(
+        sock,
+        reinterpret_cast<struct sockaddr *>(&listen_addr),
+        sizeof(listen_addr)
+    );
+
     if (ret < 0) {
-        ESP_LOGE(TAG, "UDP bind failed on port %d", UDP_LISTEN_PORT);
+        ESP_LOGE(
+            TAG,
+            "UDP bind failed on 0.0.0.0:%d, errno=%d",
+            UDP_LISTEN_PORT,
+            errno
+        );
+
         close(sock);
         vTaskDelete(NULL);
         return;
     }
 
-    ESP_LOGI(TAG, "UDP listener ready on port %d", UDP_LISTEN_PORT);
+    ESP_LOGI(
+        TAG,
+        "UDP listener ready on 0.0.0.0:%d",
+        UDP_LISTEN_PORT
+    );
 
     while (true) {
         struct sockaddr_in source_addr = {};
-        socklen_t socklen = sizeof(source_addr);
+        socklen_t source_addr_len = sizeof(source_addr);
+
+        memset(rx_buffer, 0, sizeof(rx_buffer));
+
+        ESP_LOGI(TAG, "UDP listener waiting for packet...");
 
         int len = recvfrom(
             sock,
             rx_buffer,
             sizeof(rx_buffer) - 1,
             0,
-            (struct sockaddr *)&source_addr,
-            &socklen
+            reinterpret_cast<struct sockaddr *>(&source_addr),
+            &source_addr_len
         );
 
         if (len < 0) {
-            ESP_LOGW(TAG, "UDP receive failed");
+            ESP_LOGW(
+                TAG,
+                "UDP recvfrom failed, errno=%d",
+                errno
+            );
+
             vTaskDelay(pdMS_TO_TICKS(100));
             continue;
         }
 
         rx_buffer[len] = '\0';
 
-        ESP_LOGI(TAG, "UDP RX from " IPSTR ":%d -> %s",
-                 IP2STR((ip4_addr_t *)&source_addr.sin_addr.s_addr),
-                 ntohs(source_addr.sin_port),
-                 rx_buffer);
+        char source_ip[INET_ADDRSTRLEN] = {0};
+
+        inet_ntop(
+            AF_INET,
+            &source_addr.sin_addr,
+            source_ip,
+            sizeof(source_ip)
+        );
+
+        ESP_LOGI(
+            TAG,
+            "UDP RX: %d bytes from %s:%u",
+            len,
+            source_ip,
+            static_cast<unsigned>(ntohs(source_addr.sin_port))
+        );
+
+        ESP_LOGI(TAG, "UDP payload: %s", rx_buffer);
 
         if (is_presence_event_payload(rx_buffer)) {
-            send_simple_event(EVENT_PRESENCE_RECEIVED, "Presence detected");
+            ESP_LOGI(TAG, "Valid presence_event received");
+
+            send_simple_event(
+                EVENT_PRESENCE_RECEIVED,
+                "Presence detected"
+            );
+        } else {
+            ESP_LOGW(
+                TAG,
+                "UDP payload received but rejected by presence filter"
+            );
         }
     }
 }
-
 // -----------------------------------------------------------------------------
 // UI
 // -----------------------------------------------------------------------------
