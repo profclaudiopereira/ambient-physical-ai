@@ -342,3 +342,65 @@ Current validated features:
 # Future Evolution
 
 The current implementation validates the complete Identity Layer while keeping the architecture compatible with future profile synchronization, NDEF-based identities and centralized profile management provided by the Cognitive Runtime.
+
+
+---
+
+# Identity Package V1.1
+
+The Identity Layer now officially produces **Identity Package Specification V1.1**.
+
+This update introduces a backward-compatible evolution of the identity contract used by the Ambient Physical AI ecosystem.
+
+## Changes
+
+- Added `contract_version`
+- Added `current_context`
+- Preserved legacy `context` for backward compatibility
+- Maintained compatibility with Identity Package V1.0 consumers
+
+## Validation Status
+
+The Identity Package V1.1 has been validated through the complete runtime pipeline:
+
+```text
+Identity Node
+        ↓
+UDP Identity Package V1.1
+        ↓
+AX630C Identity UDP Listener
+        ↓
+Context Builder
+        ↓
+Context Package
+        ↓
+Human-readable Context
+        ↓
+StackChan Notification
+```
+
+Validation results:
+
+- Identity Node produces Identity Package V1.1
+- AX630C Identity UDP Listener recognizes the new contract
+- Context Builder automatically prioritizes `current_context`
+- Legacy `context` remains supported
+- End-to-end interoperability successfully validated
+
+Current implementation status:
+
+```text
+Producer:
+Identity Package V1.1
+
+Consumer:
+Identity UDP Listener V1.1 Aware
+
+Context Builder:
+V1.1 Compatible
+
+Compatibility:
+Identity Package V1.0 + V1.1
+```
+
+The Identity Layer contract is now considered stable for Version 1 and ready for system integration with the Cognitive Runtime.
