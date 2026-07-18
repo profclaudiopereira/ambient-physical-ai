@@ -4,194 +4,294 @@
 
 ### Identity Layer Runtime Node
 
-The Identity Node is responsible for authenticating users in the Ambient Physical AI ecosystem.
+The Identity Node is responsible for transforming a physical identifier into a semantic digital identity inside the Ambient Physical AI ecosystem.
 
-It receives presence notifications from the Presence Node, requests user identification through NFC, associates the detected card with a local user profile, generates an Identity Package and sends it to the Cognitive Runtime.
-
----
-
-# Purpose
-
-The Identity Node provides:
-
-```text
-Presence Event
-        ↓
-NFC Authentication
-        ↓
-Profile Identification
-        ↓
-Active Context
-        ↓
-Identity Package
-        ↓
-Cognitive Runtime
-```
-
-The node is intentionally focused on identity management and user context.
+This node bridges the physical world and the cognitive runtime by recognizing users, selecting the active operational context and producing standardized identity packages for the remaining distributed system.
 
 ---
 
-# Current Status
+# Mission
+
+The Identity Node performs five primary responsibilities:
+
+- Detect NFC cards
+- Resolve user identity
+- Select operational context
+- Generate identity packages
+- Present identity through a graphical interface
+
+---
+
+# Current Project Status
 
 ```text
 Identity Node V1
+
 VALIDATED
 ```
 
 Current milestone:
 
 ```text
-IDENTITY_NODE_V1_MILESTONE_009
+IDENTITY_NODE_V1_MILESTONE_002
 
-• Presence Integration
-• NFC Authentication
-• Profile Mapping
-• Context Selection
-• Identity Package
-• UDP Communication
-• Circular UI V1
+Identity visualization with profile images validated.
 ```
 
 ---
 
-# Hardware Platform
+# Hardware
+
+Current validated hardware:
 
 ```text
-M5Stack M5Dial V1.1
+M5Dial V1.1
+
+ESP32-S3
+↓
+Round IPS Display
+↓
+Rotary Encoder
+↓
+Capacitive Touch
+↓
+Speaker
+↓
+WS1850S NFC Reader
 ```
 
-Main peripherals:
+---
 
-- ESP32-S3
-- Circular Touch Display
-- Rotary Encoder
-- Speaker
-- WS1850S NFC Reader
+# Runtime Architecture
+
+```
+                 Presence Node
+                       │
+             UDP presence_event
+                       │
+                       ▼
+              Identity Node
+                       │
+          ┌────────────┴────────────┐
+          │                         │
+    Identity Visualization    Identity Package
+          │                         │
+          └────────────┬────────────┘
+                       │
+                 UDP JSON
+                       │
+                       ▼
+           Cognitive Runtime (AX630C)
+```
 
 ---
 
 # Software Architecture
 
-Main components:
+The implementation is organized around two independent FreeRTOS tasks.
 
-- FreeRTOS Tasks
-- Identity Event Queue
-- NFC Manager
-- Profile Manager
-- Context Manager
-- UDP Communication
-- User Interface
+## UI Task
+
+Responsible for:
+
+- display
+- touch
+- encoder
+- buzzer
+- context visualization
+- profile visualization
+
+## NFC Task
+
+Responsible for:
+
+- WS1850S communication
+- card polling
+- UID reading
+- recovery
+- event generation
+
+Both tasks communicate through an Identity Event Queue, keeping the user interface isolated from NFC timing requirements. This separation is reflected directly in the current implementation. :contentReference[oaicite:2]{index=2}
 
 ---
 
 # Identity Flow
 
-```text
-Presence Node
-        │
-        ▼
-Presence Event
-        │
-        ▼
-Show NFC Prompt
-        │
-        ▼
-Read NFC Card
-        │
-        ▼
-UID Mapping
-        │
-        ▼
-Profile Selection
-        │
-        ▼
-Generate Identity Package
-        │
-        ▼
-Send UDP
-        │
-        ▼
-AX630C Cognitive Runtime
 ```
-
----
-
-# Supported Profiles
-
-Current built-in profiles:
-
-```text
-Unknown
-Claudio
-Student
-```
-
-Unknown cards are handled safely as visitor profiles.
-
----
-
-# Available Contexts
-
-Official Version 1 contexts:
-
-```text
-Lab
-Research
-Classroom
-Demo
-Meeting
-```
-
-Contexts are selected locally using the rotary encoder.
-
-The current implementation separates:
-
-- Protocol identifier (`protocol_name`)
-- Display name (`display_name`)
-
-This allows future UI localization without changing the communication protocol.
-
----
-
-# Identity Package
-
-The Identity Package is transmitted to the Cognitive Runtime using UDP.
-
-Example:
-
-```json
-{
-  "type":"identity_package",
-  "profile":{
-    "id":"claudio",
-    "name":"Claudio",
-    "role":"owner"
-  },
-  "context":"Research",
-  "nfc":{
-    "detected":true,
-    "card_present":true,
-    "uid":"8804DC32"
-  },
-  "source":"m5dial_identity_console_v1"
-}
+Presence detected
+        │
+        ▼
+Tap NFC Card
+        │
+        ▼
+Read UID
+        │
+        ▼
+Profile Resolution
+        │
+        ▼
+Context Association
+        │
+        ▼
+Identity Visualization
+        │
+        ▼
+Identity Package
+        │
+        ▼
+AX630C
 ```
 
 ---
 
 # User Interface
 
-Current interface provides:
+The Identity Node currently provides three operating screens:
 
-- Active profile
-- User role
-- Active context
-- Node status
-- Presence prompt
+- Identity Console
+- Presence Prompt
+- Identity Visualization
+
+The visualization screen presents:
+
+- profile image
+- user name
+- role
+- active context
+- NFC UID
+
+---
+
+# Profile Image Manager
+
+Version 1 introduces a dedicated abstraction named:
+
+```text
+ProfileImageManager
+```
+
+The graphical interface never accesses image data directly.
+
+Instead it simply requests:
+
+```cpp
+ProfileImageManager::drawProfile(profile.id, x, y);
+```
+
+Current implementation stores embedded RGB565 avatars.
+
+This abstraction intentionally prepares the project for future synchronized profile storage without modifying the user interface.
+
+---
+
+# Current Profiles
+
+Validated profiles:
+
+- Claudio
+- Hermínio
+- Mariana
+- Student
+- Unknown
+
+Each profile is mapped to an independent NFC card and rendered with its own avatar.
+
+---
+
+# Context Selection
+
+The rotary encoder selects the active operating context.
+
+Current contexts include:
+
+- Lab
+- Research
+- Classroom
+- Demo
+- Meeting
+
+The selected context becomes part of every generated identity package.
+
+---
+
+# Presence Integration
+
+The Identity Node continuously listens for UDP `presence_event` messages.
+
+When presence is detected:
+
+```
+Presence detected
+        ↓
+Tap NFC card
+```
+
+is presented to the user before identity acquisition begins. :contentReference[oaicite:3]{index=3}
+
+---
+
+# Identity Package
+
+After successful identification the node generates a JSON identity package containing:
+
+- profile
+- role
+- context
+- UID
+- source
+
+The package is transmitted to the Cognitive Runtime over UDP.
+
+---
+
+# Current Engineering Status
+
+Validated:
+
+- FreeRTOS runtime
+- Shared I2C protection
+- NFC communication
+- UID mapping
+- Five user profiles
+- Context selection
 - Identity visualization
+- Profile images
+- UDP communication
+- Presence integration
+- Identity Package generation
 
-The interface is optimized for the circular display of the M5Dial.
+---
+
+# Current Limitations
+
+Current implementation intentionally uses embedded RGB565 profile images.
+
+This decision was adopted to validate the complete identity pipeline before implementing centralized profile synchronization.
+
+The future implementation will preserve the same ProfileImageManager abstraction while replacing embedded images with synchronized profile assets provided by the Cognitive Runtime.
+
+---
+
+# Repository Structure
+
+```text
+identity-node/
+
+components/
+    ws1850s/
+
+main/
+    main.cpp
+    profile_image_manager.cpp
+    profile_image_manager.h
+
+    profile_images/
+        claudio.h
+        herminio.h
+        mariana.h
+        student.h
+        unknown.h
+```
 
 ---
 
@@ -211,72 +311,34 @@ idf.py flash monitor
 
 ---
 
-# Validation Checklist
-
-The following items have been validated:
-
-- NFC detection
-- UID acquisition
-- Profile mapping
-- Presence integration
-- Context selection
-- Identity Package generation
-- UDP transmission
-- AX630C communication
-- Circular UI
-
----
-
-# Repository Structure
+# Validation Status
 
 ```text
-identity-node/
-├── main/
-├── components/
-├── CMakeLists.txt
-├── sdkconfig
-└── README.md
+Identity Layer
+
+VALIDATED
 ```
 
----
+Current validated features:
 
-# Related Components
+✔ NFC
 
-This node communicates with:
+✔ Five mapped profiles
 
-```text
-Presence Node
-        │
-        ▼
-Identity Node
-        │
-        ▼
-Cognitive Runtime (AX630C)
-        │
-        ▼
-Ambient Runtime
-        │
-        ▼
-Expression Layer
-```
+✔ Context selection
+
+✔ Identity visualization
+
+✔ Profile avatars
+
+✔ Presence integration
+
+✔ UDP identity package
+
+✔ AX630C integration interface
 
 ---
 
-# Documentation
+# Future Evolution
 
-Additional engineering documentation is available in the project's `docs/` directory, including:
-
-- System Architecture
-- Engineering Decisions
-- Integration Notes
-- Discovery Reports
-
----
-
-# Project
-
-Ambient Physical AI
-
-Distributed Cognitive Ecosystem Powered by StackFlow
-
-M5Stack Global Innovation Contest 2026
+The current implementation validates the complete Identity Layer while keeping the architecture compatible with future profile synchronization, NDEF-based identities and centralized profile management provided by the Cognitive Runtime.

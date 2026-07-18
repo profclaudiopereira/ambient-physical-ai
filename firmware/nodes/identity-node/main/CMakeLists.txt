@@ -1,6 +1,11 @@
 idf_component_register(
-    SRCS "main.cpp"
-    INCLUDE_DIRS "."
+    SRCS
+        "main.cpp"
+        "profile_image_manager.cpp"
+
+    INCLUDE_DIRS
+        "."
+
     REQUIRES
         ws1850s
         esp_wifi

@@ -29,6 +29,7 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include <errno.h>
+#include "profile_image_manager.h"
 
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -78,8 +79,10 @@ struct Profile {
 
 static const Profile profiles[] = {
     {"unknown", "Unknown", "visitor"},
-    {"claudio", "Claudio", "owner"},
+    {"claudio", "Cláudio", "owner"},
     {"student", "Student", "learner"},
+    {"mariana", "Mariana", "learner"},
+    {"herminio", "Hermínio", "learner"},
 };
 
 enum ContextId {
@@ -238,6 +241,13 @@ static int find_profile_by_uid(const char *uid)
         return 2;
     }
 
+    if (strcmp(uid, "8804D225") == 0) {
+        return 3;
+   }
+
+    if (strcmp(uid, "8804EB36") == 0) {
+       return 4;
+   }
     return 0;
 }
 
@@ -510,19 +520,11 @@ static void draw_console()
     // Active profile
     // -------------------------------------------------------------------------
 
-    const char *initial = "?";
-
-    if (strcmp(profile.id, "claudio") == 0) {
-        initial = "C";
-    } else if (strcmp(profile.id, "student") == 0) {
-        initial = "S";
-    }
-
-    M5.Display.fillCircle(120, 85, 29, DARKGREY);
-    M5.Display.drawCircle(120, 85, 30, WHITE);
-
-    M5.Display.setTextSize(3);
-    M5.Display.drawString(initial, 120, 85);
+    ProfileImageManager::drawProfile(
+        profile.id,
+        120,
+        85
+    );
 
     if (has_active_profile) {
         M5.Display.setTextSize(2);
@@ -618,13 +620,6 @@ static void draw_identity_visualization(int profile_index, const char *uid)
     }
 
     const Profile &profile = profiles[profile_index];
-    const char *initial = "?";
-
-    if (strcmp(profile.id, "claudio") == 0) {
-        initial = "C";
-    } else if (strcmp(profile.id, "student") == 0) {
-        initial = "S";
-    }
 
     M5.Display.fillScreen(BLACK);
 
@@ -635,11 +630,11 @@ static void draw_identity_visualization(int profile_index, const char *uid)
 
     M5.Display.drawRoundRect(15, 45, 210, 185, 14, WHITE);
 
-    M5.Display.fillCircle(120, 82, 28, DARKGREY);
-    M5.Display.drawCircle(120, 82, 29, WHITE);
-
-    M5.Display.setTextSize(3);
-    M5.Display.drawString(initial, 120, 82);
+    ProfileImageManager::drawProfile(
+        profile.id,
+        120,
+        82
+    );
 
     M5.Display.setTextSize(2);
     M5.Display.drawString(profile.name, 120, 125);
@@ -1167,6 +1162,8 @@ static void ui_task(void *param)
 
     auto cfg = M5.config();
     M5.begin(cfg);
+
+    ProfileImageManager::init();
 
     ESP_LOGI(TAG, "Identity Console V1");
     ESP_LOGI(TAG, "FreeRTOS runtime stabilized baseline V6 + identity visualization");
