@@ -39,8 +39,13 @@ while True:
 
         print("Identity Package received")
         print("Timestamp:", datetime.now().isoformat())
+        print("Contract Version:", payload.get("contract_version", "1.0"))
         print("Profile:", payload.get("profile"))
-        print("Context:", payload.get("context"))
+        print(
+            "Current Context:",
+            payload.get("current_context", payload.get("context")),
+        )
+        print("Legacy Context:", payload.get("context"))
         print("UID:", payload.get("nfc", {}).get("uid"))
         print("Source:", payload.get("source"))
 

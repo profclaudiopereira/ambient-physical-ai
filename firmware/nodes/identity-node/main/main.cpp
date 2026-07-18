@@ -736,10 +736,17 @@ static void generate_identity_package()
 
     snprintf(identity_json,
              sizeof(identity_json),
-             "{\"type\":\"identity_package\",\"profile\":{\"id\":\"%s\",\"name\":\"%s\",\"role\":\"%s\"},\"context\":\"%s\",\"nfc\":{\"detected\":%s,\"card_present\":%s,\"uid\":\"%s\"},\"source\":\"m5dial_identity_console_v1\"}",
+             "{\"type\":\"identity_package\","
+             "\"contract_version\":\"1.1\","
+             "\"profile\":{\"id\":\"%s\",\"name\":\"%s\",\"role\":\"%s\"},"
+             "\"context\":\"%s\","
+             "\"current_context\":\"%s\","
+             "\"nfc\":{\"detected\":%s,\"card_present\":%s,\"uid\":\"%s\"},"
+             "\"source\":\"m5dial_identity_console_v1\"}",
              profiles[current_profile].id,
              profiles[current_profile].name,
              profiles[current_profile].role,
+             contexts[current_context].protocol_name,
              contexts[current_context].protocol_name,
              nfc_detected ? "true" : "false",
              nfc_card_present ? "true" : "false",
