@@ -20,7 +20,10 @@ def build_context_package(identity_package, presence_event=None, environment=Non
     profile = identity_package.get("profile", {})
     nfc = identity_package.get("nfc", {})
 
-    environment_context = identity_package.get("context", "Unknown")
+    environment_context = identity_package.get(
+        "current_context",
+        identity_package.get("context", "Unknown"),
+    )
     now = _utc_now_iso()
 
     context_package = {
