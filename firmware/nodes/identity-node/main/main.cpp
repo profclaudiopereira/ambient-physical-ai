@@ -81,8 +81,8 @@ static const Profile profiles[] = {
     {"unknown", "Unknown", "visitor"},
     {"claudio", "Cláudio", "owner"},
     {"student", "Student", "learner"},
-    {"mariana", "Mariana", "learner"},
-    {"herminio", "Hermínio", "learner"},
+    {"mariana", "Mariana", "researcher"},
+    {"herminio", "Hermínio", "researcher"},
 };
 
 enum ContextId {
