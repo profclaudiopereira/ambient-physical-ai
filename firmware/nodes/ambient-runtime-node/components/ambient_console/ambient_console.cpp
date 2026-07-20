@@ -520,6 +520,42 @@ draw_text(
     2,
     COLOR_TEXT
 );
+
+/*
+ * COGNITIVE
+ */
+draw_horizontal_line(
+    40,
+    920,
+    640,
+    2,
+    COLOR_TEXT
+);
+
+draw_text(
+    40,
+    950,
+    "COGNITIVE",
+    2,
+    COLOR_TEXT
+);
+
+snprintf(
+    value,
+    sizeof(value),
+    "STATE ............ %s",
+    data->cognitive_connected
+        ? "CONNECTED"
+        : "WAITING"
+);
+
+draw_text(
+    40,
+    995,
+    value,
+    2,
+    COLOR_TEXT
+);
     return tab5_platform_draw_bitmap(
         0,
         0,
