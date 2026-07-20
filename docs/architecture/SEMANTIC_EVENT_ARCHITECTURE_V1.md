@@ -9,7 +9,7 @@
 
 # Purpose
 
-This document freezes the Phase 1 architecture for introducing Semantic
+This document freezes the V1 architecture for introducing Semantic
 Events into the Cognitive Runtime. It records the engineering decisions
 reached after auditing both the architecture documents and the current
 implementation.
