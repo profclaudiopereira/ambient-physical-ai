@@ -4,6 +4,8 @@ import json
 import os
 import socket
 
+from semantic_event import is_semantic_event
+
 
 class StackChanNotifier:
     def __init__(self):
@@ -11,16 +13,21 @@ class StackChanNotifier:
         self.host = os.getenv("STACKCHAN_HOST", "")
         self.port = int(os.getenv("STACKCHAN_PORT", "0"))
 
-    def notify(self, message, context):
+    def notify(self, semantic_event):
+        """
+        Consume a normalized Semantic Event V1.
+
+        Returns:
+            True when sent through UDP.
+            False when only prepared in dry-run mode.
+        """
+        if not is_semantic_event(semantic_event):
+            raise ValueError("invalid Semantic Event V1")
+
         payload = {
             "type": "stackchan_notification",
-            "message": message,
+            "semantic_event": semantic_event,
             "source": "ax630c_cognitive_runtime",
-           "context": {
-                "active_user": context.get("who", {}).get("name"),
-                "role": context.get("who", {}).get("role"),
-                "environment_context": context.get("where", {}).get("environment"),
-            },
         }
 
         if self.mode == "udp":

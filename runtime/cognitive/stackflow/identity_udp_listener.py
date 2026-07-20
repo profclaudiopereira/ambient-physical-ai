@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-import socket
 import json
+import socket
 from datetime import datetime
 
 from context_builder import build_context, build_human_message
-from context_registry import update_context, get_current_context
+from context_registry import get_current_context, update_context
+from semantic_dispatcher import SemanticDispatcher
+from semantic_event_generator import generate_semantic_events
 from stackchan_notifier import StackChanNotifier
 
 
@@ -18,10 +20,15 @@ sock.bind((UDP_IP, UDP_PORT))
 
 notifier = StackChanNotifier()
 
+dispatcher = SemanticDispatcher()
+dispatcher.register_adapter("stackchan", notifier.notify)
+
 print("====================================")
 print("AX630C Identity UDP Listener")
 print(f"Listening on {UDP_IP}:{UDP_PORT}")
 print("Cognitive Context Builder: ENABLED")
+print("Semantic Event Generator: ENABLED")
+print("Semantic Dispatcher: ENABLED")
 print("StackChan Notifier: ENABLED")
 print("====================================")
 
@@ -49,11 +56,12 @@ while True:
         print("UID:", payload.get("nfc", {}).get("uid"))
         print("Source:", payload.get("source"))
 
-        
         context = build_context(payload)
         update_context(context)
         current_context = get_current_context()
+
         message = build_human_message(current_context)
+        semantic_events = generate_semantic_events(current_context)
 
         print("\nContext object generated:")
         print(json.dumps(current_context, ensure_ascii=False, indent=2))
@@ -61,15 +69,22 @@ while True:
         print("\nHuman-readable message generated:")
         print(message)
 
-        delivered = notifier.notify(message, current_context)
+        print("\nSemantic Events generated:")
+        print(json.dumps(semantic_events, ensure_ascii=False, indent=2))
 
-        if delivered:
-            print("StackChan notification sent: PASS")
-        else:
-            print("StackChan notification prepared: PASS")
-            print("StackChan reaction observed: PENDING")
+        for semantic_event in semantic_events:
+            dispatch_results = dispatcher.dispatch(semantic_event)
 
-    except Exception as e:
+            print("\nSemantic Event dispatch results:")
+            print(json.dumps(dispatch_results, ensure_ascii=False, indent=2))
+
+            if dispatch_results.get("stackchan"):
+                print("StackChan notification sent: PASS")
+            else:
+                print("StackChan notification prepared: PASS")
+                print("StackChan reaction observed: PENDING")
+
+    except Exception as exc:
         print("JSON parse error or listener error")
         print("Raw:", raw)
-        print("Error:", e)
+        print("Error:", exc)
