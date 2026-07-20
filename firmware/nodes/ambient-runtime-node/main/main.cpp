@@ -17,6 +17,7 @@
 #include "oled_sh1107.h"
 #include "pahub.h"
 #include "tab5_platform.h"
+#include "semantic_event_receiver.h"
 
 static const char *TAG = "ambient-runtime";
 
@@ -43,6 +44,7 @@ extern "C" void app_main(void)
     ESP_ERROR_CHECK(ambient_console_init());
     ESP_ERROR_CHECK(tab5_platform_backlight_set(100));
     ESP_ERROR_CHECK(ambient_network_init());
+    ESP_ERROR_CHECK(semantic_event_receiver_init());
 
     i2c_master_bus_handle_t bus =
         tab5_platform_get_port_a_i2c_bus();
@@ -231,6 +233,9 @@ extern "C" void app_main(void)
         ambient_network_status_t network =
             ambient_network_get_status();
 
+        semantic_event_receiver_status_t semantic_receiver =
+            semantic_event_receiver_get_status();    
+
         /*
          * -----------------------------------------------------
          * Ambient Runtime Console
@@ -281,7 +286,7 @@ extern "C" void app_main(void)
             network.rssi_dbm;
 
         console.cognitive_connected =
-            false;
+    	    semantic_receiver.event_received;
 
         console.pahub_ok =
             pahub_ok;

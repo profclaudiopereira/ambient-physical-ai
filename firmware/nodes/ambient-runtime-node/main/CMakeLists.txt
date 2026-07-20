@@ -10,4 +10,5 @@ idf_component_register(
         dlight
         ambient_console
         ambient_network
+        semantic_event_receiver
 )
