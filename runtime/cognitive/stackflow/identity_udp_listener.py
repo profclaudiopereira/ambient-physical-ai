@@ -1,24 +1,72 @@
 #!/usr/bin/env python3
+"""
+Identity UDP Listener for the StackFlow Cognitive Runtime.
+
+This module is the current entry point for the runtime integration process.
+
+Responsibilities:
+    - Receive Identity Packages through UDP.
+    - Build and register the current cognitive context.
+    - Generate Semantic Events from the registered context.
+    - Dispatch Semantic Events to configured output adapters.
+    - Start the StackChan MCP transport in the same Python process.
+
+The MCP server intentionally runs in a background thread. Running both
+components in the same process allows them to share the process-local
+Context Registry implemented by context_registry.py.
+"""
 
 import json
 import socket
 from datetime import datetime
+from threading import Thread
 
 from context_builder import build_context, build_human_message
 from context_registry import get_current_context, update_context
 from rgb_strip_notifier import RGBStripNotifier
 from semantic_dispatcher import SemanticDispatcher
 from semantic_event_generator import generate_semantic_events
+from stackchan_mcp_server import run_mcp_server
 from stackchan_notifier import StackChanNotifier
-
 
 
 UDP_IP = "0.0.0.0"
 UDP_PORT = 4444
 
 
+def start_mcp_server_thread() -> Thread:
+    """
+    Start the StackChan MCP server in a background daemon thread.
+
+    The MCP transport must execute in this process because the current
+    Context Registry is an in-memory, process-local component. Starting the
+    MCP server as a separate operating-system process would create an
+    independent Registry instance and Semantic Tools would continue returning
+    an empty context.
+
+    A daemon thread is appropriate for the current runtime milestone because
+    its lifetime is bound to the main Identity UDP Listener process.
+    """
+
+    thread = Thread(
+        target=run_mcp_server,
+        name="stackchan-mcp-server",
+        daemon=True,
+    )
+    thread.start()
+
+    return thread
+
+
+# Start the MCP transport before entering the blocking UDP receive loop.
+# The STACKCHAN_MCP_URL environment variable must be configured in the shell
+# used to start this process.
+mcp_thread = start_mcp_server_thread()
+
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((UDP_IP, UDP_PORT))
+
 
 notifier = StackChanNotifier()
 rgb_strip_notifier = RGBStripNotifier()
@@ -26,6 +74,7 @@ rgb_strip_notifier = RGBStripNotifier()
 dispatcher = SemanticDispatcher()
 dispatcher.register_adapter("stackchan", notifier.notify)
 dispatcher.register_adapter("rgb_strip", rgb_strip_notifier.notify)
+
 
 print("====================================")
 print("AX630C Identity UDP Listener")
@@ -35,7 +84,10 @@ print("Semantic Event Generator: ENABLED")
 print("Semantic Dispatcher: ENABLED")
 print("StackChan Notifier: ENABLED")
 print("RGB Strip Notifier: ENABLED")
+print("StackChan MCP Server: STARTING")
+print("Shared Context Registry: ENABLED")
 print("====================================")
+
 
 while True:
     data, addr = sock.recvfrom(4096)
@@ -61,7 +113,13 @@ while True:
         print("UID:", payload.get("nfc", {}).get("uid"))
         print("Source:", payload.get("source"))
 
+        # The Context Builder normalizes the Identity Package into the
+        # canonical context representation consumed by semantic services.
         context = build_context(payload)
+
+        # update_context() replaces the process-local current context. The MCP
+        # background thread reads this same Registry instance when a Tool is
+        # invoked by the XiaoZhi broker.
         update_context(context)
         current_context = get_current_context()
 
@@ -92,7 +150,7 @@ while True:
             if dispatch_results.get("rgb_strip"):
                 print("RGB Strip semantic event sent: PASS")
             else:
-                print("RGB Strip semantic event sent: FAIL")    
+                print("RGB Strip semantic event sent: FAIL")
 
     except Exception as exc:
         print("JSON parse error or listener error")

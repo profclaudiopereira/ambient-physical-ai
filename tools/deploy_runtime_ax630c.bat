@@ -1,8 +1,6 @@
 @echo off
 cd /d "%~dp0.."
 
-@echo off
-
 echo ============================================
 echo Ambient Physical AI
 echo AX630C Cognitive Runtime Deploy
@@ -35,6 +33,9 @@ scp runtime\cognitive\stackflow\semantic_services.py %HOST%:%REMOTE%/
 
 echo Deploying Semantic MCP Tools...
 scp runtime\cognitive\stackflow\semantic_mcp_tools.py %HOST%:%REMOTE%/
+
+echo Deploying StackChan MCP Server...
+scp runtime\cognitive\stackflow\stackchan_mcp_server.py %HOST%:%REMOTE%/
 
 echo Deploying StackChan Notifier...
 scp runtime\cognitive\stackflow\stackchan_notifier.py %HOST%:%REMOTE%/
