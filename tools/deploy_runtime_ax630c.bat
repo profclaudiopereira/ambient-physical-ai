@@ -39,6 +39,9 @@ scp runtime\cognitive\stackflow\semantic_mcp_tools.py %HOST%:%REMOTE%/
 echo Deploying StackChan Notifier...
 scp runtime\cognitive\stackflow\stackchan_notifier.py %HOST%:%REMOTE%/
 
+echo Deploying RGB Strip Notifier...
+scp runtime\cognitive\stackflow\rgb_strip_notifier.py %HOST%:%REMOTE%/
+
 echo.
 echo ============================================
 echo Deploy Finished
