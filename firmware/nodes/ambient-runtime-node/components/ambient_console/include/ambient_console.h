@@ -24,6 +24,15 @@ typedef struct {
 
     bool cognitive_connected;
 
+     /**
+     * Most recent Semantic Event consumed by the Ambient Runtime.
+     *
+     * These fields expose an operational snapshot for integration
+     * diagnostics. They are not an event history.
+     */
+    char cognitive_event[64];
+    char cognitive_target[64];
+
     bool pahub_ok;
     bool env_iv_ok;
     bool dlight_ok;

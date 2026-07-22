@@ -15,7 +15,7 @@
 static const char *TAG = "semantic-receiver";
 
 #define SEMANTIC_MESSAGE_TYPE_LENGTH 32
-#define SEMANTIC_TARGET_LENGTH 64
+
 
 /*
  * Internal representation of a Semantic Event.
@@ -24,14 +24,20 @@ static const char *TAG = "semantic-receiver";
  * It can be promoted to a shared public contract later,
  * after the event schema is fully stabilized.
  */
+/**
+ * Internal representation of a parsed Semantic Event.
+ *
+ * The structure remains private because transport parsing is an
+ * implementation detail of this component. Only the operational snapshot
+ * defined in the public header is exposed to the Ambient Runtime.
+ */
 typedef struct
 {
     char type[SEMANTIC_MESSAGE_TYPE_LENGTH];
     char event_type[SEMANTIC_EVENT_TYPE_LENGTH];
-    char target[SEMANTIC_TARGET_LENGTH];
+    char target[SEMANTIC_EVENT_TARGET_LENGTH];
 
 } semantic_event_t;
-
 static portMUX_TYPE s_status_lock =
     portMUX_INITIALIZER_UNLOCKED;
 
@@ -40,7 +46,8 @@ static semantic_event_receiver_status_t s_status = {
     .listening = false,
     .event_received = false,
     .received_count = 0,
-    .last_event_type = ""
+    .last_event_type = "",
+    .last_target = ""
 };
 
 static void set_listening(bool listening)
@@ -50,10 +57,22 @@ static void set_listening(bool listening)
     portEXIT_CRITICAL(&s_status_lock);
 }
 
+/**
+ * Records the most recently consumed Semantic Event.
+ *
+ * The receiver exposes a snapshot rather than an event history. Both fields
+ * are updated inside the same critical section so callers never observe an
+ * event type associated with a target from a different datagram.
+ */
 static void register_received_event(
-    const char *event_type
+    const char *event_type,
+    const char *target
 )
 {
+    if (event_type == nullptr || target == nullptr) {
+        return;
+    }
+
     portENTER_CRITICAL(&s_status_lock);
 
     s_status.event_received = true;
@@ -66,8 +85,17 @@ static void register_received_event(
         event_type
     );
 
+    snprintf(
+        s_status.last_target,
+        sizeof(s_status.last_target),
+        "%s",
+        target
+    );
+
     portEXIT_CRITICAL(&s_status_lock);
 }
+
+
 
 /*
  * Extracts a string field from the controlled JSON payload
@@ -307,9 +335,10 @@ static void consume_semantic_event(
         return;
     }
 
-    register_received_event(
-        event->event_type
-    );
+   register_received_event(
+      event->event_type,
+      event->target
+   );
 
     ESP_LOGI(
         TAG,
@@ -333,9 +362,9 @@ static void consume_semantic_event(
         "Target: %s",
         event->target
     );
-process_ambient_runtime_event(
-    event
-);
+    process_ambient_runtime_event(
+        event
+    );
 }
 
 static void semantic_receiver_task(void *argument)

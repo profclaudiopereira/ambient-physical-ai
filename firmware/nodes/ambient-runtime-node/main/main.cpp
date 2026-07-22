@@ -207,23 +207,24 @@ extern "C" void app_main(void)
         }
 
         /*
-         * Verifica novamente o canal do Mini OLED.
-         */
+        * Verifica novamente o canal do Mini OLED.
+        */
         channel_ret = pahub_select_channel(
-            bus,
-            PAHUB_CHANNEL_OLED
+        bus,
+        PAHUB_CHANNEL_OLED
         );
 
         if (channel_ret != ESP_OK) {
-            pahub_ok = false;
-            mini_oled_ok = false;
+        pahub_ok = false;
+        mini_oled_ok = false;
 
-            ESP_LOGW(
-                TAG,
-                "Unable to select Mini OLED channel: %s",
-                esp_err_to_name(channel_ret)
+        ESP_LOGW(
+            TAG,
+            "Unable to select Mini OLED channel: %s",
+            esp_err_to_name(channel_ret)
             );
         }
+ 
 
         /*
          * -----------------------------------------------------
@@ -287,6 +288,23 @@ extern "C" void app_main(void)
 
         console.cognitive_connected =
     	    semantic_receiver.event_received;
+    snprintf(
+        console.cognitive_event,
+        sizeof(console.cognitive_event),
+        "%s",
+        semantic_receiver.event_received
+            ? semantic_receiver.last_event_type
+            : "none"
+    );
+
+    snprintf(
+        console.cognitive_target,
+        sizeof(console.cognitive_target),
+        "%s",
+        semantic_receiver.event_received
+            ? semantic_receiver.last_target
+            : "none"
+    );
 
         console.pahub_ok =
             pahub_ok;

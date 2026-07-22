@@ -556,6 +556,46 @@ draw_text(
     2,
     COLOR_TEXT
 );
+
+/*
+ * The event and target fields provide integration visibility without
+ * exposing transport details to the console. They represent only the
+ * most recently consumed Semantic Event.
+ */
+/*
+ * Semantic identifiers may be longer than the available console row.
+ * Limit the rendered value explicitly so truncation is deterministic
+ * and remains compatible with builds that treat warnings as errors.
+ */
+snprintf(
+    value,
+    sizeof(value),
+    "EVENT ............ %.44s",
+    data->cognitive_event
+);
+
+draw_text(
+    40,
+    1035,
+    value,
+    2,
+    COLOR_TEXT
+);
+
+snprintf(
+    value,
+    sizeof(value),
+    "TARGET ........... %.44s",
+    data->cognitive_target
+);
+
+draw_text(
+    40,
+    1070,
+    value,
+    2,
+    COLOR_TEXT
+);
     return tab5_platform_draw_bitmap(
         0,
         0,
