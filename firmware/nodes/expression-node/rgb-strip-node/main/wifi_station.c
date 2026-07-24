@@ -135,7 +135,7 @@ int wifi_station_init(void)
         return -1;
     }
 
-    esp_netif_create_default_wifi_sta();
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t wifi_init_config =
         WIFI_INIT_CONFIG_DEFAULT();
@@ -159,6 +159,11 @@ int wifi_station_init(void)
             NULL
         )
     );
+
+
+
+
+
 
     ESP_ERROR_CHECK(
         esp_event_handler_register(
@@ -192,6 +197,25 @@ int wifi_station_init(void)
     ESP_ERROR_CHECK(
         esp_wifi_set_mode(WIFI_MODE_STA)
     );
+
+ESP_ERROR_CHECK(esp_netif_dhcpc_stop(sta_netif));
+
+esp_netif_ip_info_t ip_info = {0};
+
+ip_info.ip.addr =
+    ESP_IP4TOADDR(192, 168, 77, 26);
+
+ip_info.gw.addr =
+    ESP_IP4TOADDR(192, 168, 77, 1);
+
+ip_info.netmask.addr =
+    ESP_IP4TOADDR(255, 255, 255, 0);
+ESP_ERROR_CHECK(
+    esp_netif_set_ip_info(sta_netif, &ip_info)
+);
+
+
+
 
     ESP_ERROR_CHECK(
         esp_wifi_set_config(
