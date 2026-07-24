@@ -309,6 +309,11 @@ esp_err_t ambient_network_init(void)
 
     ret = esp_wifi_set_mode(WIFI_MODE_STA);
 
+
+
+
+
+
     if (ret != ESP_OK) {
         ESP_LOGE(
             TAG,
@@ -317,6 +322,31 @@ esp_err_t ambient_network_init(void)
         );
         return ret;
     }
+
+ESP_ERROR_CHECK(
+    esp_netif_dhcpc_stop(s_sta_netif)
+);
+
+esp_netif_ip_info_t ip_info = {};
+
+ip_info.ip.addr =
+    ESP_IP4TOADDR(192,168,77,25);
+
+ip_info.gw.addr =
+    ESP_IP4TOADDR(192,168,77,1);
+
+ip_info.netmask.addr =
+    ESP_IP4TOADDR(255,255,255,0);
+
+ESP_ERROR_CHECK(
+    esp_netif_set_ip_info(
+        s_sta_netif,
+        &ip_info
+    )
+);
+
+
+
 
     ret = esp_wifi_set_config(
         WIFI_IF_STA,
