@@ -22,6 +22,7 @@ from datetime import datetime
 from threading import Thread
 
 from context_builder import build_context, build_human_message
+from ambient_runtime_notifier import AmbientRuntimeNotifier
 from context_registry import get_current_context, update_context
 from rgb_strip_notifier import RGBStripNotifier
 from semantic_dispatcher import SemanticDispatcher
@@ -70,11 +71,14 @@ sock.bind((UDP_IP, UDP_PORT))
 
 notifier = StackChanNotifier()
 rgb_strip_notifier = RGBStripNotifier()
-
+ambient_runtime_notifier = AmbientRuntimeNotifier()
 dispatcher = SemanticDispatcher()
 dispatcher.register_adapter("stackchan", notifier.notify)
 dispatcher.register_adapter("rgb_strip", rgb_strip_notifier.notify)
-
+dispatcher.register_adapter(
+    "ambient_runtime",
+    ambient_runtime_notifier.notify,
+)
 
 print("====================================")
 print("AX630C Identity UDP Listener")
@@ -84,6 +88,7 @@ print("Semantic Event Generator: ENABLED")
 print("Semantic Dispatcher: ENABLED")
 print("StackChan Notifier: ENABLED")
 print("RGB Strip Notifier: ENABLED")
+print("Ambient Runtime Notifier: ENABLED")
 print("StackChan MCP Server: STARTING")
 print("Shared Context Registry: ENABLED")
 print("====================================")
@@ -151,6 +156,11 @@ while True:
                 print("RGB Strip semantic event sent: PASS")
             else:
                 print("RGB Strip semantic event sent: FAIL")
+
+            if dispatch_results.get("ambient_runtime"):
+                print("Ambient Runtime semantic event sent: PASS")
+            else:
+                print("Ambient Runtime semantic event sent: FAIL")
 
     except Exception as exc:
         print("JSON parse error or listener error")

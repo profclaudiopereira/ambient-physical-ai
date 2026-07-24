@@ -43,6 +43,9 @@ scp runtime\cognitive\stackflow\stackchan_notifier.py %HOST%:%REMOTE%/
 echo Deploying RGB Strip Notifier...
 scp runtime\cognitive\stackflow\rgb_strip_notifier.py %HOST%:%REMOTE%/
 
+echo Deploying Ambient Runtime Notifier...
+scp runtime\cognitive\stackflow\ambient_runtime_notifier.py %HOST%:%REMOTE%/
+
 echo.
 echo ============================================
 echo Deploy Finished
