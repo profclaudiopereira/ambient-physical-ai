@@ -1,0 +1,7 @@
+## IDF Component Manager Manifest File
+dependencies:
+  idf:
+    version: '>=4.1.0'
+
+  espressif/led_strip: '*'
+  m5stack/M5Unified: '*'
