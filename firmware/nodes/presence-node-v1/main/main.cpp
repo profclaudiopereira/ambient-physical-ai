@@ -1,4 +1,14 @@
 #include "esp_log.h"
+
+/**
+ * @file main.cpp
+ * @brief Presence Node V1 application entry point.
+ *
+ * This application integrates the LD2410 radar driver, Wi-Fi connectivity
+ * and UDP event publication to produce presence events consumed by the
+ * Ambient Physical AI distributed runtime.
+ */
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -18,6 +28,12 @@
 #include <string.h>
 #include <sys/socket.h>
 
+/**
+ * @brief Global runtime state.
+ *
+ * These variables maintain the current communication state, network
+ * resources and presence state shared across the application runtime.
+ */
 static const char *TAG = "presence-radar";
 
 #define WIFI_SSID "OKFIBRA-Claudio_2GHz"
@@ -39,6 +55,12 @@ static uint16_t pending_presence_distance_mm = 0;
 // Wi-Fi STA + UDP Broadcast
 // -----------------------------------------------------------------------------
 
+/**
+ * @brief Restarts the DHCP client for the Wi-Fi station interface.
+ *
+ * Used after association with the access point to ensure the network
+ * interface acquires a valid IPv4 configuration.
+ */
 static void restart_dhcp_client()
 {
     if (wifi_sta_netif == nullptr) {
@@ -83,6 +105,12 @@ static void restart_dhcp_client()
     }
 }
 
+/**
+ * @brief Central Wi-Fi and IP event dispatcher.
+ *
+ * Handles ESP-IDF networking events, maintains the connection state and
+ * performs automatic recovery after link interruptions.
+ */
 static void wifi_event_handler(void *arg,
                                esp_event_base_t event_base,
                                int32_t event_id,
@@ -137,6 +165,12 @@ static void wifi_event_handler(void *arg,
     }
 }
 
+/**
+ * @brief Initializes the Wi-Fi station subsystem.
+ *
+ * Creates the network interface, registers event handlers and starts the
+ * ESP-IDF Wi-Fi state machine.
+ */
 static void wifi_init_sta()
 {
     esp_err_t ret = nvs_flash_init();
@@ -201,6 +235,12 @@ static void wifi_init_sta()
     ESP_LOGI(TAG, "Wi-Fi STA started. SSID: %s", WIFI_SSID);
 }
 
+/**
+ * @brief Initializes the UDP transport used by the Presence Node.
+ *
+ * Creates the UDP socket and prepares the destination endpoint used for
+ * broadcasting presence events to the distributed runtime.
+ */
 static void udp_broadcast_init()
 {
     udp_socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
@@ -233,7 +273,12 @@ static void udp_broadcast_init()
              UDP_BROADCAST_IP,
              UDP_PORT);
 }
-
+/**
+ * @brief Publishes a presence event using the project UDP contract.
+ *
+ * The JSON payload follows the canonical Presence Event specification
+ * consumed by downstream runtime components.
+ */
 static bool send_presence_event_udp(uint16_t distance_mm)
 {
     if (!wifi_connected) {
@@ -281,6 +326,12 @@ static bool send_presence_event_udp(uint16_t distance_mm)
 // LD2410C Presence Adapter
 // -----------------------------------------------------------------------------
 
+/**
+ * @brief Converts LD2410 target states into the project presence model.
+ *
+ * Radar-specific target classifications are mapped to the binary presence
+ * abstraction used by the Ambient Physical AI runtime.
+ */
 static bool target_state_is_present(ld2410_target_state_t state)
 {
     return state == LD2410_TARGET_MOVING ||
@@ -288,6 +339,11 @@ static bool target_state_is_present(ld2410_target_state_t state)
            state == LD2410_TARGET_MOVING_AND_STATIONARY;
 }
 
+/**
+ * @brief Converts radar distance measurements from centimeters to millimeters.
+ *
+ * Saturates the result to the maximum value representable by uint16_t.
+ */
 static uint16_t detection_distance_to_mm(uint16_t distance_cm)
 {
     const uint32_t distance_mm =
@@ -298,6 +354,19 @@ static uint16_t detection_distance_to_mm(uint16_t distance_cm)
         : static_cast<uint16_t>(distance_mm);
 }
 
+/**
+ * @brief Presence Node application lifecycle.
+ *
+ * Startup sequence:
+ *   1. Initialize the LD2410 driver.
+ *   2. Initialize Wi-Fi.
+ *   3. Initialize UDP transport.
+ *   4. Continuously acquire radar data.
+ *   5. Publish presence events when state transitions occur.
+ *
+ * Presence events are emitted only on transitions, preventing unnecessary
+ * network traffic while preserving the current system state.
+ */
 extern "C" void app_main(void)
 {
     ESP_LOGI(TAG, "PRESENCE_NODE_V2_MILESTONE_001");
@@ -334,7 +403,14 @@ extern "C" void app_main(void)
 
     wifi_init_sta();
     udp_broadcast_init();
-
+    
+    /*
+    * Main acquisition loop.
+    *
+    * Radar reports are continuously acquired, translated into the project
+    * presence model and propagated to the distributed runtime whenever a
+    * presence state transition occurs.
+    */
     while (true) {
         ld2410_target_data_t current = {};
 
@@ -380,7 +456,13 @@ extern "C" void app_main(void)
             static_cast<unsigned>(current.stationary_distance_cm),
             static_cast<unsigned>(current.stationary_energy)
         );
-
+        
+        /*
+        * Presence transition detection.
+        *
+        * UDP notifications are generated only when the logical presence state
+        * changes, avoiding repeated transmission of identical events.
+        */
         if (!presence_state && radar_present) {
             presence_state = true;
             pending_presence_distance_mm = distance_mm;
@@ -396,7 +478,13 @@ extern "C" void app_main(void)
 
             ESP_LOGI(TAG, "NOT_PRESENT");
         }
-
+        
+        /*
+        * Deferred transmission.
+        *
+        * Presence events generated while the network is unavailable are retried
+        * automatically after Wi-Fi connectivity is restored.
+        */
         if (presence_state &&
             pending_presence_udp &&
             wifi_connected) {
