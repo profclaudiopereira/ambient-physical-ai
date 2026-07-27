@@ -7,6 +7,7 @@
 
 #include "expression_processor.h"
 #include "rgb_controller.h"
+#include "semantic_consumer.h"
 #include "semantic_receiver.h"
 #include "wifi_station.h"
 
@@ -59,9 +60,20 @@ extern "C" void app_main(void)
 
     expression_processor_process("idle");
 
+    if (semantic_consumer_init() != 0) {
+        ESP_LOGE(
+            TAG,
+            "Runtime State consumer initialization failed"
+        );
+
+    expression_processor_process("error");
+    return;
+}
+
+
     if (semantic_receiver_start() != 0) {
         ESP_LOGE(TAG, "Semantic Receiver failed");
-        expression_processor_process("system_error");
+        expression_processor_process("error");
         return;
     }
 

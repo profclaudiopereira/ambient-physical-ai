@@ -9,40 +9,66 @@
 
 static const char *TAG = "expression_processor";
 
-int expression_processor_process(const char *event_type)
+/**
+ * @brief Maps one normalized Cognitive Runtime state to a visual effect.
+ *
+ * This module owns the Runtime State vocabulary understood by the StickC
+ * Plus 2. It does not access display, LED or networking APIs directly.
+ */
+int expression_processor_process(const char *runtime_state)
 {
-    if (event_type == NULL || event_type[0] == '\0') {
-        ESP_LOGE(TAG, "Invalid semantic event");
+    if (runtime_state == NULL || runtime_state[0] == '\0') {
+        ESP_LOGE(TAG, "Invalid Runtime State");
         return (int)ESP_ERR_INVALID_ARG;
     }
 
-    ESP_LOGI(TAG, "Processing semantic event: %s", event_type);
+    ESP_LOGI(
+        TAG,
+        "Processing Runtime State: %s",
+        runtime_state
+    );
 
-    if (strcmp(event_type, "boot") == 0) {
-        return rgb_effects_boot();
-    }
-
-    if (strcmp(event_type, "idle") == 0) {
+    if (strcmp(runtime_state, "idle") == 0) {
         return rgb_effects_idle();
     }
 
-    if (strcmp(event_type, "presence_detected") == 0) {
-        return rgb_effects_presence_detected();
+    if (strcmp(runtime_state, "presence") == 0) {
+        return rgb_effects_presence();
     }
 
-    if (strcmp(event_type, "identity_authenticated") == 0) {
-        return rgb_effects_identity_authenticated();
+    if (strcmp(runtime_state, "listening") == 0) {
+        return rgb_effects_listening();
     }
 
-    if (strcmp(event_type, "processing") == 0) {
-        return rgb_effects_processing();
+    if (strcmp(runtime_state, "thinking") == 0) {
+        return rgb_effects_thinking();
     }
 
-    if (strcmp(event_type, "system_error") == 0) {
+    if (strcmp(runtime_state, "responding") == 0) {
+        return rgb_effects_responding();
+    }
+
+    if (strcmp(runtime_state, "alert") == 0) {
+        return rgb_effects_alert();
+    }
+
+    if (strcmp(runtime_state, "error") == 0) {
         return rgb_effects_error();
     }
 
-    ESP_LOGW(TAG, "Unsupported semantic event: %s", event_type);
+    if (strcmp(runtime_state, "offline") == 0) {
+        return rgb_effects_offline();
+    }
+
+    if (strcmp(runtime_state, "learning") == 0) {
+        return rgb_effects_learning();
+    }
+
+    ESP_LOGW(
+        TAG,
+        "Unsupported Runtime State: %s",
+        runtime_state
+    );
 
     return (int)ESP_ERR_NOT_SUPPORTED;
 }

@@ -5,15 +5,30 @@ extern "C" {
 #endif
 
 /**
- * @brief Processa um evento semântico destinado ao RGB Strip Node.
+ * @brief Processes one Cognitive Runtime state.
  *
- * @param event_type Nome do evento semântico.
+ * The processor maps the normalized Runtime State vocabulary to the
+ * corresponding visual effect presented by the StickC Plus 2.
  *
- * @return 0 em caso de sucesso.
- * @return valor diferente de zero se o evento for inválido,
- *         desconhecido ou se o efeito falhar.
+ * Supported states:
+ *
+ * - idle
+ * - presence
+ * - listening
+ * - thinking
+ * - responding
+ * - alert
+ * - error
+ * - offline
+ * - learning
+ *
+ * @param runtime_state Null-terminated normalized Runtime State name.
+ *
+ * @return 0 when the state is recognized and presented successfully.
+ * @return Non-zero ESP-IDF error code when the state is invalid,
+ *         unsupported or cannot be presented.
  */
-int expression_processor_process(const char *event_type);
+int expression_processor_process(const char *runtime_state);
 
 #ifdef __cplusplus
 }

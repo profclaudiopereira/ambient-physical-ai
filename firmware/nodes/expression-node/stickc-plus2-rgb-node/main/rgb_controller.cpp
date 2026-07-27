@@ -22,13 +22,34 @@ static led_strip_handle_t s_led_strip = nullptr;
 static bool s_initialized = false;
 
 /**
- * @brief Updates the StickC Plus 2 display with the commanded RGB value.
+ * @brief Selects a readable foreground color for the display label.
  *
- * The display belongs to the hardware presentation layer. Keeping its
- * implementation inside this controller prevents semantic and networking
- * modules from depending on M5Unified.
+ * Bright backgrounds use black text, while darker backgrounds use white
+ * text. This decision belongs to the presentation layer and does not alter
+ * the Runtime State semantic mapping.
+ */
+static uint16_t select_text_color(
+    uint8_t red,
+    uint8_t green,
+    uint8_t blue
+)
+{
+    const uint16_t luminance =
+        static_cast<uint16_t>(red) * 299U +
+        static_cast<uint16_t>(green) * 587U +
+        static_cast<uint16_t>(blue) * 114U;
+
+    return luminance >= 128000U ? BLACK : WHITE;
+}
+
+/**
+ * @brief Updates the StickC Plus 2 display with a background and label.
+ *
+ * The display is part of the hardware presentation boundary. Semantic and
+ * networking modules must not depend directly on M5Unified.
  */
 static void update_display(
+    const char *label,
     uint8_t red,
     uint8_t green,
     uint8_t blue
@@ -37,14 +58,67 @@ static void update_display(
     const uint16_t background =
         M5.Display.color565(red, green, blue);
 
-    M5.Display.fillScreen(background);
-    M5.Display.setTextColor(WHITE, background);
-    M5.Display.setCursor(10, 10);
-    M5.Display.setTextSize(2);
+    const uint16_t foreground =
+        select_text_color(red, green, blue);
 
-   M5.Display.setTextFont(1);
-   M5.Display.setCursor(10, 10);
-   M5.Display.println("RGB NODE");
+    M5.Display.fillScreen(background);
+
+    if (label == nullptr || label[0] == '\0') {
+        return;
+    }
+
+    M5.Display.setTextColor(foreground, background);
+    M5.Display.setTextFont(1);
+    M5.Display.setTextSize(2);
+    M5.Display.setTextDatum(middle_center);
+    M5.Display.drawString(
+        label,
+        M5.Display.width() / 2,
+        M5.Display.height() / 2
+    );
+}
+
+/**
+ * @brief Applies one RGB value to every physical WS2812 LED.
+ */
+static int update_led_strip(
+    uint8_t red,
+    uint8_t green,
+    uint8_t blue
+)
+{
+    for (int index = 0; index < RGB_COUNT; index++) {
+        esp_err_t err = led_strip_set_pixel(
+            s_led_strip,
+            index,
+            red,
+            green,
+            blue
+        );
+
+        if (err != ESP_OK) {
+            ESP_LOGE(
+                TAG,
+                "Failed to set pixel %d: %s",
+                index,
+                esp_err_to_name(err)
+            );
+            return static_cast<int>(err);
+        }
+    }
+
+    esp_err_t err = led_strip_refresh(s_led_strip);
+
+    if (err != ESP_OK) {
+        ESP_LOGE(
+            TAG,
+            "Failed to refresh WS2812 output: %s",
+            esp_err_to_name(err)
+        );
+        return static_cast<int>(err);
+    }
+
+    return 0;
 }
 
 int rgb_controller_init(void)
@@ -55,8 +129,7 @@ int rgb_controller_init(void)
     }
 
     /*
-     * M5Unified initializes the StickC display and the board services
-     * required by the validated laboratory implementation.
+     * M5Unified initializes the StickC Plus 2 display and board services.
      */
     M5.begin();
     M5.Display.setRotation(0);
@@ -106,7 +179,7 @@ int rgb_controller_init(void)
         return static_cast<int>(err);
     }
 
-    update_display(0, 0, 0);
+    update_display(nullptr, 0, 0, 0);
 
     /*
      * The short stabilization delay is preserved from the validated
@@ -118,9 +191,46 @@ int rgb_controller_init(void)
 
     ESP_LOGI(
         TAG,
-        "StickC RGB controller initialized: GPIO=%d, LEDs=%d",
+        "StickC visual controller initialized: GPIO=%d, LEDs=%d",
         RGB_GPIO,
         RGB_COUNT
+    );
+
+    return 0;
+}
+
+int rgb_controller_present_state(
+    const char *label,
+    uint8_t red,
+    uint8_t green,
+    uint8_t blue
+)
+{
+    if (!s_initialized || s_led_strip == nullptr) {
+        ESP_LOGE(TAG, "RGB controller is not initialized");
+        return static_cast<int>(ESP_ERR_INVALID_STATE);
+    }
+
+    if (label == nullptr || label[0] == '\0') {
+        ESP_LOGE(TAG, "Runtime State label is invalid");
+        return static_cast<int>(ESP_ERR_INVALID_ARG);
+    }
+
+    const int result = update_led_strip(
+        red,
+        green,
+        blue
+    );
+
+    if (result != 0) {
+        return result;
+    }
+
+    update_display(
+        label,
+        red,
+        green,
+        blue
     );
 
     return 0;
@@ -137,38 +247,22 @@ int rgb_controller_set_all(
         return static_cast<int>(ESP_ERR_INVALID_STATE);
     }
 
-    for (int index = 0; index < RGB_COUNT; index++) {
-        esp_err_t err = led_strip_set_pixel(
-            s_led_strip,
-            index,
-            red,
-            green,
-            blue
-        );
+    const int result = update_led_strip(
+        red,
+        green,
+        blue
+    );
 
-        if (err != ESP_OK) {
-            ESP_LOGE(
-                TAG,
-                "Failed to set pixel %d: %s",
-                index,
-                esp_err_to_name(err)
-            );
-            return static_cast<int>(err);
-        }
+    if (result != 0) {
+        return result;
     }
 
-    esp_err_t err = led_strip_refresh(s_led_strip);
-
-    if (err != ESP_OK) {
-        ESP_LOGE(
-            TAG,
-            "Failed to refresh WS2812 output: %s",
-            esp_err_to_name(err)
-        );
-        return static_cast<int>(err);
-    }
-
-    update_display(red, green, blue);
+    update_display(
+        nullptr,
+        red,
+        green,
+        blue
+    );
 
     return 0;
 }
@@ -191,7 +285,7 @@ int rgb_controller_clear(void)
         return static_cast<int>(err);
     }
 
-    update_display(0, 0, 0);
+    update_display(nullptr, 0, 0, 0);
 
     return 0;
 }

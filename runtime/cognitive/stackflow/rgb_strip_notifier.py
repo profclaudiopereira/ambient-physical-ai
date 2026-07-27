@@ -30,14 +30,15 @@ class RGBStripNotifier:
 
     Default production destinations:
 
-        RGB Strip Node       192.168.77.26:5555
-        StickC Plus 2 Node   192.168.77.27:5555
-        Atom Matrix Node     192.168.77.28:5555
+    RGB Strip Node       192.168.77.26:5555
+    Atom Matrix Node     192.168.77.28:5555
+
+    The StickC Plus 2 is intentionally excluded because it consumes the
+    dedicated Runtime State protocol rather than Semantic Events.
     """
 
     DEFAULT_HOSTS = (
         "192.168.77.26",
-        "192.168.77.27",
         "192.168.77.28",
     )
 
