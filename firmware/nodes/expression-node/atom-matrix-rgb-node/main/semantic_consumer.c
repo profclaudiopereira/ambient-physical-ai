@@ -60,8 +60,9 @@ int semantic_consumer_process(const char *payload)
     }
 
     /*
-     * Este node aceita eventos destinados diretamente ao rgb_strip
-     * ou genericamente à expression_layer.
+     * This node preserves the same target contract used by the validated
+     * RGB Strip Node. It accepts direct rgb_strip events and generic
+     * expression_layer events.
      */
     if (strcmp(target->valuestring, "rgb_strip") != 0 &&
         strcmp(target->valuestring, "expression_layer") != 0) {
@@ -76,6 +77,38 @@ int semantic_consumer_process(const char *payload)
         return (int)ESP_ERR_NOT_SUPPORTED;
     }
 
+    semantic_context_t context = {
+        .user_id = NULL
+    };
+
+    /*
+     * Profile data is optional and only consumed when present.
+     * This keeps compatibility with semantic events that carry no payload.
+     */
+    const cJSON *semantic_payload =
+        cJSON_GetObjectItemCaseSensitive(root, "payload");
+
+    if (cJSON_IsObject(semantic_payload)) {
+        const cJSON *user_id =
+            cJSON_GetObjectItemCaseSensitive(
+                semantic_payload,
+                "user_id"
+            );
+
+        if (cJSON_IsString(user_id) &&
+            user_id->valuestring != NULL &&
+            user_id->valuestring[0] != '\0') {
+
+            context.user_id = user_id->valuestring;
+
+            ESP_LOGI(
+                TAG,
+                "Semantic context user_id: %s",
+                context.user_id
+            );
+        }
+    }
+
     ESP_LOGI(
         TAG,
         "Semantic event accepted: %s",
@@ -83,7 +116,10 @@ int semantic_consumer_process(const char *payload)
     );
 
     int result =
-        expression_processor_process(event->valuestring);
+        expression_processor_process(
+            event->valuestring,
+            &context
+        );
 
     if (result != 0) {
         ESP_LOGE(

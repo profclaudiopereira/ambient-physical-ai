@@ -5,15 +5,32 @@ extern "C" {
 #endif
 
 /**
- * @brief Processa um evento semântico destinado ao RGB Strip Node.
+ * @brief Optional semantic context forwarded with a normalized event.
  *
- * @param event_type Nome do evento semântico.
- *
- * @return 0 em caso de sucesso.
- * @return valor diferente de zero se o evento for inválido,
- *         desconhecido ou se o efeito falhar.
+ * The Atom Matrix RGB Node currently consumes the authenticated user
+ * identifier. The structure can be extended later without changing the
+ * event-processing contract.
  */
-int expression_processor_process(const char *event_type);
+typedef struct
+{
+    const char *user_id;
+} semantic_context_t;
+
+/**
+ * @brief Processes a semantic event destined for the Atom Matrix RGB Node.
+ *
+ * @param event_type Normalized semantic event name.
+ * @param context Optional event context. Pass NULL when the event has no
+ *                associated profile information.
+ *
+ * @return 0 on success.
+ * @return Non-zero when the event is invalid, unsupported, or the visual
+ *         effect cannot be applied.
+ */
+int expression_processor_process(
+    const char *event_type,
+    const semantic_context_t *context
+);
 
 #ifdef __cplusplus
 }
