@@ -24,7 +24,7 @@ void app_main(void)
         return;
     }
 
-    expression_processor_process("boot");
+    expression_processor_process("boot", NULL);
 
     if (wifi_station_init() != 0) {
         ESP_LOGE(
@@ -32,7 +32,7 @@ void app_main(void)
             "Wi-Fi initialization failed"
         );
 
-        expression_processor_process("system_error");
+        expression_processor_process("system_error", NULL);
         return;
     }
 
@@ -45,11 +45,11 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Network ready");
 
-    expression_processor_process("idle");
+    expression_processor_process("idle", NULL);
 
     if (semantic_receiver_start() != 0) {
         ESP_LOGE(TAG, "Semantic Receiver failed");
-        expression_processor_process("system_error");
+        expression_processor_process("system_error", NULL);
         return;
     }
 

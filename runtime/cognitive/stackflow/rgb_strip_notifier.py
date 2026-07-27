@@ -145,10 +145,20 @@ class RGBStripNotifier:
                 "Semantic Event does not contain a valid event"
             )
 
+        event_payload = semantic_event.get("payload", {})
+
+        if not isinstance(event_payload, dict):
+            event_payload = {}
+
         payload = {
             "type": "semantic_event",
             "event": event_name.strip(),
             "target": "rgb_strip",
+            "payload": {
+                "user_id": str(
+                    event_payload.get("user_id", "unknown")
+                ).strip().lower(),
+            },
         }
 
         if self.mode == "udp":
