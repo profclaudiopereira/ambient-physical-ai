@@ -25,6 +25,7 @@ from threading import Thread
 from ambient_runtime_notifier import AmbientRuntimeNotifier
 from context_builder import build_context, build_human_message
 from context_registry import get_current_context, update_context
+from echo_pyramid_adapter import EchoPyramidAdapter
 from rgb_strip_notifier import RGBStripNotifier
 from runtime_state_notifier import RuntimeStateNotifier
 from semantic_dispatcher import SemanticDispatcher
@@ -96,6 +97,7 @@ sock.bind((UDP_IP, UDP_PORT))
 notifier = StackChanNotifier()
 rgb_strip_notifier = RGBStripNotifier()
 ambient_runtime_notifier = AmbientRuntimeNotifier()
+echo_pyramid_adapter = EchoPyramidAdapter()
 runtime_state_notifier = RuntimeStateNotifier()
 
 dispatcher = SemanticDispatcher()
@@ -104,6 +106,10 @@ dispatcher.register_adapter("rgb_strip", rgb_strip_notifier.notify)
 dispatcher.register_adapter(
     "ambient_runtime",
     ambient_runtime_notifier.notify,
+)
+dispatcher.register_adapter(
+    "echo_pyramid",
+    echo_pyramid_adapter.notify,
 )
 
 
@@ -116,6 +122,8 @@ print("Semantic Dispatcher: ENABLED")
 print("StackChan Notifier: ENABLED")
 print("RGB Strip Notifier: ENABLED")
 print("Ambient Runtime Notifier: ENABLED")
+print("Echo Pyramid Adapter: ENABLED")
+print(f"Echo Pyramid UDP Target: {echo_pyramid_adapter.host}:{echo_pyramid_adapter.port}")
 print("Runtime State Notifier: ENABLED")
 print("StackChan MCP Server: STARTING")
 print("Shared Context Registry: ENABLED")
@@ -195,6 +203,11 @@ while True:
                 print("Ambient Runtime semantic event sent: PASS")
             else:
                 print("Ambient Runtime semantic event sent: FAIL")
+
+            if dispatch_results.get("echo_pyramid"):
+                print("Echo Pyramid semantic event sent: PASS")
+            else:
+                print("Echo Pyramid semantic event sent: FAIL")
 
         # Responding represents the completed handoff of the generated
         # Semantic Events to all currently registered output adapters.

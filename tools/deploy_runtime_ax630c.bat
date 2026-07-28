@@ -68,6 +68,10 @@ echo Deploying Ambient Runtime Notifier...
 scp runtime\cognitive\stackflow\ambient_runtime_notifier.py %HOST%:%REMOTE%/
 if errorlevel 1 goto :deploy_error
 
+echo Deploying Echo Pyramid Adapter...
+scp runtime\cognitive\stackflow\echo_pyramid_adapter.py %HOST%:%REMOTE%/
+if errorlevel 1 goto :deploy_error
+
 echo.
 echo ============================================
 echo Deploy Finished Successfully
@@ -77,6 +81,7 @@ echo Updated integration files include:
 echo   - identity_udp_listener.py
 echo   - runtime_state_notifier.py
 echo   - rgb_strip_notifier.py
+echo   - echo_pyramid_adapter.py
 echo.
 goto :end
 
