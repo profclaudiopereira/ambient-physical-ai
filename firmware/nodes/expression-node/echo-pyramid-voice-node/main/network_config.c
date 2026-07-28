@@ -1,33 +1,12 @@
 /**
  * @file network_config.c
  * @brief Static network configuration for the Echo Pyramid Voice Node.
- *
- * Responsibilities:
- * - initialize NVS and ESP-NETIF;
- * - create the Wi-Fi station interface;
- * - assign the production hostname;
- * - disable the DHCP client;
- * - apply static IPv4, gateway and netmask values;
- * - configure primary and fallback DNS servers;
- * - maintain connection state and reconnect after disconnection.
- *
- * Fixed network identity:
- * - Device: echo-pyramid-voice-node
- * - Hostname: echo-pyramid-voice
- * - IPv4: 192.168.77.31
- * - Gateway: 192.168.77.1
- * - Netmask: 255.255.255.0
- *
- * The fixed address is required because the Cognitive Runtime dispatches
- * semantic events directly to known device endpoints.
  */
 
 #include "network_config.h"
 
 #include <stdio.h>
 #include <string.h>
-
-#include "freertos/FreeRTOS.h"
 
 #include "esp_event.h"
 #include "esp_log.h"
@@ -66,17 +45,9 @@
 #define WIFI_PASS         "15120813"
 
 static const char *TAG = "echo_pyramid_net";
-
 static volatile bool s_wifi_connected = false;
 static char s_current_ip[16] = STATIC_IP_TEXT;
 
-/**
- * @brief Initializes NVS, recovering from known partition version conditions.
- *
- * Wi-Fi stores calibration and connection data in NVS. Erasing is performed
- * only for the two recoverable initialization conditions recommended by
- * ESP-IDF.
- */
 static esp_err_t initialize_nvs(void)
 {
     esp_err_t ret = nvs_flash_init();
@@ -87,24 +58,12 @@ static esp_err_t initialize_nvs(void)
         if (ret != ESP_OK) {
             return ret;
         }
-
         ret = nvs_flash_init();
     }
 
     return ret;
 }
 
-/**
- * @brief Applies the fixed IPv4 configuration to the station interface.
- *
- * DHCP must be stopped before assigning a static address. IP4_ADDR is used
- * instead of text parsing so the configuration remains compatible with the
- * ESP-IDF 5.4 network types used by this firmware.
- *
- * @param netif Station network interface created by ESP-NETIF.
- *
- * @return ESP_OK on success, otherwise an ESP-IDF error code.
- */
 static esp_err_t configure_static_ipv4(esp_netif_t *netif)
 {
     esp_err_t ret = esp_netif_dhcpc_stop(netif);
@@ -116,22 +75,14 @@ static esp_err_t configure_static_ipv4(esp_netif_t *netif)
     esp_netif_ip_info_t ip_info = {0};
 
     IP4_ADDR(&ip_info.ip,
-             STATIC_IP_OCTET_1,
-             STATIC_IP_OCTET_2,
-             STATIC_IP_OCTET_3,
-             STATIC_IP_OCTET_4);
-
+             STATIC_IP_OCTET_1, STATIC_IP_OCTET_2,
+             STATIC_IP_OCTET_3, STATIC_IP_OCTET_4);
     IP4_ADDR(&ip_info.gw,
-             GATEWAY_OCTET_1,
-             GATEWAY_OCTET_2,
-             GATEWAY_OCTET_3,
-             GATEWAY_OCTET_4);
-
+             GATEWAY_OCTET_1, GATEWAY_OCTET_2,
+             GATEWAY_OCTET_3, GATEWAY_OCTET_4);
     IP4_ADDR(&ip_info.netmask,
-             NETMASK_OCTET_1,
-             NETMASK_OCTET_2,
-             NETMASK_OCTET_3,
-             NETMASK_OCTET_4);
+             NETMASK_OCTET_1, NETMASK_OCTET_2,
+             NETMASK_OCTET_3, NETMASK_OCTET_4);
 
     ret = esp_netif_set_ip_info(netif, &ip_info);
     if (ret != ESP_OK) {
@@ -155,21 +106,12 @@ static esp_err_t configure_static_ipv4(esp_netif_t *netif)
 
     ESP_LOGI(TAG,
              "Static network configured: device=%s hostname=%s IP=%s GW=%s MASK=%s",
-             DEVICE_NAME,
-             DEVICE_HOSTNAME,
-             STATIC_IP_TEXT,
-             STATIC_GATEWAY,
-             STATIC_NETMASK);
+             DEVICE_NAME, DEVICE_HOSTNAME, STATIC_IP_TEXT,
+             STATIC_GATEWAY, STATIC_NETMASK);
 
     return ESP_OK;
 }
 
-/**
- * @brief Handles Wi-Fi and IP events for connection state management.
- *
- * The node reconnects automatically after disconnection. Connection state is
- * marked ready only after ESP-NETIF confirms the configured IPv4 address.
- */
 static void network_event_handler(void *arg,
                                   esp_event_base_t event_base,
                                   int32_t event_id,
@@ -180,9 +122,9 @@ static void network_event_handler(void *arg,
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_err_t ret = esp_wifi_connect();
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Initial Wi-Fi connection failed: %s", esp_err_to_name(ret));
+            ESP_LOGE(TAG, "Initial Wi-Fi connection failed: %s",
+                     esp_err_to_name(ret));
         }
-
     } else if (event_base == WIFI_EVENT &&
                event_id == WIFI_EVENT_STA_DISCONNECTED) {
         s_wifi_connected = false;
@@ -190,20 +132,17 @@ static void network_event_handler(void *arg,
 
         esp_err_t ret = esp_wifi_connect();
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Wi-Fi reconnection failed: %s", esp_err_to_name(ret));
+            ESP_LOGE(TAG, "Wi-Fi reconnection failed: %s",
+                     esp_err_to_name(ret));
         }
-
     } else if (event_base == IP_EVENT &&
                event_id == IP_EVENT_STA_GOT_IP) {
         const ip_event_got_ip_t *event =
             (const ip_event_got_ip_t *)event_data;
 
         s_wifi_connected = true;
-
-        snprintf(s_current_ip,
-                 sizeof(s_current_ip),
-                 IPSTR,
-                 IP2STR(&event->ip_info.ip));
+        snprintf(s_current_ip, sizeof(s_current_ip),
+                 IPSTR, IP2STR(&event->ip_info.ip));
 
         ESP_LOGI(TAG, "Wi-Fi connected. IP: %s", s_current_ip);
     }
@@ -242,28 +181,21 @@ esp_err_t network_init(void)
     }
 
     wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
-
     ret = esp_wifi_init(&wifi_init_config);
     if (ret != ESP_OK) {
         return ret;
     }
 
     ret = esp_event_handler_instance_register(
-        WIFI_EVENT,
-        ESP_EVENT_ANY_ID,
-        &network_event_handler,
-        NULL,
-        NULL);
+        WIFI_EVENT, ESP_EVENT_ANY_ID,
+        &network_event_handler, NULL, NULL);
     if (ret != ESP_OK) {
         return ret;
     }
 
     ret = esp_event_handler_instance_register(
-        IP_EVENT,
-        IP_EVENT_STA_GOT_IP,
-        &network_event_handler,
-        NULL,
-        NULL);
+        IP_EVENT, IP_EVENT_STA_GOT_IP,
+        &network_event_handler, NULL, NULL);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -271,12 +203,9 @@ esp_err_t network_init(void)
     wifi_config_t wifi_config = {0};
 
     strlcpy((char *)wifi_config.sta.ssid,
-            WIFI_SSID,
-            sizeof(wifi_config.sta.ssid));
-
+            WIFI_SSID, sizeof(wifi_config.sta.ssid));
     strlcpy((char *)wifi_config.sta.password,
-            WIFI_PASS,
-            sizeof(wifi_config.sta.password));
+            WIFI_PASS, sizeof(wifi_config.sta.password));
 
     wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
@@ -297,9 +226,7 @@ esp_err_t network_init(void)
 
     ESP_LOGI(TAG,
              "Wi-Fi STA started: SSID=%s hostname=%s static_ip=%s",
-             WIFI_SSID,
-             DEVICE_HOSTNAME,
-             STATIC_IP_TEXT);
+             WIFI_SSID, DEVICE_HOSTNAME, STATIC_IP_TEXT);
 
     return ESP_OK;
 }

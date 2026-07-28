@@ -2,6 +2,16 @@ idf_component_register(
     SRCS
         "main.c"
         "network_config.c"
+        "display_manager.c"
+        "lcd_driver.c"
     INCLUDE_DIRS
         "."
+    PRIV_REQUIRES
+        driver
+        esp_event
+        esp_netif
+        esp_wifi
+        nvs_flash
+        lwip
+        esp_system
 )

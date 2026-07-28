@@ -1,18 +1,10 @@
 /**
  * @file main.c
- * @brief Application entry point for the Echo Pyramid Voice Node.
+ * @brief Echo Pyramid + AtomS3R Expression Node application.
  *
- * This firmware is derived from the validated Echo Pyramid + AtomS3R
- * laboratory baseline. The application currently provides:
- *
- * - Echo Pyramid RGB control through the STM32 I2C interface;
- * - UDP command reception;
- * - local conversion from simple UDP commands to semantic events;
- * - periodic runtime heartbeat logging;
- * - network initialization through the dedicated network_config module.
- *
- * Network responsibilities are intentionally isolated from this file so that
- * the application entry point remains focused on device orchestration.
+ * The validated RGB, UDP and personalized welcome contracts are preserved.
+ * Local Status Display V1 adds BOOT, READY and personalized WELCOME states
+ * without changing Cognitive Runtime or StackFlow contracts.
  */
 
 #include <stdbool.h>
@@ -21,6 +13,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+
+#include "display_manager.h"
+#include "network_config.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -31,12 +26,10 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
-#include "network_config.h"
-
 #define UDP_PORT        5005
 #define UDP_BUFFER_SIZE 128
-#define WELCOME_PREFIX   "WELCOME|"
-#define USER_NAME_SIZE   64
+#define WELCOME_PREFIX  "WELCOME|"
+#define USER_NAME_SIZE  64
 
 #define I2C_PORT        I2C_NUM_0
 #define I2C_SDA_GPIO    38
@@ -50,45 +43,21 @@
 #define RGB1_STATUS_REG_ADDR     0x20
 #define RGB2_STATUS_REG_ADDR     0x60
 
-static const char *TAG = "echo_pyramid_voice";
+#define READY_WAIT_INTERVAL_MS   100
+#define READY_WAIT_TIMEOUT_MS    15000
+#define WELCOME_DISPLAY_MS       3000
 
+static const char *TAG = "echo_pyramid_voice";
 static i2c_master_bus_handle_t i2c_bus = NULL;
 
-/**
- * @brief Minimal semantic event representation used by the current baseline.
- *
- * The structure preserves the semantic separation between transport commands
- * and expression actions. It may later be replaced by the canonical runtime
- * event contract without changing the device-specific RGB functions.
- */
 typedef struct {
     const char *type;
     const char *event;
     const char *target;
     const char *message;
-
-    /*
-     * Optional event parameter supplied by the Cognitive Runtime.
-     *
-     * For the personalized welcome contract, this field carries the
-     * authenticated user's display name or profile identifier. It remains
-     * NULL for legacy commands and for expression events that do not require
-     * a parameter.
-     */
     const char *parameter;
 } semantic_event_t;
 
-/* ================= I2C / RGB ================= */
-
-/**
- * @brief Initializes the AtomS3R I2C master bus used by the Echo Pyramid.
- *
- * The Echo Pyramid exposes its RGB control registers through an onboard STM32
- * at address 0x1A. The bus is initialized once and retained for the lifetime
- * of the application.
- *
- * @return ESP_OK on success, otherwise an ESP-IDF error code.
- */
 static esp_err_t init_i2c_bus(void)
 {
     i2c_master_bus_config_t bus_config = {
@@ -103,20 +72,6 @@ static esp_err_t init_i2c_bus(void)
     return i2c_new_master_bus(&bus_config, &i2c_bus);
 }
 
-/**
- * @brief Writes one or more bytes to an Echo Pyramid STM32 register.
- *
- * A temporary device handle is created for each transaction. This preserves
- * the behavior of the validated laboratory baseline and keeps the transaction
- * contract explicit while the production driver is still being stabilized.
- *
- * @param dev_addr 7-bit I2C device address.
- * @param reg_addr Register address.
- * @param data Payload bytes.
- * @param len Number of payload bytes.
- *
- * @return ESP_OK on success, otherwise an ESP-IDF error code.
- */
 static esp_err_t write_registers(uint8_t dev_addr,
                                  uint8_t reg_addr,
                                  const uint8_t *data,
@@ -129,8 +84,9 @@ static esp_err_t write_registers(uint8_t dev_addr,
     };
 
     i2c_master_dev_handle_t dev_handle = NULL;
+    esp_err_t ret =
+        i2c_master_bus_add_device(i2c_bus, &dev_cfg, &dev_handle);
 
-    esp_err_t ret = i2c_master_bus_add_device(i2c_bus, &dev_cfg, &dev_handle);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -146,15 +102,10 @@ static esp_err_t write_registers(uint8_t dev_addr,
     memcpy(&buffer[1], data, len);
 
     ret = i2c_master_transmit(dev_handle, buffer, len + 1, 100);
-
     i2c_master_bus_rm_device(dev_handle);
-
     return ret;
 }
 
-/**
- * @brief Writes a single byte to an Echo Pyramid STM32 register.
- */
 static esp_err_t write_register(uint8_t dev_addr,
                                 uint8_t reg_addr,
                                 uint8_t value)
@@ -162,12 +113,6 @@ static esp_err_t write_register(uint8_t dev_addr,
     return write_registers(dev_addr, reg_addr, &value, 1);
 }
 
-/**
- * @brief Sets the brightness of one Echo Pyramid RGB channel.
- *
- * @param channel Echo Pyramid RGB channel number (1 or 2).
- * @param value Brightness percentage in the range 0 to 100.
- */
 static esp_err_t set_brightness(uint8_t channel, uint8_t value)
 {
     if (value > 100) {
@@ -181,11 +126,6 @@ static esp_err_t set_brightness(uint8_t channel, uint8_t value)
     return write_register(STM32_I2C_ADDR, reg_addr, value);
 }
 
-/**
- * @brief Sets one RGB LED exposed by the Echo Pyramid STM32.
- *
- * The STM32 register layout uses BGR byte order followed by one reserved byte.
- */
 static esp_err_t set_rgb(uint8_t channel,
                          uint8_t led_index,
                          uint8_t red,
@@ -201,24 +141,15 @@ static esp_err_t set_rgb(uint8_t channel,
                            : RGB2_STATUS_REG_ADDR;
 
     uint8_t reg_addr = base_reg + (led_index * 4);
+    uint8_t data[4] = {blue, green, red, 0x00};
 
-    uint8_t data[4] = {
-        blue,
-        green,
-        red,
-        0x00
-    };
-
-    return write_registers(STM32_I2C_ADDR, reg_addr, data, sizeof(data));
+    return write_registers(
+        STM32_I2C_ADDR, reg_addr, data, sizeof(data));
 }
 
-/**
- * @brief Applies one RGB color to the LEDs selected by the validated baseline.
- *
- * This function intentionally preserves the laboratory LED selection until
- * the complete Echo Pyramid register map is formally incorporated.
- */
-static void set_all_demo_leds(uint8_t red, uint8_t green, uint8_t blue)
+static void set_all_demo_leds(uint8_t red,
+                              uint8_t green,
+                              uint8_t blue)
 {
     ESP_ERROR_CHECK(set_brightness(1, 100));
     ESP_ERROR_CHECK(set_brightness(2, 100));
@@ -238,7 +169,6 @@ static void expression_rgb_welcome(void)
 {
     ESP_LOGI(TAG, "Expression action: RGB_WELCOME");
     set_all_demo_leds(0, 255, 0);
-    ESP_LOGI(TAG, "RGB welcome reaction sent to Echo Pyramid.");
 }
 
 static void expression_rgb_red(void)
@@ -265,15 +195,15 @@ static void expression_rgb_off(void)
     set_all_demo_leds(0, 0, 0);
 }
 
-/* ================= Semantic Event ================= */
+static void show_ready_screen(void)
+{
+    esp_err_t err = display_show_ready(network_get_ip());
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Unable to show READY screen: %s",
+                 esp_err_to_name(err));
+    }
+}
 
-/**
- * @brief Dispatches one local semantic event to a device expression action.
- *
- * This handler is deliberately transport-independent. UDP currently creates
- * these events, but future StackFlow integration may supply the same semantic
- * contract through a richer payload.
- */
 static void handle_semantic_event(const semantic_event_t *event)
 {
     ESP_LOGI(TAG, "Semantic Event received");
@@ -287,20 +217,26 @@ static void handle_semantic_event(const semantic_event_t *event)
     }
 
     if (strcmp(event->event, "welcome_researcher") == 0) {
-        /*
-         * The current firmware baseline has validated RGB expression but does
-         * not yet expose a speech playback API in this source file. The user
-         * parameter is therefore preserved and logged here so the upcoming
-         * voice-confirmation implementation can consume it without changing
-         * the UDP or semantic contracts again.
-         */
-        if (event->parameter != NULL && event->parameter[0] != '\0') {
-            ESP_LOGI(TAG,
-                     "Personalized welcome requested for authenticated user: %s",
-                     event->parameter);
-        }
+        const char *user =
+            (event->parameter != NULL && event->parameter[0] != '\0')
+                ? event->parameter : "USER";
 
         expression_rgb_welcome();
+
+        esp_err_t err = display_show_welcome(user);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Unable to show WELCOME screen: %s",
+                     esp_err_to_name(err));
+        }
+
+        /*
+         * V1 deliberately keeps this short synchronous pause. UDP reception
+         * resumes after three seconds and the node returns to READY. A future
+         * voice-state manager can replace this with an asynchronous UI task.
+         */
+        vTaskDelay(pdMS_TO_TICKS(WELCOME_DISPLAY_MS));
+        show_ready_screen();
+
     } else if (strcmp(event->event, "rgb_red") == 0) {
         expression_rgb_red();
     } else if (strcmp(event->event, "rgb_green") == 0) {
@@ -314,63 +250,32 @@ static void handle_semantic_event(const semantic_event_t *event)
     }
 }
 
-/**
- * @brief Converts the current simple UDP command format into semantic events.
- *
- * Supported commands:
- * - WELCOME
- * - WELCOME|<authenticated_user>
- * - RED
- * - GREEN
- * - BLUE
- * - OFF
- *
- * This compatibility parser preserves the validated E05.2 behavior while the
- * production node is prepared for the canonical runtime event contract.
- */
 static void handle_udp_message(const char *msg)
 {
     ESP_LOGI(TAG, "UDP message received: %s", msg);
 
-    /*
-     * Personalized welcome protocol
-     * -----------------------------
-     * Both formats are intentionally accepted:
-     *
-     *     WELCOME
-     *     WELCOME|Claudio
-     *
-     * The first form preserves the validated legacy behavior. The second form
-     * carries the authenticated user's name while keeping the embedded
-     * protocol compact. The AX630C remains responsible for cognition and for
-     * deciding which identity is allowed to reach this expression node.
-     */
     if (strcmp(msg, "WELCOME") == 0 ||
         strncmp(msg, WELCOME_PREFIX, strlen(WELCOME_PREFIX)) == 0) {
 
         char user_name[USER_NAME_SIZE] = {0};
         const char *parameter = NULL;
 
-        if (strncmp(msg, WELCOME_PREFIX, strlen(WELCOME_PREFIX)) == 0) {
-            const char *received_name = msg + strlen(WELCOME_PREFIX);
-            size_t received_length = strnlen(
-                received_name,
-                USER_NAME_SIZE
-            );
+        if (strncmp(msg, WELCOME_PREFIX,
+                    strlen(WELCOME_PREFIX)) == 0) {
+            const char *received_name =
+                msg + strlen(WELCOME_PREFIX);
+            size_t received_length =
+                strnlen(received_name, USER_NAME_SIZE);
 
-            if (received_length > 0 && received_length < USER_NAME_SIZE) {
+            if (received_length > 0 &&
+                received_length < USER_NAME_SIZE) {
                 memcpy(user_name, received_name, received_length);
                 user_name[received_length] = '\0';
                 parameter = user_name;
             } else if (received_length >= USER_NAME_SIZE) {
-                /*
-                 * Reject an oversized parameter instead of silently accepting
-                 * a truncated identity. The legacy RGB welcome still runs,
-                 * but the malformed name is not propagated.
-                 */
                 ESP_LOGW(TAG,
-                         "Welcome parameter exceeds the supported size; "
-                         "using legacy welcome behavior");
+                         "Welcome parameter exceeds supported size; "
+                         "using legacy behavior");
             }
         }
 
@@ -430,15 +335,6 @@ static void handle_udp_message(const char *msg)
     }
 }
 
-/* ================= UDP Task ================= */
-
-/**
- * @brief Runs the UDP compatibility server used by the production baseline.
- *
- * The socket listens on all local interfaces at UDP port 5005. The port is
- * intentionally unchanged in this stabilization step. Alignment with the
- * canonical Runtime port will be performed as a separate integration change.
- */
 static void udp_server_task(void *pv_parameters)
 {
     (void)pv_parameters;
@@ -455,31 +351,32 @@ static void udp_server_task(void *pv_parameters)
 
     if (sock < 0) {
         ESP_LOGE(TAG, "Unable to create UDP socket");
+        display_show_error("UDP SOCKET");
         vTaskDelete(NULL);
         return;
     }
 
-    int err = bind(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    int err = bind(
+        sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
 
     if (err < 0) {
         ESP_LOGE(TAG, "UDP socket bind failed");
+        display_show_error("UDP BIND");
         close(sock);
         vTaskDelete(NULL);
         return;
     }
 
     ESP_LOGI(TAG, "UDP server listening on port %d", UDP_PORT);
+    show_ready_screen();
 
     while (true) {
         struct sockaddr_in source_addr;
         socklen_t source_addr_len = sizeof(source_addr);
 
-        int len = recvfrom(sock,
-                           rx_buffer,
-                           sizeof(rx_buffer) - 1,
-                           0,
-                           (struct sockaddr *)&source_addr,
-                           &source_addr_len);
+        int len = recvfrom(
+            sock, rx_buffer, sizeof(rx_buffer) - 1, 0,
+            (struct sockaddr *)&source_addr, &source_addr_len);
 
         if (len < 0) {
             ESP_LOGE(TAG, "UDP recvfrom failed");
@@ -491,35 +388,39 @@ static void udp_server_task(void *pv_parameters)
     }
 }
 
-/* ================= Main ================= */
-
-/**
- * @brief Initializes the Echo Pyramid Voice Node production baseline.
- *
- * Initialization order:
- * 1. Echo Pyramid I2C bus;
- * 2. network module with fixed IPv4 configuration;
- * 3. UDP semantic command server;
- * 4. periodic operational heartbeat.
- */
 void app_main(void)
 {
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
 
     ESP_LOGI(TAG, "========================================");
+    ESP_LOGI(TAG, "Ambient Physical AI");
     ESP_LOGI(TAG, "Expression Layer - Echo Pyramid Voice Node");
     ESP_LOGI(TAG, "Hardware: Echo Pyramid + AtomS3R");
-    ESP_LOGI(TAG, "Target: ESP32-S3");
-    ESP_LOGI(TAG, "Firmware stage: Production baseline derived from E05.2");
-    ESP_LOGI(TAG, "Purpose: UDP semantic event reception and RGB expression");
+    ESP_LOGI(TAG, "Firmware stage: Local Status Display V1");
     ESP_LOGI(TAG, "========================================");
 
     ESP_LOGI(TAG, "Chip cores: %d", chip_info.cores);
     ESP_LOGI(TAG, "Silicon revision: %d", chip_info.revision);
 
     ESP_ERROR_CHECK(init_i2c_bus());
+    ESP_ERROR_CHECK(display_manager_init());
+    ESP_ERROR_CHECK(display_show_boot());
     ESP_ERROR_CHECK(network_init());
+
+    int waited_ms = 0;
+    while (!network_is_connected() &&
+           waited_ms < READY_WAIT_TIMEOUT_MS) {
+        vTaskDelay(pdMS_TO_TICKS(READY_WAIT_INTERVAL_MS));
+        waited_ms += READY_WAIT_INTERVAL_MS;
+    }
+
+    if (!network_is_connected()) {
+        ESP_LOGW(TAG,
+                 "Wi-Fi not connected after %d ms; UDP will still start",
+                 READY_WAIT_TIMEOUT_MS);
+        ESP_ERROR_CHECK(display_show_error("WI-FI TIMEOUT"));
+    }
 
     BaseType_t task_created = xTaskCreate(
         udp_server_task,
@@ -527,11 +428,11 @@ void app_main(void)
         4096,
         NULL,
         5,
-        NULL
-    );
+        NULL);
 
     if (task_created != pdPASS) {
         ESP_LOGE(TAG, "Failed to create UDP server task");
+        ESP_ERROR_CHECK(display_show_error("UDP TASK"));
         return;
     }
 
@@ -539,7 +440,8 @@ void app_main(void)
 
     while (true) {
         ESP_LOGI(TAG,
-                 "Expression node heartbeat: %d | Wi-Fi: %s | IP: %s | UDP port: %d",
+                 "Expression node heartbeat: %d | Wi-Fi: %s | "
+                 "IP: %s | UDP port: %d",
                  counter++,
                  network_is_connected() ? "connected" : "not connected",
                  network_get_ip(),
