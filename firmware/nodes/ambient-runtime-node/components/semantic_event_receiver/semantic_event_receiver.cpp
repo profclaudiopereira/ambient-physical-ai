@@ -4,42 +4,26 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "cJSON.h"
+#include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
-#include "esp_log.h"
-
 #include "lwip/inet.h"
 #include "lwip/sockets.h"
 
 static const char *TAG = "semantic-receiver";
 
 #define SEMANTIC_MESSAGE_TYPE_LENGTH 32
+#define UDP_RECEIVE_BUFFER_LENGTH 1024
 
-
-/*
- * Internal representation of a Semantic Event.
- *
- * This structure is private to the component for now.
- * It can be promoted to a shared public contract later,
- * after the event schema is fully stabilized.
- */
-/**
- * Internal representation of a parsed Semantic Event.
- *
- * The structure remains private because transport parsing is an
- * implementation detail of this component. Only the operational snapshot
- * defined in the public header is exposed to the Ambient Runtime.
- */
-typedef struct
-{
+typedef struct {
     char type[SEMANTIC_MESSAGE_TYPE_LENGTH];
     char event_type[SEMANTIC_EVENT_TYPE_LENGTH];
     char target[SEMANTIC_EVENT_TARGET_LENGTH];
-
 } semantic_event_t;
-static portMUX_TYPE s_status_lock =
-    portMUX_INITIALIZER_UNLOCKED;
+
+static portMUX_TYPE s_state_lock = portMUX_INITIALIZER_UNLOCKED;
 
 static semantic_event_receiver_status_t s_status = {
     .initialized = false,
@@ -50,20 +34,61 @@ static semantic_event_receiver_status_t s_status = {
     .last_target = ""
 };
 
-static void set_listening(bool listening)
+static ambient_context_snapshot_t s_context = {};
+
+static uint64_t monotonic_ms(void)
 {
-    portENTER_CRITICAL(&s_status_lock);
-    s_status.listening = listening;
-    portEXIT_CRITICAL(&s_status_lock);
+    return (uint64_t)(esp_timer_get_time() / 1000ULL);
 }
 
-/**
- * Records the most recently consumed Semantic Event.
- *
- * The receiver exposes a snapshot rather than an event history. Both fields
- * are updated inside the same critical section so callers never observe an
- * event type associated with a target from a different datagram.
- */
+static void copy_json_string(
+    const cJSON *object,
+    const char *field,
+    char *destination,
+    size_t destination_size
+)
+{
+    if (destination == nullptr || destination_size == 0) {
+        return;
+    }
+
+    destination[0] = '\0';
+
+    const cJSON *item = cJSON_GetObjectItemCaseSensitive(object, field);
+    if (!cJSON_IsString(item) || item->valuestring == nullptr) {
+        return;
+    }
+
+    snprintf(destination, destination_size, "%s", item->valuestring);
+}
+
+static bool json_bool_or(
+    const cJSON *object,
+    const char *field,
+    bool fallback
+)
+{
+    const cJSON *item = cJSON_GetObjectItemCaseSensitive(object, field);
+    return cJSON_IsBool(item) ? cJSON_IsTrue(item) : fallback;
+}
+
+static double json_number_or(
+    const cJSON *object,
+    const char *field,
+    double fallback
+)
+{
+    const cJSON *item = cJSON_GetObjectItemCaseSensitive(object, field);
+    return cJSON_IsNumber(item) ? item->valuedouble : fallback;
+}
+
+static void set_listening(bool listening)
+{
+    portENTER_CRITICAL(&s_state_lock);
+    s_status.listening = listening;
+    portEXIT_CRITICAL(&s_state_lock);
+}
+
 static void register_received_event(
     const char *event_type,
     const char *target
@@ -73,7 +98,7 @@ static void register_received_event(
         return;
     }
 
-    portENTER_CRITICAL(&s_status_lock);
+    portENTER_CRITICAL(&s_state_lock);
 
     s_status.event_received = true;
     s_status.received_count++;
@@ -92,177 +117,148 @@ static void register_received_event(
         target
     );
 
-    portEXIT_CRITICAL(&s_status_lock);
+    portEXIT_CRITICAL(&s_state_lock);
 }
 
-
-
-/*
- * Extracts a string field from the controlled JSON payload
- * produced by the Cognitive Runtime.
- *
- * This is intentionally a lightweight parser for the current
- * integration milestone. A complete JSON parser can be introduced
- * later if the Semantic Event contract becomes more complex.
- */
-static bool extract_json_string_field(
-    const char *payload,
-    const char *field_name,
-    char *output,
-    size_t output_size
+static bool parse_semantic_event(
+    const cJSON *root,
+    semantic_event_t *event
 )
 {
-    if (
-        payload == nullptr ||
-        field_name == nullptr ||
-        output == nullptr ||
-        output_size == 0
-    ) {
+    if (root == nullptr || event == nullptr) {
         return false;
     }
 
-    output[0] = '\0';
+    memset(event, 0, sizeof(*event));
 
-    char field_pattern[96];
+    copy_json_string(root, "type", event->type, sizeof(event->type));
+    copy_json_string(
+        root,
+        "event_type",
+        event->event_type,
+        sizeof(event->event_type)
+    );
+    copy_json_string(root, "target", event->target, sizeof(event->target));
 
-    int pattern_length = snprintf(
-        field_pattern,
-        sizeof(field_pattern),
-        "\"%s\"",
-        field_name
+    return event->event_type[0] != '\0' && event->target[0] != '\0';
+}
+
+static bool parse_ambient_context(
+    const cJSON *root,
+    ambient_context_snapshot_t *context
+)
+{
+    if (root == nullptr || context == nullptr) {
+        return false;
+    }
+
+    const cJSON *global =
+        cJSON_GetObjectItemCaseSensitive(root, "global");
+
+    const cJSON *personal =
+        cJSON_GetObjectItemCaseSensitive(root, "personal");
+
+    if (!cJSON_IsObject(global) || !cJSON_IsObject(personal)) {
+        return false;
+    }
+
+    memset(context, 0, sizeof(*context));
+
+    context->context_received = true;
+    context->authenticated =
+        json_bool_or(root, "authenticated", false);
+
+    context->sequence = (uint32_t)json_number_or(root, "sequence", 0);
+    context->ttl_seconds =
+        (uint32_t)json_number_or(root, "ttl_seconds", 900);
+
+    if (context->ttl_seconds == 0) {
+        context->ttl_seconds = 900;
+    }
+
+    context->received_at_ms = monotonic_ms();
+
+    copy_json_string(
+        root,
+        "profile_id",
+        context->profile_id,
+        sizeof(context->profile_id)
     );
 
-    if (
-        pattern_length <= 0 ||
-        static_cast<size_t>(pattern_length) >= sizeof(field_pattern)
-    ) {
-        return false;
-    }
+    context->global_available =
+        json_bool_or(global, "available", false);
 
-    const char *field =
-        strstr(payload, field_pattern);
-
-    if (field == nullptr) {
-        return false;
-    }
-
-    const char *colon =
-        strchr(field + pattern_length, ':');
-
-    if (colon == nullptr) {
-        return false;
-    }
-
-    const char *start =
-        strchr(colon, '"');
-
-    if (start == nullptr) {
-        return false;
-    }
-
-    start++;
-
-    const char *end =
-        strchr(start, '"');
-
-    if (end == nullptr) {
-        return false;
-    }
-
-    size_t length =
-        static_cast<size_t>(end - start);
-
-    if (length >= output_size) {
-        length = output_size - 1;
-    }
-
-    memcpy(
-        output,
-        start,
-        length
+    copy_json_string(
+        global,
+        "location",
+        context->location,
+        sizeof(context->location)
     );
 
-    output[length] = '\0';
+    copy_json_string(
+        global,
+        "weather_summary",
+        context->weather_summary,
+        sizeof(context->weather_summary)
+    );
+
+    context->temperature_c =
+        (float)json_number_or(global, "temperature_c", 0.0);
+
+    context->uv_index =
+        (float)json_number_or(global, "uv_index", 0.0);
+
+    copy_json_string(
+        global,
+        "uv_label",
+        context->uv_label,
+        sizeof(context->uv_label)
+    );
+
+    context->personal_available =
+        json_bool_or(personal, "available", false);
+
+    copy_json_string(
+        personal,
+        "title",
+        context->personal_title,
+        sizeof(context->personal_title)
+    );
+
+    copy_json_string(
+        personal,
+        "value",
+        context->personal_value,
+        sizeof(context->personal_value)
+    );
+
+    copy_json_string(
+        personal,
+        "secondary",
+        context->personal_secondary,
+        sizeof(context->personal_secondary)
+    );
 
     return true;
 }
 
-/*
- * Parses the controlled Semantic Event payload.
- *
- * Missing fields receive safe fallback values so the receiver
- * remains operational while the event contract evolves.
- */
-static void parse_semantic_event(
-    const char *payload,
-    semantic_event_t *event
+static void register_ambient_context(
+    const ambient_context_snapshot_t *context
 )
 {
-    if (event == nullptr) {
+    if (context == nullptr) {
         return;
     }
 
-    memset(
-        event,
-        0,
-        sizeof(*event)
-    );
+    portENTER_CRITICAL(&s_state_lock);
 
-    if (
-        !extract_json_string_field(
-            payload,
-            "type",
-            event->type,
-            sizeof(event->type)
-        )
-    ) {
-        snprintf(
-            event->type,
-            sizeof(event->type),
-            "unknown"
-        );
-    }
+    uint32_t next_count = s_context.received_count + 1U;
+    s_context = *context;
+    s_context.received_count = next_count;
 
-    if (
-        !extract_json_string_field(
-            payload,
-            "event_type",
-            event->event_type,
-            sizeof(event->event_type)
-        )
-    ) {
-        snprintf(
-            event->event_type,
-            sizeof(event->event_type),
-            "unknown"
-        );
-    }
-
-    if (
-        !extract_json_string_field(
-            payload,
-            "target",
-            event->target,
-            sizeof(event->target)
-        )
-    ) {
-        snprintf(
-            event->target,
-            sizeof(event->target),
-            "unspecified"
-        );
-    }
+    portEXIT_CRITICAL(&s_state_lock);
 }
 
-
-/*
- * Processes Semantic Events addressed to the Ambient Runtime.
- *
- * This function is intentionally minimal at this milestone.
- * Future versions will dispatch events to the display,
- * Mini OLED, environmental services and other runtime
- * components.
- */
 static void process_ambient_runtime_event(
     const semantic_event_t *event
 )
@@ -271,324 +267,202 @@ static void process_ambient_runtime_event(
         return;
     }
 
-    ESP_LOGI(
-        TAG,
-        "Processing Ambient Runtime event..."
-    );
-
-    if (
-        strcmp(
-            event->target,
-            "ambient_runtime"
-        ) != 0
-    ) {
-        ESP_LOGI(
-            TAG,
-            "Ignoring event for target: %s",
-            event->target
-        );
-
+    if (strcmp(event->target, "ambient_runtime") != 0) {
+        ESP_LOGI(TAG, "Ignoring event for target: %s", event->target);
         return;
     }
 
-    if (
-        strcmp(
-            event->event_type,
-            "identity_authenticated"
-        ) == 0
-    ) {
-        ESP_LOGI(
-            TAG,
-            "identity_authenticated received"
-        );
-
+    if (strcmp(event->event_type, "identity_authenticated") == 0) {
+        ESP_LOGI(TAG, "identity_authenticated received");
         return;
     }
 
-    ESP_LOGI(
-        TAG,
-        "Event '%s' not implemented yet",
-        event->event_type
-    );
+    ESP_LOGI(TAG, "Event '%s' not implemented yet", event->event_type);
 }
-
-
-
-
-
-/*
- * Local Semantic Event consumer for the Ambient Runtime.
- *
- * At this milestone, it preserves the previously validated
- * behavior: register the event and expose receiver status.
- *
- * Target filtering and Ambient Runtime actions will be introduced
- * in a subsequent controlled milestone.
- */
-
 
 static void consume_semantic_event(
     const semantic_event_t *event
 )
 {
-    if (event == nullptr) {
+    register_received_event(event->event_type, event->target);
+
+    ESP_LOGI(
+        TAG,
+        "Semantic event consumed | Type=%s Event=%s Target=%s",
+        event->type,
+        event->event_type,
+        event->target
+    );
+
+    process_ambient_runtime_event(event);
+}
+
+static void consume_ambient_context(
+    const ambient_context_snapshot_t *context
+)
+{
+    register_ambient_context(context);
+
+    ESP_LOGI(
+        TAG,
+        "Ambient context consumed | Seq=%u Profile=%s Global=%s Personal=%s",
+        (unsigned)context->sequence,
+        context->profile_id,
+        context->global_available ? "YES" : "NO",
+        context->personal_available ? "YES" : "NO"
+    );
+}
+
+static void dispatch_json_message(const char *payload)
+{
+    cJSON *root = cJSON_Parse(payload);
+    if (root == nullptr) {
+        ESP_LOGW(TAG, "Invalid JSON payload ignored");
         return;
     }
 
-   register_received_event(
-      event->event_type,
-      event->target
-   );
+    const cJSON *type =
+        cJSON_GetObjectItemCaseSensitive(root, "type");
 
-    ESP_LOGI(
-        TAG,
-        "Semantic event consumed"
-    );
+    if (!cJSON_IsString(type) || type->valuestring == nullptr) {
+        ESP_LOGW(TAG, "Message without string field 'type' ignored");
+        cJSON_Delete(root);
+        return;
+    }
 
-    ESP_LOGI(
-        TAG,
-        "Type: %s",
-        event->type
-    );
+    if (strcmp(type->valuestring, "semantic_event") == 0) {
+        semantic_event_t event = {};
 
-    ESP_LOGI(
-        TAG,
-        "Event: %s",
-        event->event_type
-    );
+        if (parse_semantic_event(root, &event)) {
+            consume_semantic_event(&event);
+        } else {
+            ESP_LOGW(TAG, "Incomplete semantic_event ignored");
+        }
+    } else if (strcmp(type->valuestring, "ambient_context") == 0) {
+        ambient_context_snapshot_t context = {};
 
-    ESP_LOGI(
-        TAG,
-        "Target: %s",
-        event->target
-    );
-    process_ambient_runtime_event(
-        event
-    );
+        if (parse_ambient_context(root, &context)) {
+            consume_ambient_context(&context);
+        } else {
+            ESP_LOGW(TAG, "Incomplete ambient_context ignored");
+        }
+    } else {
+        ESP_LOGI(TAG, "Unsupported message type: %s", type->valuestring);
+    }
+
+    cJSON_Delete(root);
 }
 
 static void semantic_receiver_task(void *argument)
 {
     (void)argument;
 
-    ESP_LOGI(
-        TAG,
-        "Semantic receiver task started"
-    );
+    ESP_LOGI(TAG, "Semantic receiver task started");
 
-    char receive_buffer[512];
+    char receive_buffer[UDP_RECEIVE_BUFFER_LENGTH];
 
-    while (true)
-    {
-        ESP_LOGI(
-            TAG,
-            "Creating UDP socket..."
-        );
+    while (true) {
+        int socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 
-        int socket_fd =
-            socket(
-                AF_INET,
-                SOCK_DGRAM,
-                IPPROTO_IP
-            );
-
-        if (socket_fd < 0)
-        {
-            ESP_LOGE(
-                TAG,
-                "socket() failed errno=%d",
-                errno
-            );
-
-            vTaskDelay(
-                pdMS_TO_TICKS(2000)
-            );
-
+        if (socket_fd < 0) {
+            ESP_LOGE(TAG, "socket() failed errno=%d", errno);
+            vTaskDelay(pdMS_TO_TICKS(2000));
             continue;
         }
 
-        ESP_LOGI(
-            TAG,
-            "Socket created"
+        struct sockaddr_in listen_address = {};
+        listen_address.sin_family = AF_INET;
+        listen_address.sin_port = htons(SEMANTIC_EVENT_RECEIVER_PORT);
+        listen_address.sin_addr.s_addr = htonl(INADDR_ANY);
+
+        int bind_result = bind(
+            socket_fd,
+            reinterpret_cast<struct sockaddr *>(&listen_address),
+            sizeof(listen_address)
         );
 
-        struct sockaddr_in listen_address = {};
+        if (bind_result < 0) {
+            ESP_LOGE(TAG, "bind() failed errno=%d", errno);
+            close(socket_fd);
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            continue;
+        }
 
-        listen_address.sin_family = AF_INET;
-        listen_address.sin_port =
-            htons(SEMANTIC_EVENT_RECEIVER_PORT);
-
-        listen_address.sin_addr.s_addr =
-            htonl(INADDR_ANY);
-
+        set_listening(true);
         ESP_LOGI(
             TAG,
-            "Binding UDP port %d...",
+            "Waiting for runtime messages on UDP port %d",
             SEMANTIC_EVENT_RECEIVER_PORT
         );
 
-        int bind_result =
-            bind(
-                socket_fd,
-                reinterpret_cast<struct sockaddr *>(
-                    &listen_address
-                ),
-                sizeof(listen_address)
-            );
-
-        if (bind_result < 0)
-        {
-            ESP_LOGE(
-                TAG,
-                "bind() failed errno=%d",
-                errno
-            );
-
-            close(socket_fd);
-
-            vTaskDelay(
-                pdMS_TO_TICKS(2000)
-            );
-
-            continue;
-        }
-
-        ESP_LOGI(
-            TAG,
-            "UDP bind OK"
-        );
-
-        set_listening(true);
-
-        ESP_LOGI(
-            TAG,
-            "Waiting for semantic events..."
-        );
-
-        while (true)
-        {
+        while (true) {
             struct sockaddr_in source_address = {};
+            socklen_t source_length = sizeof(source_address);
 
-            socklen_t source_length =
-                sizeof(source_address);
+            int received = recvfrom(
+                socket_fd,
+                receive_buffer,
+                sizeof(receive_buffer) - 1,
+                0,
+                reinterpret_cast<struct sockaddr *>(&source_address),
+                &source_length
+            );
 
-            int received =
-                recvfrom(
-                    socket_fd,
-                    receive_buffer,
-                    sizeof(receive_buffer) - 1,
-                    0,
-                    reinterpret_cast<struct sockaddr *>(
-                        &source_address
-                    ),
-                    &source_length
-                );
-
-            if (received < 0)
-            {
-                ESP_LOGE(
-                    TAG,
-                    "recvfrom() failed errno=%d",
-                    errno
-                );
-
+            if (received < 0) {
+                ESP_LOGE(TAG, "recvfrom() failed errno=%d", errno);
                 break;
             }
 
             receive_buffer[received] = '\0';
 
-            ESP_LOGI(
-                TAG,
-                "Received %d bytes",
-                received
-            );
-
-            semantic_event_t event = {};
-
-            parse_semantic_event(
-                receive_buffer,
-                &event
-            );
-
-            consume_semantic_event(
-                &event
-            );
-
-            ESP_LOGI(
-                TAG,
-                "Payload: %s",
-                receive_buffer
-            );
+            ESP_LOGI(TAG, "Received %d bytes", received);
+            dispatch_json_message(receive_buffer);
         }
 
         set_listening(false);
-
         close(socket_fd);
 
-        ESP_LOGW(
-            TAG,
-            "Receiver restarting..."
-        );
-
-        vTaskDelay(
-            pdMS_TO_TICKS(1000)
-        );
+        ESP_LOGW(TAG, "Receiver restarting...");
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
 esp_err_t semantic_event_receiver_init(void)
 {
-    if (s_status.initialized)
-    {
-        ESP_LOGW(
-            TAG,
-            "Semantic event receiver already initialized"
-        );
+    portENTER_CRITICAL(&s_state_lock);
+    bool already_initialized = s_status.initialized;
+    portEXIT_CRITICAL(&s_state_lock);
 
+    if (already_initialized) {
+        ESP_LOGW(TAG, "Semantic event receiver already initialized");
         return ESP_OK;
     }
 
-    portENTER_CRITICAL(&s_status_lock);
+    portENTER_CRITICAL(&s_state_lock);
+    memset(&s_status, 0, sizeof(s_status));
+    memset(&s_context, 0, sizeof(s_context));
+    s_status.initialized = true;
+    portEXIT_CRITICAL(&s_state_lock);
 
-    memset(
-        &s_status,
-        0,
-        sizeof(s_status)
+    BaseType_t task_result = xTaskCreate(
+        semantic_receiver_task,
+        "semantic_receiver",
+        6144,
+        nullptr,
+        5,
+        nullptr
     );
 
-    s_status.initialized = true;
-
-    portEXIT_CRITICAL(&s_status_lock);
-
-    BaseType_t task_result =
-        xTaskCreate(
-            semantic_receiver_task,
-            "semantic_receiver",
-            4096,
-            nullptr,
-            5,
-            nullptr
-        );
-
-    if (task_result != pdPASS)
-    {
-        portENTER_CRITICAL(&s_status_lock);
+    if (task_result != pdPASS) {
+        portENTER_CRITICAL(&s_state_lock);
         s_status.initialized = false;
-        portEXIT_CRITICAL(&s_status_lock);
+        portEXIT_CRITICAL(&s_state_lock);
 
-        ESP_LOGE(
-            TAG,
-            "Unable to create semantic receiver task"
-        );
-
+        ESP_LOGE(TAG, "Unable to create semantic receiver task");
         return ESP_ERR_NO_MEM;
     }
 
-    ESP_LOGI(
-        TAG,
-        "Semantic event receiver initialized"
-    );
-
+    ESP_LOGI(TAG, "Semantic event receiver initialized");
     return ESP_OK;
 }
 
@@ -597,9 +471,27 @@ semantic_event_receiver_get_status(void)
 {
     semantic_event_receiver_status_t snapshot;
 
-    portENTER_CRITICAL(&s_status_lock);
+    portENTER_CRITICAL(&s_state_lock);
     snapshot = s_status;
-    portEXIT_CRITICAL(&s_status_lock);
+    portEXIT_CRITICAL(&s_state_lock);
+
+    return snapshot;
+}
+
+ambient_context_snapshot_t
+semantic_event_receiver_get_ambient_context(void)
+{
+    ambient_context_snapshot_t snapshot;
+
+    portENTER_CRITICAL(&s_state_lock);
+    snapshot = s_context;
+    portEXIT_CRITICAL(&s_state_lock);
+
+    if (snapshot.context_received && snapshot.ttl_seconds > 0) {
+        uint64_t elapsed_ms = monotonic_ms() - snapshot.received_at_ms;
+        snapshot.stale =
+            elapsed_ms > ((uint64_t)snapshot.ttl_seconds * 1000ULL);
+    }
 
     return snapshot;
 }
