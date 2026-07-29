@@ -1,0 +1,15 @@
+[Unit]
+Description=Ambient Physical AI Ambient Context Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/ambient-runtime/runtime/cognitive/stackflow/services/ambient_context
+EnvironmentFile=/root/ambient-runtime/runtime/cognitive/stackflow/services/ambient_context/.env
+ExecStart=/usr/bin/python3 /root/ambient-runtime/runtime/cognitive/stackflow/services/ambient_context/ambient_context_service.py --profile claudio
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

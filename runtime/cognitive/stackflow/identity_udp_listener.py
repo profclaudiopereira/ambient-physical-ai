@@ -32,6 +32,9 @@ from semantic_dispatcher import SemanticDispatcher
 from semantic_event_generator import generate_semantic_events
 from stackchan_mcp_server import run_mcp_server
 from stackchan_notifier import StackChanNotifier
+from services.ambient_context.ambient_context_service import (
+    send_ambient_context,
+)
 
 
 UDP_IP = "0.0.0.0"
@@ -167,8 +170,22 @@ while True:
         # update_context() replaces the process-local current context. The MCP
         # background thread reads this same Registry instance when a Tool is
         # invoked by the XiaoZhi broker.
+        
         update_context(context)
         current_context = get_current_context()
+
+        try:
+            profile_id = current_context.get("who", {}).get("id", "unknown")
+
+            send_ambient_context(
+                profile_id=profile_id,
+                tab5_host="192.168.77.25",
+            )
+
+            print(f"Ambient Context updated for '{profile_id}'")
+
+        except Exception as exc:
+            print(f"Ambient Context update failed: {exc}")
 
         message = build_human_message(current_context)
         semantic_events = generate_semantic_events(current_context)
