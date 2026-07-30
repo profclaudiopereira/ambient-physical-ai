@@ -13,9 +13,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include "voice_receiver.h"
 
 #include "display_manager.h"
 #include "network_config.h"
+#include "audio_bridge.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -202,6 +204,13 @@ static void show_ready_screen(void)
         ESP_LOGE(TAG, "Unable to show READY screen: %s",
                  esp_err_to_name(err));
     }
+}
+
+static esp_err_t play_received_pcm(
+    const int16_t *samples,
+    size_t sample_count)
+{
+    return audio_bridge_play_pcm(samples, sample_count);
 }
 
 static void handle_semantic_event(const semantic_event_t *event)
@@ -406,7 +415,25 @@ void app_main(void)
     ESP_ERROR_CHECK(init_i2c_bus());
     ESP_ERROR_CHECK(display_manager_init());
     ESP_ERROR_CHECK(display_show_boot());
+
+    /*
+    * Audio shares the application-owned I2C master bus. Audio failure must not
+    * prevent the already validated display, network and UDP services from
+    * starting.
+    */
+    
+    esp_err_t audio_err = audio_bridge_init(i2c_bus);
+
+    if (audio_err == ESP_OK) {
+        ESP_LOGI(TAG, "Audio subsystem initialized");
+    } else {
+        ESP_LOGE(TAG,
+                 "Audio initialization failed: %s",
+                 esp_err_to_name(audio_err));
+    }
+
     ESP_ERROR_CHECK(network_init());
+
 
     int waited_ms = 0;
     while (!network_is_connected() &&
@@ -420,6 +447,22 @@ void app_main(void)
                  "Wi-Fi not connected after %d ms; UDP will still start",
                  READY_WAIT_TIMEOUT_MS);
         ESP_ERROR_CHECK(display_show_error("WI-FI TIMEOUT"));
+    }
+
+    if (audio_err == ESP_OK) {
+        esp_err_t voice_err = voice_receiver_start(
+            VOICE_RECEIVER_DEFAULT_PORT,
+            play_received_pcm);
+
+        if (voice_err != ESP_OK) {
+            ESP_LOGE(TAG,
+                     "Unable to start voice receiver: %s",
+                     esp_err_to_name(voice_err));
+        } else {
+            ESP_LOGI(TAG,
+                     "Voice receiver listening on TCP port %d",
+                     VOICE_RECEIVER_DEFAULT_PORT);
+        }
     }
 
     BaseType_t task_created = xTaskCreate(

@@ -19,6 +19,9 @@ Context Registry implemented by context_registry.py.
 
 import json
 import socket
+import subprocess
+import sys
+from pathlib import Path
 from datetime import datetime
 from threading import Thread
 
@@ -30,6 +33,7 @@ from rgb_strip_notifier import RGBStripNotifier
 from runtime_state_notifier import RuntimeStateNotifier
 from semantic_dispatcher import SemanticDispatcher
 from semantic_event_generator import generate_semantic_events
+from semantic_services import build_identity_voice_message
 from stackchan_mcp_server import run_mcp_server
 from stackchan_notifier import StackChanNotifier
 from services.ambient_context.ambient_context_service import (
@@ -179,13 +183,56 @@ while True:
 
             send_ambient_context(
                 profile_id=profile_id,
-                tab5_host="192.168.77.25",
+                tab5_host="192.168.77.203",
             )
 
             print(f"Ambient Context updated for '{profile_id}'")
 
         except Exception as exc:
             print(f"Ambient Context update failed: {exc}")
+
+        # Select and render the canonical identity message once per received
+        # Identity Package. The validated StackFlow TTS client generates the
+        # complete PCM stream, wraps it as WAV and sends it to the Echo Pyramid
+        # through TCP/5006. Voice remains observational: failures must not stop
+        # the remaining semantic pipeline.
+        try:
+            identity = current_context.get("who")
+            voice_message = build_identity_voice_message(identity)
+
+            print("\nIdentity voice message selected:")
+            print(voice_message)
+
+            tts_client_path = (
+                Path(__file__).resolve().parent
+                / "stackflow_tts_to_echo_pyramid.py"
+            )
+
+            if not tts_client_path.is_file():
+                raise FileNotFoundError(
+                    f"StackFlow TTS client not found: {tts_client_path}"
+                )
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(tts_client_path),
+                    "--text",
+                    voice_message,
+                ],
+                check=False,
+            )
+
+            if completed.returncode == 0:
+                print("Echo Pyramid personalized voice: PASS")
+            else:
+                print(
+                    "Echo Pyramid personalized voice: FAIL "
+                    f"(TTS client exit code {completed.returncode})"
+                )
+
+        except Exception as exc:
+            print(f"Echo Pyramid personalized voice failed: {exc}")
 
         message = build_human_message(current_context)
         semantic_events = generate_semantic_events(current_context)

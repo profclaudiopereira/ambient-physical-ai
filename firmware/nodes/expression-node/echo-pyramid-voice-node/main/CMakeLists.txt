@@ -1,6 +1,7 @@
 idf_component_register(
     SRCS
         "main.c"
+        "audio_bridge.cpp"
         "network_config.c"
         "display_manager.c"
         "lcd_driver.c"
@@ -15,4 +16,5 @@ idf_component_register(
         lwip
         esp_system
         M5Echo-Pyramid
+	voice_receiver
 )

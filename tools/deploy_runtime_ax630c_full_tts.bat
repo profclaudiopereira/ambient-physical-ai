@@ -36,6 +36,15 @@ if not exist "%LOCAL%\identity_udp_listener.py" (
     goto :local_error
 )
 
+if not exist "%LOCAL%\stackflow_tts_to_echo_pyramid.py" (
+    echo ERROR: StackFlow TTS client was not found at:
+    echo        %CD%\%LOCAL%\stackflow_tts_to_echo_pyramid.py
+    echo.
+    echo Copy stackflow_tts_to_echo_pyramid.py into the StackFlow runtime
+    echo directory before running this deploy.
+    goto :local_error
+)
+
 echo [1/5] Checking SSH connection...
 ssh "%HOST%" "echo AX630C connection: PASS"
 if errorlevel 1 goto :deploy_error
@@ -58,7 +67,7 @@ if errorlevel 1 goto :deploy_error
 
 echo.
 echo [5/5] Validating deployed Python sources...
-ssh "%HOST%" "cd '%REMOTE%' && python3 -m py_compile identity_udp_listener.py context_builder.py context_registry.py semantic_dispatcher.py semantic_event.py semantic_event_generator.py ambient_runtime_notifier.py rgb_strip_notifier.py runtime_state_notifier.py echo_pyramid_adapter.py services/ambient_context/ambient_context_service.py services/ambient_context/send_test_context.py"
+ssh "%HOST%" "cd '%REMOTE%' && python3 -m py_compile identity_udp_listener.py context_builder.py context_registry.py semantic_dispatcher.py semantic_event.py semantic_event_generator.py semantic_services.py ambient_runtime_notifier.py rgb_strip_notifier.py runtime_state_notifier.py echo_pyramid_adapter.py stackflow_tts_to_echo_pyramid.py services/ambient_context/ambient_context_service.py services/ambient_context/send_test_context.py"
 if errorlevel 1 goto :validation_error
 
 echo.
@@ -74,6 +83,12 @@ echo   - services/ambient_context/ambient_context_service.py
 echo   - services/ambient_context/send_test_context.py
 echo   - services/ambient_context/.env.example
 echo   - services/ambient_context/ambient-context.service
+echo.
+echo Echo Pyramid voice integration files deployed:
+echo   - semantic_services.py
+echo   - echo_pyramid_adapter.py
+echo   - identity_udp_listener.py
+echo   - stackflow_tts_to_echo_pyramid.py
 echo.
 echo Remote Python syntax validation: PASS
 echo.
