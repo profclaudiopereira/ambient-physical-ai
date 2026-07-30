@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+        "wake_word_detector.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        esp-sr
+    PRIV_REQUIRES
+        main
+)

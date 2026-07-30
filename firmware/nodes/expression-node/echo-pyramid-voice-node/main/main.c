@@ -12,8 +12,10 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include "voice_receiver.h"
+#include "wake_word_detector.h"
 
 #include "display_manager.h"
 #include "network_config.h"
@@ -48,6 +50,10 @@
 #define READY_WAIT_INTERVAL_MS   100
 #define READY_WAIT_TIMEOUT_MS    15000
 #define WELCOME_DISPLAY_MS       3000
+
+#define AX630C_IP                 "192.168.77.202"
+#define AX630C_UDP_PORT           4444
+#define CONTEXT_REQUEST_SIZE      192
 
 static const char *TAG = "echo_pyramid_voice";
 static i2c_master_bus_handle_t i2c_bus = NULL;
@@ -210,7 +216,154 @@ static esp_err_t play_received_pcm(
     const int16_t *samples,
     size_t sample_count)
 {
-    return audio_bridge_play_pcm(samples, sample_count);
+    const bool detector_active =
+        wake_word_detector_is_started();
+
+    if (detector_active) {
+        wake_word_detector_pause();
+        vTaskDelay(pdMS_TO_TICKS(40));
+    }
+
+    const esp_err_t result =
+        audio_bridge_play_pcm(samples, sample_count);
+
+    if (detector_active) {
+        wake_word_detector_resume();
+    }
+
+    return result;
+}
+
+static const char *context_name_from_command_id(int command_id)
+{
+    switch (command_id) {
+        case 1: return "Research";
+        case 2: return "Lab";
+        case 3: return "Meeting";
+        case 4: return "Classroom";
+        case 5: return "Demo";
+        default: return NULL;
+    }
+}
+
+static esp_err_t send_context_change_request(const char *context)
+{
+    if (context == NULL || !network_is_connected()) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    char payload[CONTEXT_REQUEST_SIZE] = {0};
+    int written = snprintf(
+        payload,
+        sizeof(payload),
+        "{\"type\":\"context_change_request\","
+        "\"requested_context\":\"%s\","
+        "\"source\":\"voice_pyramid\"}",
+        context);
+
+    if (written < 0 || written >= (int)sizeof(payload)) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock < 0) {
+        return ESP_FAIL;
+    }
+
+    struct sockaddr_in destination = {
+        .sin_family = AF_INET,
+        .sin_port = htons(AX630C_UDP_PORT),
+    };
+
+    if (inet_pton(AF_INET, AX630C_IP,
+                  &destination.sin_addr) != 1) {
+        close(sock);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    int sent = sendto(
+        sock,
+        payload,
+        (size_t)written,
+        0,
+        (struct sockaddr *)&destination,
+        sizeof(destination));
+
+    close(sock);
+
+    if (sent != written) {
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(
+        TAG,
+        "Context change request sent | context=%s | target=%s:%d",
+        context,
+        AX630C_IP,
+        AX630C_UDP_PORT);
+    ESP_LOGI(TAG, "Payload: %s", payload);
+
+    return ESP_OK;
+}
+
+static void handle_wake_word_detected(
+    int wake_word_index,
+    int model_index)
+{
+    ESP_LOGI(
+        TAG,
+        "Wake Word callback | phrase=Hi ESP | word=%d | model=%d",
+        wake_word_index,
+        model_index);
+
+    expression_rgb_blue();
+}
+
+static void handle_context_command_detected(
+    int command_id,
+    float probability)
+{
+
+    /*
+     * ID 0 representa timeout da janela de comando.
+     * Restaura o estado visual normal sem enviar UDP.
+     */
+    if (command_id == 0) {
+        ESP_LOGI(
+            TAG,
+            "Context command window closed without recognition");
+
+        expression_rgb_green();
+        return;
+    }
+
+    const char *context =
+        context_name_from_command_id(command_id);
+
+    if (context == NULL) {
+        ESP_LOGW(TAG,
+                 "Unknown context command ID: %d",
+                 command_id);
+        expression_rgb_red();
+        return;
+    }
+
+    ESP_LOGI(
+        TAG,
+        "Voice context selected | context=%s | probability=%.3f",
+        context,
+        probability);
+
+    esp_err_t err = send_context_change_request(context);
+    if (err == ESP_OK) {
+        expression_rgb_green();
+    } else {
+        ESP_LOGE(
+            TAG,
+            "Unable to send context request: %s",
+            esp_err_to_name(err));
+        expression_rgb_red();
+    }
 }
 
 static void handle_semantic_event(const semantic_event_t *event)
@@ -462,6 +615,19 @@ void app_main(void)
             ESP_LOGI(TAG,
                      "Voice receiver listening on TCP port %d",
                      VOICE_RECEIVER_DEFAULT_PORT);
+        }
+
+        esp_err_t wake_err = wake_word_detector_start(
+            handle_wake_word_detected,
+            handle_context_command_detected);
+
+        if (wake_err != ESP_OK) {
+            ESP_LOGE(TAG,
+                     "Unable to start Wake Word detector: %s",
+                     esp_err_to_name(wake_err));
+        } else {
+            ESP_LOGI(TAG,
+                     "Wake Word detector listening for: Hi ESP");
         }
     }
 

@@ -7,8 +7,9 @@ idf_component_register(
         "lcd_driver.c"
     INCLUDE_DIRS
         "."
+    REQUIRES
+        esp_driver_i2c
     PRIV_REQUIRES
-        driver
         esp_event
         esp_netif
         esp_wifi
@@ -16,5 +17,6 @@ idf_component_register(
         lwip
         esp_system
         M5Echo-Pyramid
-	voice_receiver
+        voice_receiver
+        wake_word_detector
 )

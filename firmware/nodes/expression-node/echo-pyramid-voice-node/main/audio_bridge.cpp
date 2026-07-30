@@ -17,6 +17,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
 namespace {
 
@@ -33,6 +34,7 @@ const char *TAG = "echo_audio_bridge";
 
 M5EchoPyramid echo_pyramid;
 bool audio_initialized = false;
+SemaphoreHandle_t audio_mutex = nullptr;
 
 }  // namespace
 
@@ -74,6 +76,12 @@ extern "C" esp_err_t audio_bridge_init(
     echo_pyramid.codec().setVolume(AUDIO_VOLUME);
     echo_pyramid.codec().mute(false);
 
+    audio_mutex = xSemaphoreCreateMutex();
+    if (audio_mutex == nullptr) {
+        ESP_LOGE(TAG, "Unable to create audio access mutex");
+        return ESP_ERR_NO_MEM;
+    }
+
     audio_initialized = true;
 
     ESP_LOGI(
@@ -99,6 +107,10 @@ extern "C" esp_err_t audio_bridge_play_pcm(
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (xSemaphoreTake(audio_mutex, portMAX_DELAY) != pdTRUE) {
+        return ESP_FAIL;
+    }
+
     size_t samples_played = 0;
 
     while (samples_played < sample_count) {
@@ -119,6 +131,7 @@ extern "C" esp_err_t audio_bridge_play_pcm(
         samples_played += static_cast<size_t>(frame_count);
     }
 
+    xSemaphoreGive(audio_mutex);
     return ESP_OK;
 }
 
@@ -139,6 +152,10 @@ extern "C" esp_err_t audio_bridge_record_pcm(
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (xSemaphoreTake(audio_mutex, portMAX_DELAY) != pdTRUE) {
+        return ESP_FAIL;
+    }
+
     size_t samples_recorded = 0;
 
     while (samples_recorded < sample_count) {
@@ -156,6 +173,7 @@ extern "C" esp_err_t audio_bridge_record_pcm(
         samples_recorded += static_cast<size_t>(frame_count);
     }
 
+    xSemaphoreGive(audio_mutex);
     return ESP_OK;
 }
 
