@@ -2,12 +2,9 @@
 """
 Ambient Runtime Notifier for Ambient Physical AI.
 
-Consumes normalized Semantic Event V1 objects and delivers a compact
-Ambient Runtime message to the Tab5 through UDP.
-
-This adapter does not generate semantic meaning. It only translates
-the normalized runtime event into the delivery contract currently
-supported by the Ambient Runtime semantic event receiver.
+Consumes normalized Semantic Event V1 objects and delivers a compact Ambient
+Runtime message to the Tab5 through UDP. Semantic meaning remains centralized
+in the AX630C; this adapter only translates and transports the event.
 """
 
 import json
@@ -26,7 +23,7 @@ class AmbientRuntimeNotifier:
 
         self.host = os.getenv(
             "AMBIENT_RUNTIME_HOST",
-            "192.168.77.25",
+            "192.168.77.203",
         )
 
         self.port = int(
@@ -38,11 +35,11 @@ class AmbientRuntimeNotifier:
 
     def notify(self, semantic_event):
         """
-        Consume a normalized Semantic Event V1.
+        Consume and deliver one normalized Semantic Event V1.
 
-        Returns:
-            True when the event is sent through UDP.
-            False when delivery is disabled or only prepared.
+        The payload is forwarded because context_changed consumers need the
+        previous/current environment and request source. Existing receivers
+        remain compatible because the original envelope fields are unchanged.
         """
         if not is_semantic_event(semantic_event):
             raise ValueError("invalid Semantic Event V1")
@@ -57,10 +54,24 @@ class AmbientRuntimeNotifier:
                 "Semantic Event does not contain a valid event"
             )
 
+        event_payload = semantic_event.get("payload", {})
+        if not isinstance(event_payload, dict):
+            event_payload = {}
+
+        event_context = semantic_event.get("context", {})
+        if not isinstance(event_context, dict):
+            event_context = {}
+
         payload = {
             "type": "semantic_event",
             "event_type": event_name.strip(),
             "target": "ambient_runtime",
+            "payload": event_payload,
+            "context": event_context,
+            "source": semantic_event.get(
+                "source",
+                "ax630c_cognitive_runtime",
+            ),
         }
 
         if self.mode == "udp":

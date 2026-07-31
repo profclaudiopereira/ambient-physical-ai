@@ -2,11 +2,9 @@
 """
 Semantic Event Generator for Ambient Physical AI.
 
-Transforms the current validated Context Package into normalized
-Semantic Event V1 objects.
-
-This module does not deliver events and does not know device protocols.
-Its only responsibility is semantic event generation.
+Transforms validated Context Package objects into normalized Semantic Event V1
+objects. This module owns semantic meaning only; delivery and device protocols
+remain responsibilities of the Semantic Dispatcher and its adapters.
 """
 
 from semantic_event import build_semantic_event
@@ -87,9 +85,7 @@ DEFAULT_ROLE_PROFILE = {
 
 
 def _resolve_authorization(role):
-    """
-    Resolve a legacy or normalized role into the V1 authorization model.
-    """
+    """Resolve a legacy or normalized role into the V1 authorization model."""
     normalized_key = str(role or "unknown").strip().lower()
     profile = ROLE_PROFILES.get(normalized_key, DEFAULT_ROLE_PROFILE)
 
@@ -101,9 +97,7 @@ def _resolve_authorization(role):
 
 
 def _compact_context(context_package, authorization):
-    """
-    Extract only the minimum context required by downstream consumers.
-    """
+    """Extract the minimum shared context required by downstream consumers."""
     who = context_package.get("who", {})
     where = context_package.get("where", {})
     what = context_package.get("what", {})
@@ -122,10 +116,11 @@ def _compact_context(context_package, authorization):
 
 def generate_semantic_events(context_package):
     """
-    Generate the initial Semantic Event set from a Context Package.
+    Generate the initial identity-authentication Semantic Event set.
 
-    Returns:
-        A list containing normalized Semantic Event V1 dictionaries.
+    This function remains dedicated to the validated NFC authentication flow.
+    Voice-driven context changes use generate_context_changed_event() so they
+    never replay identity greetings or identity-authenticated behavior.
     """
     if not isinstance(context_package, dict):
         raise ValueError("context_package must be a dictionary")
@@ -163,6 +158,57 @@ def generate_semantic_events(context_package):
         source="semantic_event_generator_v1",
     )
 
-    return [
-        identity_event,
-    ]
+    return [identity_event]
+
+
+def generate_context_changed_event(
+    context_package,
+    previous_context,
+    requested_context,
+    request_source,
+):
+    """
+    Build the canonical event for an authorized environment-context change.
+
+    Identity, role and authorization are inherited from the active Context
+    Package. The event carries both the previous and current environment so
+    consumers can decide whether and how to adapt without reconstructing state.
+    """
+    if not isinstance(context_package, dict):
+        raise ValueError("context_package must be a dictionary")
+
+    if not isinstance(previous_context, str) or not previous_context.strip():
+        raise ValueError("previous_context must be a non-empty string")
+
+    if not isinstance(requested_context, str) or not requested_context.strip():
+        raise ValueError("requested_context must be a non-empty string")
+
+    if not isinstance(request_source, str) or not request_source.strip():
+        raise ValueError("request_source must be a non-empty string")
+
+    who = context_package.get("who", {})
+    what = context_package.get("what", {})
+    source_role = who.get("role", "unknown")
+    authorization = _resolve_authorization(source_role)
+    compact_context = _compact_context(context_package, authorization)
+
+    return build_semantic_event(
+        event_type="context_changed",
+        target="cognitive_runtime",
+        priority="high",
+        payload={
+            "user_id": who.get("id", "unknown"),
+            "user_name": who.get("name", "Unknown"),
+            "source_role": source_role,
+            "role": authorization["role"],
+            "access_level": authorization["access_level"],
+            "capabilities": authorization["capabilities"],
+            "previous_context": previous_context.strip(),
+            "environment": requested_context.strip(),
+            "activity": what.get("activity", "context_change"),
+            "state": what.get("state", "validated"),
+            "request_source": request_source.strip(),
+        },
+        context=compact_context,
+        source="semantic_event_generator_v1",
+    )

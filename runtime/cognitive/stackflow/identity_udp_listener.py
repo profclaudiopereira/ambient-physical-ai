@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
 """
-Identity UDP Listener for the StackFlow Cognitive Runtime.
+Identity and Context-Change UDP Listener for the StackFlow Cognitive Runtime.
 
-This module is the current entry point for the runtime integration process.
+This module is the current entry point for runtime integration.
 
 Responsibilities:
-    - Receive Identity Packages through UDP.
+    - Receive Identity Packages and authorized Context Change Requests by UDP.
     - Build and register the current cognitive context.
-    - Generate Semantic Events from the registered context.
-    - Dispatch Semantic Events to configured output adapters.
+    - Preserve the active identity during voice-driven context changes.
+    - Generate and dispatch normalized Semantic Event V1 objects.
+    - Refresh Ambient Context information on the Tab5.
     - Publish Cognitive Runtime State to the dedicated state indicator.
     - Start the StackChan MCP transport in the same Python process.
 
 The MCP server intentionally runs in a background thread. Running both
-components in the same process allows them to share the process-local
-Context Registry implemented by context_registry.py.
+components in the same process allows them to share the process-local Context
+Registry implemented by context_registry.py.
 """
 
 import json
 import socket
 import subprocess
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from threading import Thread
 
 from ambient_runtime_notifier import AmbientRuntimeNotifier
@@ -32,74 +33,189 @@ from echo_pyramid_adapter import EchoPyramidAdapter
 from rgb_strip_notifier import RGBStripNotifier
 from runtime_state_notifier import RuntimeStateNotifier
 from semantic_dispatcher import SemanticDispatcher
-from semantic_event_generator import generate_semantic_events
+from semantic_event_generator import (
+    generate_context_changed_event,
+    generate_semantic_events,
+)
 from semantic_services import build_identity_voice_message
-from stackchan_mcp_server import run_mcp_server
-from stackchan_notifier import StackChanNotifier
 from services.ambient_context.ambient_context_service import (
     send_ambient_context,
 )
+from stackchan_mcp_server import run_mcp_server
+from stackchan_notifier import StackChanNotifier
 
 
 UDP_IP = "0.0.0.0"
 UDP_PORT = 4444
 
+# These names are the canonical environment values already used by M5Dial,
+# Echo Pyramid MultiNet commands and the Cognitive Runtime.
+VALID_CONTEXTS = {
+    "Research",
+    "Lab",
+    "Meeting",
+    "Classroom",
+    "Demo",
+}
+
 
 def start_mcp_server_thread() -> Thread:
-    """
-    Start the StackChan MCP server in a background daemon thread.
-
-    The MCP transport must execute in this process because the current
-    Context Registry is an in-memory, process-local component. Starting the
-    MCP server as a separate operating-system process would create an
-    independent Registry instance and Semantic Tools would continue returning
-    an empty context.
-
-    A daemon thread is appropriate for the current runtime milestone because
-    its lifetime is bound to the main Identity UDP Listener process.
-    """
-
+    """Start the StackChan MCP server in a background daemon thread."""
     thread = Thread(
         target=run_mcp_server,
         name="stackchan-mcp-server",
         daemon=True,
     )
     thread.start()
-
     return thread
 
 
 def notify_runtime_state(state: str) -> bool:
     """
-    Publish a Runtime State without interrupting the semantic pipeline.
+    Publish Runtime State without interrupting the semantic pipeline.
 
     Runtime-state indication is observational. A temporary failure in the
-    StickC node, its network path, or its notifier must never prevent context
-    construction or Semantic Event delivery to the remaining system nodes.
-
-    Returns:
-        True when the notifier reports successful UDP transmission.
-        False when notification fails or raises an exception.
+    StickC node or network path must not prevent Context or Semantic Event
+    processing.
     """
-
     try:
         return runtime_state_notifier.notify(state)
     except Exception as exc:
-        print(
-            f"Runtime State notification failed [{state}]: {exc}"
-        )
+        print(f"Runtime State notification failed [{state}]: {exc}")
         return False
 
 
-# Start the MCP transport before entering the blocking UDP receive loop.
-# The STACKCHAN_MCP_URL environment variable must be configured in the shell
-# used to start this process.
-mcp_thread = start_mcp_server_thread()
+def refresh_ambient_context(current_context: dict) -> None:
+    """
+    Refresh profile-aware external information on the Tab5.
 
+    This service is separate from Semantic Event delivery. A failure here is
+    reported but does not block context registration or event dispatch.
+    """
+    try:
+        profile_id = current_context.get("who", {}).get("id", "unknown")
+
+        send_ambient_context(
+            profile_id=profile_id,
+            tab5_host="192.168.77.203",
+        )
+
+        print(f"Ambient Context updated for '{profile_id}'")
+
+    except Exception as exc:
+        print(f"Ambient Context update failed: {exc}")
+
+
+def print_dispatch_results(dispatch_results: dict) -> None:
+    """Print one consistent delivery summary for every Semantic Event."""
+    print("\nSemantic Event dispatch results:")
+    print(json.dumps(dispatch_results, ensure_ascii=False, indent=2))
+
+    if dispatch_results.get("stackchan"):
+        print("StackChan semantic event sent/prepared: PASS")
+    else:
+        print("StackChan semantic event sent/prepared: FAIL")
+
+    if dispatch_results.get("rgb_strip"):
+        print("RGB expression semantic event sent: PASS")
+    else:
+        print("RGB expression semantic event sent: FAIL")
+
+    if dispatch_results.get("ambient_runtime"):
+        print("Ambient Runtime semantic event sent: PASS")
+    else:
+        print("Ambient Runtime semantic event sent: FAIL")
+
+    if dispatch_results.get("echo_pyramid"):
+        print("Echo Pyramid semantic event handled: PASS")
+    else:
+        print("Echo Pyramid semantic event handled: FAIL")
+
+
+def handle_context_change_request(payload: dict) -> None:
+    """
+    Validate and apply one voice-originated environment-context change.
+
+    The active identity, NFC UID, role and authorization remain unchanged.
+    Only the environment and context-change metadata are updated. After the
+    Registry update, a dedicated context_changed Semantic Event is dispatched
+    so downstream nodes can react without replaying identity authentication.
+    """
+    requested_context = payload.get("requested_context")
+    request_source = payload.get("source", "unknown")
+
+    print("Context Change Request received")
+    print("Timestamp:", datetime.now().isoformat())
+    print("Requested Context:", requested_context)
+    print("Source:", request_source)
+
+    if requested_context not in VALID_CONTEXTS:
+        raise ValueError(
+            "invalid requested_context; expected one of "
+            + ", ".join(sorted(VALID_CONTEXTS))
+        )
+
+    current_context = get_current_context()
+    if current_context is None:
+        raise ValueError(
+            "context change rejected: no authenticated identity is active"
+        )
+
+    previous_context = (
+        current_context.get("where", {}).get("environment", "Unknown")
+    )
+
+    current_context.setdefault("where", {})
+    current_context["where"]["environment"] = requested_context
+    current_context["where"]["location_source"] = request_source
+
+    current_context.setdefault("what", {})
+    current_context["what"]["activity"] = "context_change"
+    current_context["what"]["state"] = "validated"
+    current_context["what"]["event_type"] = "context_change_request"
+
+    current_context.setdefault("why", {})
+    current_context["why"]["intent"] = "change_environment_context"
+    current_context["why"]["reasoning"] = (
+        f"Context changed from {previous_context} to "
+        f"{requested_context} by {request_source}"
+    )
+    current_context["why"]["confidence"] = 1.0
+
+    current_context.setdefault("source", {})
+    current_context["source"]["context_change_source"] = request_source
+
+    update_context(current_context)
+    updated_context = get_current_context()
+
+    print(f"Context updated: {previous_context} -> {requested_context}")
+    print("Updated Runtime Context:")
+    print(json.dumps(updated_context, ensure_ascii=False, indent=2))
+
+    # Preserve the already validated profile-aware Tab5 refresh path.
+    refresh_ambient_context(updated_context)
+
+    # Generate a dedicated event instead of reusing identity_authenticated.
+    # This prevents a second welcome message and keeps identity semantics clean.
+    context_event = generate_context_changed_event(
+        context_package=updated_context,
+        previous_context=previous_context,
+        requested_context=requested_context,
+        request_source=request_source,
+    )
+
+    print("\nContext Changed Semantic Event generated:")
+    print(json.dumps(context_event, ensure_ascii=False, indent=2))
+
+    dispatch_results = dispatcher.dispatch(context_event)
+    print_dispatch_results(dispatch_results)
+
+
+# The MCP transport must share the same in-memory Registry as this listener.
+mcp_thread = start_mcp_server_thread()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((UDP_IP, UDP_PORT))
-
 
 notifier = StackChanNotifier()
 rgb_strip_notifier = RGBStripNotifier()
@@ -119,18 +235,22 @@ dispatcher.register_adapter(
     echo_pyramid_adapter.notify,
 )
 
-
 print("====================================")
-print("AX630C Identity UDP Listener")
+print("AX630C Identity and Context UDP Listener")
 print(f"Listening on {UDP_IP}:{UDP_PORT}")
+print("Identity Package ingress: ENABLED")
+print("Context Change Request ingress: ENABLED")
 print("Cognitive Context Builder: ENABLED")
 print("Semantic Event Generator: ENABLED")
 print("Semantic Dispatcher: ENABLED")
 print("StackChan Notifier: ENABLED")
-print("RGB Strip Notifier: ENABLED")
+print("RGB Expression Notifier: ENABLED")
 print("Ambient Runtime Notifier: ENABLED")
 print("Echo Pyramid Adapter: ENABLED")
-print(f"Echo Pyramid UDP Target: {echo_pyramid_adapter.host}:{echo_pyramid_adapter.port}")
+print(
+    "Echo Pyramid UDP Target: "
+    f"{echo_pyramid_adapter.host}:{echo_pyramid_adapter.port}"
+)
 print("Runtime State Notifier: ENABLED")
 print("StackChan MCP Server: STARTING")
 print("Shared Context Registry: ENABLED")
@@ -149,6 +269,18 @@ while True:
 
     try:
         payload = json.loads(raw)
+        packet_type = payload.get("type")
+
+        if packet_type == "context_change_request":
+            notify_runtime_state("thinking")
+            handle_context_change_request(payload)
+            notify_runtime_state("responding")
+            continue
+
+        if packet_type != "identity_package":
+            raise ValueError(
+                f"unsupported UDP packet type: {packet_type!r}"
+            )
 
         print("Identity Package received")
         print("Timestamp:", datetime.now().isoformat())
@@ -162,40 +294,17 @@ while True:
         print("UID:", payload.get("nfc", {}).get("uid"))
         print("Source:", payload.get("source"))
 
-        # The current StickC firmware supports "thinking" but does not yet
-        # define a separate "processing_context" state. Context construction
-        # and Semantic Event generation are therefore represented as thinking.
         notify_runtime_state("thinking")
 
-        # The Context Builder normalizes the Identity Package into the
-        # canonical context representation consumed by semantic services.
+        # Normalize the Identity Package and replace the active Registry state.
         context = build_context(payload)
-
-        # update_context() replaces the process-local current context. The MCP
-        # background thread reads this same Registry instance when a Tool is
-        # invoked by the XiaoZhi broker.
-        
         update_context(context)
         current_context = get_current_context()
 
-        try:
-            profile_id = current_context.get("who", {}).get("id", "unknown")
+        refresh_ambient_context(current_context)
 
-            send_ambient_context(
-                profile_id=profile_id,
-                tab5_host="192.168.77.203",
-            )
-
-            print(f"Ambient Context updated for '{profile_id}'")
-
-        except Exception as exc:
-            print(f"Ambient Context update failed: {exc}")
-
-        # Select and render the canonical identity message once per received
-        # Identity Package. The validated StackFlow TTS client generates the
-        # complete PCM stream, wraps it as WAV and sends it to the Echo Pyramid
-        # through TCP/5006. Voice remains observational: failures must not stop
-        # the remaining semantic pipeline.
+        # Identity voice runs only for Identity Packages. Context changes never
+        # execute this block and therefore never replay the welcome greeting.
         try:
             identity = current_context.get("who")
             voice_message = build_identity_voice_message(identity)
@@ -248,33 +357,8 @@ while True:
 
         for semantic_event in semantic_events:
             dispatch_results = dispatcher.dispatch(semantic_event)
+            print_dispatch_results(dispatch_results)
 
-            print("\nSemantic Event dispatch results:")
-            print(json.dumps(dispatch_results, ensure_ascii=False, indent=2))
-
-            if dispatch_results.get("stackchan"):
-                print("StackChan notification sent: PASS")
-            else:
-                print("StackChan notification prepared: PASS")
-                print("StackChan reaction observed: PENDING")
-
-            if dispatch_results.get("rgb_strip"):
-                print("RGB Strip semantic event sent: PASS")
-            else:
-                print("RGB Strip semantic event sent: FAIL")
-
-            if dispatch_results.get("ambient_runtime"):
-                print("Ambient Runtime semantic event sent: PASS")
-            else:
-                print("Ambient Runtime semantic event sent: FAIL")
-
-            if dispatch_results.get("echo_pyramid"):
-                print("Echo Pyramid semantic event sent: PASS")
-            else:
-                print("Echo Pyramid semantic event sent: FAIL")
-
-        # Responding represents the completed handoff of the generated
-        # Semantic Events to all currently registered output adapters.
         notify_runtime_state("responding")
 
     except Exception as exc:
@@ -284,6 +368,6 @@ while True:
         print("Error:", exc)
 
     finally:
-        # Every packet-processing cycle returns the indicator to idle,
-        # regardless of success or failure.
+        # Every processing cycle returns the explicit cognitive indicator to
+        # idle, including the context-change branch that uses continue above.
         notify_runtime_state("idle")
