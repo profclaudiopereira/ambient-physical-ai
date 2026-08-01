@@ -81,6 +81,14 @@ PASS
 
 ------------------------------------------------------------------------
 
+## Repository Note
+
+The current validated implementation described in this document corresponds to **Presence Node V2**, based on the HLK-LD2410C 24 GHz mmWave radar.
+
+The repository directory intentionally retains the historical name `presence-node-v1` to preserve Git history, maintain stable repository references, and avoid unnecessary repository restructuring.
+
+------------------------------------------------------------------------
+
 # Role in the Ambient Physical AI Architecture
 
 The Presence Layer does not identify the person and does not perform
@@ -448,6 +456,16 @@ CMake
 Ninja
 Git
 ```
+### Wi-Fi Configuration
+
+Before building the firmware, configure the Wi-Fi credentials:
+
+```cpp
+#define WIFI_SSID "<YOUR_WIFI_SSID>"
+#define WIFI_PASS "<YOUR_WIFI_PASSWORD>"
+```
+
+Replace the placeholder values with the credentials of your local Wi-Fi network.
 
 From the node directory:
 
@@ -588,17 +606,6 @@ Not implemented in this node:
 -   StackFlow orchestration;
 -   ambient actuation;
 -   expression output.
-
-------------------------------------------------------------------------
-
-# Security and Configuration Note
-
-Wi-Fi credentials and fixed IPv4 destinations are currently configured
-in source code for laboratory validation.
-
-Before public release, move environment-specific values to an
-appropriate configuration mechanism and ensure that no private
-credentials are committed.
 
 ------------------------------------------------------------------------
 
