@@ -13,6 +13,12 @@ They are preserved as engineering evidence because they were used to validate:
 - AX630C as an MCP Tool Provider
 - StackChan MCP integration experiments
 
+For the validated StackFlow Cognitive Runtime architecture, see:
+
+```text
+../README.md
+```
+
 ## Core Runtime
 
 The production Cognitive Runtime is implemented in:
@@ -32,16 +38,12 @@ Identity Package
 Context Builder
         │
         ▼
-5W Context Package
-        │
-        ▼
 Context Registry
         │
-        ▼
-Local Semantic Services
-        │
-        ▼
-Semantic MCP Tool Layer
+        ├──────────────┐
+        │              │
+        ▼              ▼
+Semantic Services   Embedded MCP Runtime
 ```
 
 ## Purpose
@@ -51,3 +53,11 @@ The scripts contained in this directory document the engineering investigation t
 They are intentionally preserved to improve reproducibility and to document the project's technical evolution.
 
 They are **laboratory artifacts**, not production runtime components.
+
+## Engineering Scope
+
+The scripts contained in this directory are preserved for engineering reproducibility.
+
+They are intentionally isolated from the production runtime and should not be imported or referenced by runtime components.
+
+Changes made inside this directory must not modify the validated StackFlow Cognitive Runtime architecture.
