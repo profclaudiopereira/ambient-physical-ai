@@ -4,25 +4,13 @@
 
 ### Identity Layer Runtime Node
 
-The Identity Node is responsible for transforming a physical identifier into a semantic digital identity inside the Ambient Physical AI ecosystem.
+The **Identity Node** is responsible for transforming a physical identifier into a semantic digital identity within the Ambient Physical AI ecosystem.
 
-This node bridges the physical world and the cognitive runtime by recognizing users, selecting the active operational context and producing standardized identity packages for the remaining distributed system.
-
----
-
-# Mission
-
-The Identity Node performs five primary responsibilities:
-
-- Detect NFC cards
-- Resolve user identity
-- Select operational context
-- Generate identity packages
-- Present identity through a graphical interface
+It bridges the physical and cognitive worlds by identifying users, selecting the active operational context, presenting identity locally on the M5Dial interface, and generating standardized Identity Packages consumed by the Cognitive Runtime.
 
 ---
 
-# Current Project Status
+# Project Status
 
 ```text
 Identity Node V1
@@ -40,9 +28,21 @@ Identity visualization with profile images validated.
 
 ---
 
+# Mission
+
+The Identity Node is responsible for:
+
+- Detecting NFC cards
+- Resolving user identities
+- Selecting the active operational context
+- Presenting identity locally
+- Producing standardized Identity Packages
+
+---
+
 # Hardware
 
-Current validated hardware:
+Validated hardware platform:
 
 ```text
 M5Dial V1.1
@@ -62,33 +62,29 @@ WS1850S NFC Reader
 
 ---
 
-# Runtime Architecture
+# Runtime Overview
 
+```text
+Presence Node
+      │
+presence_event
+      │
+      ▼
+Identity Node
+      │
+Identity Package (UDP)
+      │
+      ▼
+Cognitive Runtime (AX630C)
 ```
-                 Presence Node
-                       │
-             UDP presence_event
-                       │
-                       ▼
-              Identity Node
-                       │
-          ┌────────────┴────────────┐
-          │                         │
-    Identity Visualization    Identity Package
-          │                         │
-          └────────────┬────────────┘
-                       │
-                 UDP JSON
-                       │
-                       ▼
-           Cognitive Runtime (AX630C)
-```
+
+The Identity Node acts as the boundary between physical identification and semantic processing.
 
 ---
 
-# Software Architecture
+# Software Organization
 
-The implementation is organized around two independent FreeRTOS tasks.
+The firmware is organized around independent FreeRTOS tasks.
 
 ## UI Task
 
@@ -96,10 +92,10 @@ Responsible for:
 
 - display
 - touch
-- encoder
+- rotary encoder
 - buzzer
-- context visualization
 - profile visualization
+- context visualization
 
 ## NFC Task
 
@@ -107,17 +103,17 @@ Responsible for:
 
 - WS1850S communication
 - card polling
-- UID reading
+- UID acquisition
 - recovery
 - event generation
 
-Both tasks communicate through an Identity Event Queue, keeping the user interface isolated from NFC timing requirements. This separation is reflected directly in the current implementation. :contentReference[oaicite:2]{index=2}
+Communication between both tasks occurs through an Identity Event Queue, isolating the graphical interface from NFC timing requirements.
 
 ---
 
 # Identity Flow
 
-```
+```text
 Presence detected
         │
         ▼
@@ -127,16 +123,16 @@ Tap NFC Card
 Read UID
         │
         ▼
-Profile Resolution
+Resolve Profile
         │
         ▼
-Context Association
+Associate Context
         │
         ▼
-Identity Visualization
+Display Identity
         │
         ▼
-Identity Package
+Generate Identity Package
         │
         ▼
 AX630C
@@ -146,13 +142,13 @@ AX630C
 
 # User Interface
 
-The Identity Node currently provides three operating screens:
+The current interface includes:
 
 - Identity Console
 - Presence Prompt
 - Identity Visualization
 
-The visualization screen presents:
+The visualization screen displays:
 
 - profile image
 - user name
@@ -162,29 +158,25 @@ The visualization screen presents:
 
 ---
 
-# Profile Image Manager
+# Profile Images
 
-Version 1 introduces a dedicated abstraction named:
+Profile image management is implemented through the `ProfileImageManager` abstraction.
 
-```text
-ProfileImageManager
-```
-
-The graphical interface never accesses image data directly.
-
-Instead it simply requests:
+The user interface never accesses image assets directly. Instead it requests rendering through a single interface:
 
 ```cpp
 ProfileImageManager::drawProfile(profile.id, x, y);
 ```
 
-Current implementation stores embedded RGB565 avatars.
+Additional implementation details are documented in:
 
-This abstraction intentionally prepares the project for future synchronized profile storage without modifying the user interface.
+```text
+main/README.md
+```
 
 ---
 
-# Current Profiles
+# Supported Profiles
 
 Validated profiles:
 
@@ -194,15 +186,15 @@ Validated profiles:
 - Student
 - Unknown
 
-Each profile is mapped to an independent NFC card and rendered with its own avatar.
+Each profile is associated with an independent NFC identifier.
 
 ---
 
 # Context Selection
 
-The rotary encoder selects the active operating context.
+The rotary encoder selects the current operating context.
 
-Current contexts include:
+Validated contexts:
 
 - Lab
 - Research
@@ -210,7 +202,7 @@ Current contexts include:
 - Demo
 - Meeting
 
-The selected context becomes part of every generated identity package.
+The selected context becomes part of every generated Identity Package.
 
 ---
 
@@ -218,21 +210,13 @@ The selected context becomes part of every generated identity package.
 
 The Identity Node continuously listens for UDP `presence_event` messages.
 
-When presence is detected:
-
-```
-Presence detected
-        ↓
-Tap NFC card
-```
-
-is presented to the user before identity acquisition begins. :contentReference[oaicite:3]{index=3}
+When presence is detected, the interface requests the user to authenticate before identity acquisition begins.
 
 ---
 
 # Identity Package
 
-After successful identification the node generates a JSON identity package containing:
+After successful authentication the node generates a standardized JSON package containing:
 
 - profile
 - role
@@ -244,31 +228,26 @@ The package is transmitted to the Cognitive Runtime over UDP.
 
 ---
 
-# Current Engineering Status
+# Documentation
 
-Validated:
+Project documentation is organized hierarchically.
 
-- FreeRTOS runtime
-- Shared I2C protection
-- NFC communication
-- UID mapping
-- Five user profiles
-- Context selection
-- Identity visualization
-- Profile images
-- UDP communication
-- Presence integration
-- Identity Package generation
+```text
+identity-node/
 
----
+README.md
 
-# Current Limitations
+components/
+    ws1850s/
+        README.md
 
-Current implementation intentionally uses embedded RGB565 profile images.
+main/
+    README.md
+```
 
-This decision was adopted to validate the complete identity pipeline before implementing centralized profile synchronization.
-
-The future implementation will preserve the same ProfileImageManager abstraction while replacing embedded images with synchronized profile assets provided by the Cognitive Runtime.
+- **README.md** — Identity Layer overview.
+- **components/ws1850s/README.md** — reusable NFC reader component.
+- **main/README.md** — profile image management and graphical assets.
 
 ---
 
@@ -286,11 +265,6 @@ main/
     profile_image_manager.h
 
     profile_images/
-        claudio.h
-        herminio.h
-        mariana.h
-        student.h
-        unknown.h
 ```
 
 ---
@@ -313,94 +287,68 @@ idf.py flash monitor
 
 # Validation Status
 
+Validated features:
+
+- FreeRTOS runtime
+- Shared I²C protection
+- WS1850S communication
+- UID mapping
+- Five user profiles
+- Context selection
+- Identity visualization
+- Profile images
+- Presence integration
+- UDP Identity Package
+- AX630C integration
+
 ```text
 Identity Layer
 
 VALIDATED
 ```
 
-Current validated features:
-
-✔ NFC
-
-✔ Five mapped profiles
-
-✔ Context selection
-
-✔ Identity visualization
-
-✔ Profile avatars
-
-✔ Presence integration
-
-✔ UDP identity package
-
-✔ AX630C integration interface
-
 ---
 
-# Future Evolution
+# Future Work
 
-The current implementation validates the complete Identity Layer while keeping the architecture compatible with future profile synchronization, NDEF-based identities and centralized profile management provided by the Cognitive Runtime.
+The current implementation intentionally stores profile images as embedded RGB565 assets.
 
+The existing `ProfileImageManager` abstraction allows future migration to synchronized profile assets without changing the user interface.
+
+Planned evolution includes:
+
+- centralized profile synchronization;
+- NDEF-based identity resolution;
+- runtime-managed profile assets.
+
+These items are future work and are **not** part of the validated implementation.
 
 ---
 
 # Identity Package V1.1
 
-The Identity Layer now officially produces **Identity Package Specification V1.1**.
+The current implementation produces **Identity Package Specification V1.1**.
 
-This update introduces a backward-compatible evolution of the identity contract used by the Ambient Physical AI ecosystem.
+Enhancements include:
 
-## Changes
+- `contract_version`
+- `current_context`
+- backward compatibility with `context`
 
-- Added `contract_version`
-- Added `current_context`
-- Preserved legacy `context` for backward compatibility
-- Maintained compatibility with Identity Package V1.0 consumers
-
-## Validation Status
-
-The Identity Package V1.1 has been validated through the complete runtime pipeline:
+The complete end-to-end pipeline has been validated:
 
 ```text
 Identity Node
         ↓
-UDP Identity Package V1.1
+Identity Package V1.1
         ↓
-AX630C Identity UDP Listener
+Identity UDP Listener
         ↓
 Context Builder
         ↓
 Context Package
         ↓
-Human-readable Context
-        ↓
-StackChan Notification
+Cognitive Runtime
 ```
 
-Validation results:
-
-- Identity Node produces Identity Package V1.1
-- AX630C Identity UDP Listener recognizes the new contract
-- Context Builder automatically prioritizes `current_context`
-- Legacy `context` remains supported
-- End-to-end interoperability successfully validated
-
-Current implementation status:
-
-```text
-Producer:
-Identity Package V1.1
-
-Consumer:
-Identity UDP Listener V1.1 Aware
-
-Context Builder:
-V1.1 Compatible
-
-Compatibility:
-Identity Package V1.0 + V1.1
-```
-
-The Identity Layer contract is now considered stable for Version 1 and ready for system integration with the Cognitive Runtime.
+Both V1.0 and V1.1 contracts remain supported, providing backward compatibility while establishing V1.1 as the stable interface for the Ambient Physical AI Identity Layer.
