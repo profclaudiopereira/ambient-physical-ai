@@ -2,1757 +2,1000 @@
 
 ## Ambient Physical AI
 
-### Distributed Cognitive Ecosystem Powered by StackFlow
-
-> **Official Engineering README — Final Stable Baseline**
+### Embedded Runtime for Physical Environment Integration
 
 ---
 
 # Overview
 
-The **Ambient Runtime Node** is the physical environment execution node of the **Ambient Physical AI** architecture.
+The Ambient Runtime is the embedded runtime responsible for connecting the digital cognitive layer of the Ambient Physical AI ecosystem to the physical laboratory environment.
 
-This implementation runs on the **M5Stack Tab5**, based on the **ESP32-P4**, and is responsible for:
+It executes on the M5Stack Tab5 platform and provides the local runtime responsible for:
 
-- acquiring environmental data;
-- monitoring the local I²C device network;
-- presenting the official Ambient Runtime Console;
-- controlling auxiliary displays;
-- representing the operational state of the physical environment;
-- providing Wi-Fi connectivity through the onboard ESP32-C6 coprocessor;
-- exposing the network state required by future distributed services;
-- serving as the physical execution endpoint for future integration with the Cognitive Runtime.
+- acquiring environmental information from physical sensors;
+- maintaining the operational state of the embedded platform;
+- receiving semantic information produced by the Cognitive Runtime;
+- presenting operational information to the local display;
+- presenting contextual information to the auxiliary Mini OLED display;
+- exposing the current runtime status for engineering validation.
 
-The current implementation replaces the original PoE-P4 host while preserving the architectural responsibility of the Ambient Runtime.
+Unlike the Cognitive Runtime, the Ambient Runtime does not perform inference, reasoning or decision making.
 
-The node is now considered a **stable network-enabled Ambient Runtime baseline**.
+Its responsibility is to execute the physical runtime, consume validated semantic information, and transform that information into interactions with the physical environment.
 
 ---
 
-# Current Milestone
+# Position within Ambient Physical AI
 
-The current milestone completes the Ambient Runtime Node baseline on the Tab5.
+The Ambient Runtime is one of the major runtime subsystems of the Ambient Physical AI architecture.
 
-Validated capabilities include:
-
-- ESP32-P4 boot;
-- 16 MB flash;
-- 32 MB PSRAM;
-- ST7121 display;
-- MIPI DSI;
-- RGB565 framebuffer rendering;
-- LCD backlight control;
-- internal I²C bus;
-- PORT A I²C bus;
-- PI4IOE1 initialization;
-- PI4IOE2 initialization;
-- ESP32-C6 power enable through `WLAN_PWR_EN`;
-- ESP-Hosted integration;
-- ESP Wi-Fi Remote integration;
-- SDIO communication between ESP32-P4 and ESP32-C6;
-- Wi-Fi Station mode;
-- Wi-Fi association;
-- DHCP;
-- IPv4 address;
-- network mask;
-- default gateway;
-- RSSI monitoring;
-- PaHub channel selection;
-- ENV-IV environmental sensing;
-- DLight ambient light sensing;
-- Mini OLED SH1107;
-- periodic sensor acquisition;
-- text-oriented Ambient Runtime Console;
-- runtime health visualization;
-- dynamic network state visualization;
-- final runtime state `NETWORK READY`.
-
-This milestone closes the local and network foundations of the Ambient Runtime Node.
-
-Future work must focus on higher-level distributed services, not on redesigning the validated platform.
-
----
-
-# Architectural Role
-
-The Ambient Runtime Node is not the Cognitive Runtime.
-
-Its responsibility is to interact with and represent the physical environment.
+Its role is to bridge the Cognitive Runtime and the physical embedded hardware.
 
 ```text
-Presence Layer
-        │
-        ▼
-Identity Layer
-        │
-        ▼
-Cognitive Runtime
-        │
-        ▼
-Ambient Runtime
-        │
-        ▼
-Physical Environment
+                    Ambient Physical AI
+
+                         Human
+                            │
+                            ▼
+                  Presence Layer
+                            │
+                            ▼
+                  Identity Layer
+                            │
+                            ▼
+                 Cognitive Runtime
+                     (AX630C + LLM Mate)
+                            │
+                  Semantic Messages
+                            │
+                            ▼
+                  Ambient Runtime
+                     (M5Stack Tab5)
+                            │
+          ┌─────────────────┼─────────────────┐
+          │                 │                 │
+          ▼                 ▼                 ▼
+   Environmental      Local Runtime     Mini OLED
+      Sensors          Console UI      Context Display
 ```
 
-The Cognitive Runtime is responsible for understanding context, reasoning and producing semantic decisions.
-
-The Ambient Runtime is responsible for converting future semantic decisions into physical or visual environmental changes.
-
-The current milestone provides the complete local and network foundation required for that future integration.
+The Ambient Runtime acts as the execution layer responsible for translating validated semantic information into embedded interactions while simultaneously monitoring the physical environment.
 
 ---
 
-# System Architecture
+# Responsibilities
 
-```text
-                         M5Stack Tab5
-┌───────────────────────────────────────────────────────────────┐
-│                                                               │
-│  ESP32-P4                                                     │
-│  ┌─────────────────────────────────────────────────────────┐  │
-│  │ Ambient Runtime Application                             │  │
-│  │                                                         │  │
-│  │  ├── tab5_platform                                      │  │
-│  │  ├── ambient_console                                    │  │
-│  │  ├── ambient_network                                    │  │
-│  │  ├── pahub                                              │  │
-│  │  ├── env_iv                                             │  │
-│  │  ├── dlight                                             │  │
-│  │  └── oled_sh1107                                        │  │
-│  └─────────────────────────────────────────────────────────┘  │
-│                │                         │                    │
-│                │                         │                    │
-│          Internal I²C                ESP-Hosted               │
-│                │                         │                    │
-│       ┌────────┴────────┐                │ SDIO 4-bit         │
-│       │                 │                │ 40 MHz             │
-│   PI4IOE1           PI4IOE2              │                    │
-│   0x43              0x44                 ▼                    │
-│       │                 │           ESP32-C6                  │
-│       │                 └─ P0      Wi-Fi coprocessor          │
-│       │                    │                                  │
-│       │              WLAN_PWR_EN                              │
-│       │                    │                                  │
-│       │              C6 power enabled                         │
-│       │                                                       │
-│  LCD / Touch                                                  │
-│  control                                                      │
-│                                                               │
-│  PORT A I²C                                                   │
-│  SDA GPIO53 / SCL GPIO54                                      │
-│       │                                                       │
-│       ▼                                                       │
-│     PaHub 0x70                                                 │
-│       ├── CH0 ENV-IV                                          │
-│       ├── CH1 Mini OLED                                       │
-│       └── CH2 DLight                                          │
-└───────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-                               Wi-Fi Access Point
-                                      │
-                                      ▼
-                               Local IP Network
-```
+The Ambient Runtime is responsible for the following engineering functions.
+
+## Platform Initialization
+
+Initialize and configure the embedded hardware platform, including display, communication buses and platform-specific peripherals required by the runtime.
 
 ---
 
-# Architecture Diagram
+## Environmental Data Acquisition
 
-![Tab5 Ambient Runtime Node System Architecture](../../../docs/architecture/tab5_ambient_runtime_node_system_architecture.png)
+Acquire environmental information from supported sensors.
 
-Complete architecture documentation:
+Current validated implementation includes:
 
-```text
-docs/architecture/TAB5_AMBIENT_RUNTIME_NODE_ARCHITECTURE.md
-```
+- temperature;
+- humidity;
+- atmospheric pressure;
+- ambient light intensity.
 
----
-
-# Hardware Architecture
-
-The Tab5 combines:
-
-- ESP32-P4 as the primary application processor;
-- ESP32-C6 as the wireless coprocessor;
-- 32 MB external PSRAM;
-- MIPI DSI display;
-- internal I²C peripherals;
-- two PI4IOE GPIO expanders;
-- external PORT A I²C;
-- integrated power-management controls.
-
-The board must be treated as a multi-processor embedded platform.
-
-The ESP32-P4 does not contain integrated Wi-Fi.
-
-Wi-Fi is provided by the ESP32-C6 through the ESP-Hosted architecture.
+Sensor acquisition is performed locally and remains independent from the Cognitive Runtime.
 
 ---
 
-# Hardware Inventory
+## Runtime Infrastructure
 
-| Device | Function | Interface | Status |
-|---|---|---|---|
-| M5Stack Tab5 | Main Ambient Runtime platform | ESP32-P4 | Validated |
-| ST7121 display | Primary Runtime Console | MIPI DSI | Validated |
-| 32 MB PSRAM | Runtime framebuffer and working memory | MSPI | Validated |
-| PI4IOE1 | LCD, touch and board-control GPIO expander | Internal I²C, address `0x43` | Validated |
-| PI4IOE2 | Wi-Fi power and board-control GPIO expander | Internal I²C, address `0x44` | Validated |
-| ESP32-C6 | Wi-Fi coprocessor | ESP-Hosted / SDIO | Validated |
-| PaHub | I²C multiplexer | PORT A I²C | Validated |
-| ENV-IV | Temperature, humidity and pressure | PaHub CH0 | Validated |
-| Mini OLED SH1107 | Auxiliary distributed display | PaHub CH1 | Validated |
-| DLight | Ambient light measurement | PaHub CH2 | Validated |
+Maintain the operational infrastructure required by the embedded application.
 
----
-
-# Internal I²C Architecture
-
-The Tab5 internal I²C bus uses:
-
-```text
-SDA = GPIO31
-SCL = GPIO32
-```
-
-The internal bus is responsible for board-level devices.
-
-```text
-ESP32-P4
-    │
-    ▼
-Internal I²C
-    │
-    ├── PI4IOE1 — 0x43
-    │   ├── LCD control
-    │   ├── touch reset
-    │   └── related platform control
-    │
-    └── PI4IOE2 — 0x44
-        ├── WLAN_PWR_EN
-        ├── USB 5V enable
-        ├── charge control
-        └── additional board control
-```
-
-The Ambient Runtime initializes both expanders.
-
----
-
-# PORT A I²C Architecture
-
-The external PORT A I²C bus uses:
-
-```text
-SDA = GPIO53
-SCL = GPIO54
-```
-
-Current topology:
-
-```text
-ESP32-P4
-    │
-    ▼
-PORT A I²C
-SDA = GPIO53
-SCL = GPIO54
-    │
-    ▼
-PaHub
-Address = 0x70
-    │
-    ├── CH0
-    │   └── ENV-IV
-    │       ├── SHT40
-    │       └── BMP280
-    │
-    ├── CH1
-    │   └── Mini OLED SH1107
-    │
-    └── CH2
-        └── DLight
-```
-
----
-
-# PaHub Channel Allocation
-
-| Channel | Device | Responsibility |
-|---|---|---|
-| CH0 | ENV-IV | Temperature, humidity and pressure |
-| CH1 | Mini OLED | Auxiliary local status display |
-| CH2 | DLight | Ambient light measurement |
-| CH3 | Reserved | Future I²C device |
-| CH4 | Reserved | Future I²C device |
-| CH5 | Reserved | Future I²C device |
-
-Channel allocation is centralized in `main/main.cpp`.
-
-```cpp
-static constexpr uint8_t PAHUB_CHANNEL_ENV_IV = 0;
-static constexpr uint8_t PAHUB_CHANNEL_OLED   = 1;
-static constexpr uint8_t PAHUB_CHANNEL_DLIGHT = 2;
-```
-
----
-
-# ESP32-P4 Responsibilities
-
-The ESP32-P4 executes the complete Ambient Runtime application.
-
-Current responsibilities include:
+This includes:
 
 - platform initialization;
-- internal I²C management;
-- PI4IOE1 initialization;
-- PI4IOE2 initialization;
-- ESP32-C6 power control;
-- MIPI DSI display initialization;
-- ST7121 panel initialization;
-- framebuffer management;
-- PORT A I²C management;
-- PaHub channel selection;
-- ENV-IV acquisition;
-- DLight acquisition;
-- Mini OLED control;
-- Ambient Runtime Console;
-- ESP-Hosted host execution;
-- Wi-Fi Station control;
-- DHCP state management;
-- RSSI monitoring;
-- runtime state orchestration.
+- network initialization;
+- communication services;
+- hardware abstraction;
+- runtime status monitoring.
 
 ---
 
-# ESP32-C6 Responsibilities
+## Semantic Context Consumption
 
-The ESP32-C6 is the Tab5 wireless coprocessor.
+Receive semantic messages generated by the Cognitive Runtime.
+
+The Ambient Runtime consumes already validated information and never performs reasoning or semantic interpretation.
+
+Incoming messages are normalized into internal runtime structures before becoming available to the remainder of the application.
+
+---
+
+## Context Presentation
+
+Present contextual information received from the Cognitive Runtime on the auxiliary Mini OLED display.
+
+The Ambient Runtime is responsible only for rendering the received context.
+
+Profile selection, personalization rules, API access and content generation remain responsibilities of the Cognitive Runtime.
+
+---
+
+## Runtime Monitoring
+
+Provide a local engineering console displaying the operational status of the embedded runtime.
+
+The console consolidates information from multiple runtime subsystems, including:
+
+- network state;
+- hardware status;
+- environmental sensors;
+- runtime readiness;
+- Cognitive Runtime connectivity.
+
+This console is intended primarily for engineering validation, integration and debugging.
+
+---
+
+# Architectural Principles
+
+The Ambient Runtime follows several architectural principles that guide its implementation.
+
+## Separation of Responsibilities
+
+Each component owns a single well-defined responsibility.
+
+Examples include:
+
+- platform abstraction;
+- sensor acquisition;
+- network management;
+- semantic message reception;
+- context presentation;
+- runtime visualization.
+
+Business logic is intentionally separated from hardware-specific implementation.
+
+---
+
+## Hardware Abstraction
+
+Hardware-specific implementation remains encapsulated inside dedicated platform components.
+
+Application-level modules interact with stable interfaces rather than directly accessing platform peripherals.
+
+This approach simplifies maintenance and isolates hardware dependencies.
+
+---
+
+## Context Normalization
+
+Incoming semantic information is normalized before being consumed by the application.
+
+Rather than exposing transport protocols or JSON structures throughout the system, the runtime operates on validated internal snapshots representing the current semantic context.
+
+This minimizes coupling between communication infrastructure and application logic.
+
+---
+
+## Layered Design
+
+The Ambient Runtime is organized as a layered embedded application.
+
+```text
+Application Layer
+│
+├── Runtime Console
+├── Semantic Context
+└── Context Presentation
+
+Infrastructure Layer
+│
+├── Network Services
+└── Communication Services
+
+Platform Layer
+│
+├── Tab5 Platform
+├── External I²C Devices
+├── Display Drivers
+└── Hardware Abstraction
+```
+
+Each layer exposes services to the layer above while hiding implementation details.
+
+---
+
+# Repository Organization
+
+The Ambient Runtime implementation is located at:
+
+```text
+firmware/
+└── nodes/
+    └── ambient-runtime-node/
+```
+
+The repository is organized into clearly separated modules.
+
+```text
+ambient-runtime-node/
+│
+├── README.md
+├── CMakeLists.txt
+│
+├── main/
+│   ├── main.cpp
+│   └── README.md
+│
+└── components/
+    ├── ambient_console/
+    ├── ambient_network/
+    ├── tab5_platform/
+    ├── semantic_event_receiver/
+    ├── oled_context_presenter/
+    ├── oled_sh1107/
+    ├── env_iv/
+    ├── dlight/
+    └── pahub/
+```
+
+Each component is documented independently whenever its complexity justifies dedicated documentation.
+
+The main README provides the architectural overview of the Ambient Runtime and serves as the entry point for the subsystem documentation.
+
+Implementation details remain within the documentation of the corresponding components.
+
+---
+
+# Documentation Map
+
+The documentation hierarchy follows the same organization adopted throughout the Ambient Physical AI repository.
+
+| Document | Purpose |
+|----------|---------|
+| `README.md` | Architectural overview of the Ambient Runtime. |
+| `main/README.md` | Runtime lifecycle and application entry point. |
+| `components/tab5_platform/README.md` | Platform abstraction and hardware initialization. |
+| `components/ambient_network/README.md` | Network infrastructure and connectivity management. |
+| `components/ambient_console/README.md` | Runtime console architecture and visualization. |
+| `components/semantic_event_receiver/README.md` | Semantic communication with the Cognitive Runtime. |
+| `components/oled_context_presenter/README.md` | Context presentation for the Mini OLED display. |
+| `components/oled_sh1107/README.md` | SH1107 display driver. |
+| `components/env_iv/README.md` | Environmental sensor interface. |
+| `components/dlight/README.md` | Ambient light sensor interface. |
+| `components/pahub/README.md` | External I²C multiplexer support. |
+
+The main README intentionally avoids duplicating implementation details already documented within individual components.
+
+# Runtime Architecture
+
+The Ambient Runtime is organized as a modular embedded application in which each component has a clearly defined responsibility.
+
+Rather than exposing hardware resources directly to the application, platform-specific functionality is encapsulated behind dedicated interfaces.
+
+Likewise, semantic information produced by the Cognitive Runtime is normalized before being consumed by presentation components.
+
+This separation minimizes coupling and improves maintainability while allowing individual components to evolve independently.
+
+---
+
+# Runtime Lifecycle
+
+The application follows a deterministic initialization sequence.
+
+Each subsystem is initialized only after its dependencies become available.
+
+The current implementation follows the sequence below.
+
+```text
+Application Start
+        │
+        ▼
+Platform Initialization
+(tab5_platform)
+        │
+        ▼
+Runtime Console
+(ambient_console)
+        │
+        ▼
+Network Infrastructure
+(ambient_network)
+        │
+        ▼
+Semantic Receiver
+(semantic_event_receiver)
+        │
+        ▼
+Mini OLED Initialization
+(oled_sh1107)
+        │
+        ▼
+Main Runtime Loop
+```
+
+Once initialization is complete, the runtime enters a continuous execution loop where hardware monitoring and semantic context presentation are updated independently.
+
+---
+
+# Runtime Software Architecture
+
+The Ambient Runtime is composed of independent modules with well-defined responsibilities.
+
+```text
+                           Ambient Runtime
+
+                                   │
+        ┌──────────────────────────┼──────────────────────────┐
+        │                          │                          │
+        ▼                          ▼                          ▼
+
+ Platform Services          Infrastructure             Runtime Services
+
+ tab5_platform              ambient_network            ambient_console
+
+                             pahub                     semantic_event_receiver
+
+                                                       oled_context_presenter
+
+        │                          │                          │
+        └──────────────────────────┼──────────────────────────┘
+                                   │
+                                   ▼
+
+                           Device Services
+
+                    env_iv
+                    dlight
+                    oled_sh1107
+```
+
+Each module provides services through stable interfaces without exposing internal implementation details.
+
+---
+
+# Component Overview
+
+## tab5_platform
+
+Provides hardware abstraction for the M5Stack Tab5 platform.
 
 Responsibilities include:
 
-- Wi-Fi PHY;
-- Wi-Fi MAC;
-- remote Wi-Fi execution;
-- ESP-Hosted slave operation;
-- SDIO communication with the ESP32-P4;
-- future Bluetooth support if enabled.
+- platform initialization;
+- display initialization;
+- internal and external I²C buses;
+- display backlight control;
+- framebuffer transfer;
+- platform-specific hardware configuration.
 
-The Ambient Runtime does not run the application directly on the ESP32-C6.
-
-The ESP32-P4 invokes the normal ESP-IDF Wi-Fi API, and the calls are routed through ESP Wi-Fi Remote and ESP-Hosted to the C6.
+Application components never manipulate Tab5 hardware directly.
 
 ---
 
-# ESP-Hosted Architecture
+## ambient_network
 
-```text
-Ambient Runtime Application
-        │
-        ▼
-ESP-IDF Wi-Fi API
-        │
-        ▼
-ESP Wi-Fi Remote
-        │
-        ▼
-ESP-Hosted
-        │
-        ▼
-SDIO 4-bit / 40 MHz
-        │
-        ▼
-ESP32-C6
-        │
-        ▼
-Wi-Fi Access Point
-```
+Provides the networking infrastructure required by the Ambient Runtime.
 
-The application remains independent from the low-level C6 firmware protocol.
+Responsibilities include:
+
+- Wi-Fi initialization;
+- connection management;
+- network monitoring;
+- IP configuration;
+- runtime network status.
+
+The remainder of the application accesses only the network status snapshot exposed by this component.
 
 ---
 
-# SDIO Configuration
+## ambient_console
 
-Final validated mapping:
+Implements the engineering console displayed on the Tab5 display.
 
-| Signal | ESP32-P4 GPIO |
-|---|---:|
-| D3 | GPIO8 |
-| D2 | GPIO9 |
-| D1 | GPIO10 |
-| D0 | GPIO11 |
-| CLK | GPIO12 |
-| CMD | GPIO13 |
-| ESP32-C6 RESET | GPIO15 |
+Its responsibility is to consolidate operational information from multiple runtime subsystems into a single runtime status interface.
 
-Configuration:
+The console does not communicate directly with sensors or communication services.
 
-```text
-Slave target ........ ESP32-C6
-Backend ............. ESP-Hosted
-Transport ........... SDIO
-Bus width ........... 4-bit
-Clock ................ 40 MHz
-Reset polarity ....... Active Low
-```
+Instead, it renders normalized runtime information supplied by the application.
 
 ---
 
-# Major Engineering Discovery
+## semantic_event_receiver
 
-The most important engineering discovery during this node development was that the ESP32-C6 is not automatically operational merely because ESP-Hosted and the SDIO pins are configured.
+Acts as the communication gateway between the Cognitive Runtime and the Ambient Runtime.
 
-The C6 must first be explicitly powered through the Tab5 internal GPIO expander:
+Responsibilities include:
 
-```text
-PI4IOE2
-I²C address 0x44
-```
+- receiving UDP runtime messages;
+- parsing semantic payloads;
+- validating received messages;
+- normalizing semantic information;
+- maintaining the current context snapshot.
 
-The critical signal is:
-
-```text
-P0 = WLAN_PWR_EN
-```
-
-Without this signal, the ESP32-P4 can initialize its SDIO host and pulse the reset line on GPIO15, but the ESP32-C6 does not respond correctly.
+The component exposes normalized runtime data rather than transport-specific structures.
 
 ---
 
-# Original Failure
+## oled_context_presenter
 
-Before PI4IOE2 support was added, the log reached:
+Transforms normalized semantic context into information suitable for presentation on the auxiliary Mini OLED display.
 
-```text
-transport: Attempt connection with slave
-transport: Reset slave using GPIO[15]
-SDIO master: Data-Lines: 4-bit
-sdmmc_init_ocr: send_op_cond returned 0x107
-sdmmc_card_init failed
-H_SDIO_DRV: sdio card init failed
-```
+Responsibilities include:
 
-The failure occurred before:
+- rendering global context;
+- rendering personalized information;
+- detecting stale context;
+- minimizing unnecessary display updates.
 
-- Wi-Fi association;
-- DHCP;
-- IPv4 assignment;
-- gateway acquisition;
-- RSSI reporting.
-
-Therefore, the problem was not the SSID, password, Station configuration or DHCP.
-
-The failure was at the board power and SDIO bring-up layer.
+The presenter consumes only normalized runtime snapshots and remains independent from communication protocols.
 
 ---
 
-# Root Cause
+## env_iv
 
-The original Ambient Runtime platform initialized only:
+Acquires environmental measurements from the ENV-IV sensor.
 
-```text
-PI4IOE1 = 0x43
-```
+Current validated measurements include:
 
-The official M5Stack BSP revealed the second expander:
-
-```text
-PI4IOE2 = 0x44
-```
-
-and the function:
-
-```cpp
-bsp_set_wifi_power_enable(true);
-```
-
-This function activates:
-
-```text
-PI4IOE2 P0 = WLAN_PWR_EN
-```
-
-The missing dependency chain was:
-
-```text
-Internal I²C
-    │
-    ▼
-PI4IOE2
-    │
-    ▼
-WLAN_PWR_EN
-    │
-    ▼
-ESP32-C6 powered
-    │
-    ▼
-GPIO15 reset
-    │
-    ▼
-SDIO enumeration
-    │
-    ▼
-ESP-Hosted initialization
-```
+- temperature;
+- humidity;
+- atmospheric pressure.
 
 ---
 
-# PI4IOE2 Initialization
+## dlight
 
-The Ambient Runtime reproduces the relevant official initialization sequence.
+Acquires ambient illumination measurements from the DLight sensor.
 
-```text
-CHIP_RESET  = 0xFF
-IO_DIR      = 0b10111001
-OUT_H_IM    = 0b00000110
-PULL_SEL    = 0b10111001
-PULL_EN     = 0b11111001
-IN_DEF_STA  = 0b01000000
-INT_MASK    = 0b10111111
-OUT_SET     = 0b00001001
-```
-
-The output state:
-
-```text
-0x09
-```
-
-activates at least:
-
-```text
-P0 = WLAN_PWR_EN
-P3 = USB5V_EN
-```
-
-Expected logs:
-
-```text
-init PI4IOE2 at I2C address 0x44
-PI4IOE2 output state: 0x09
-ESP32-C6 Wi-Fi power enabled
-```
+Measured light intensity is incorporated into the runtime status presented by the engineering console.
 
 ---
 
-# Successful ESP32-C6 Bring-Up
+## oled_sh1107
 
-After enabling `WLAN_PWR_EN`, the SDIO link became operational.
+Provides low-level access to the auxiliary SH1107 OLED display.
 
-Validated logs include:
-
-```text
-SDIO master: Data-Lines: 4-bit Freq(KHz)[40000 KHz]
-GPIOs: CLK[12] CMD[13] D0[11] D1[10] D2[9] D3[8] Slave_Reset[15]
-```
-
-The ESP32-C6 responded:
-
-```text
-Received INIT event from ESP32 peripheral
-capabilities: 0xd
-Features supported are:
-    WLAN
-    HCI over SDIO
-    BLE only
-ESP board type is : 13
-Base transport is set-up
-Slave chip Id[12]
-```
-
-This validates:
-
-- ESP32-C6 power;
-- reset;
-- SDIO physical communication;
-- ESP-Hosted transport;
-- remote Wi-Fi capability negotiation.
-
-No ESP32-C6 firmware reflash was required.
+Rendering policies remain outside this component.
 
 ---
 
-# Ambient Runtime Console
+## pahub
 
-The Tab5 display is the official:
+Provides access to external I²C devices connected through the PaHub multiplexer.
 
-```text
-Ambient Runtime Console
-```
-
-The console is intentionally implemented as a clean engineering interface.
-
-It is not:
-
-- an LVGL demonstration;
-- an animated tablet interface;
-- a general-purpose application;
-- a decorative dashboard.
-
-The console prioritizes:
-
-- readability;
-- system status;
-- engineering clarity;
-- demonstration reliability;
-- real sensor data;
-- real network data.
+The multiplexer implementation remains transparent to higher-level runtime modules.
 
 ---
 
-# Current Console Layout
+# Interaction with the Cognitive Runtime
+
+The Ambient Runtime consumes semantic information produced by the Cognitive Runtime.
+
+Communication currently occurs through UDP messages exchanged over the local network.
+
+The Cognitive Runtime remains responsible for:
+
+- user profile resolution;
+- semantic reasoning;
+- personalization;
+- external service access;
+- context generation.
+
+The Ambient Runtime never reproduces those responsibilities.
+
+Instead, it receives already validated information.
 
 ```text
-AMBIENT PHYSICAL AI
-AMBIENT RUNTIME CONSOLE
-
-SYSTEM
-WI-FI ............ CONNECTED
-IP ............... 192.168.77.13
-MASK ............. 255.255.255.0
-
-ENVIRONMENT
-TEMPERATURE ....... xx.x C
-HUMIDITY .......... xx.x %
-PRESSURE .......... xxxx.x HPA
-LIGHT ............. xxxx.x LX
-
-I2C NETWORK
-PAHUB ............. OK
-ENV-IV ............ OK
-DLIGHT ............ OK
-MINI OLED ......... OK
-
-STATUS
-NETWORK READY
-GW 192.168.77.1  RSSI -30 dBm
+             Cognitive Runtime
+                     │
+                     │
+          Semantic Messages
+                     │
+                     ▼
+      semantic_event_receiver
+                     │
+                     ▼
+      Ambient Context Snapshot
+                     │
+        ┌────────────┴────────────┐
+        ▼                         ▼
+ Ambient Runtime Console   OLED Context Presenter
 ```
+
+This architecture maintains a clear separation between semantic processing and embedded presentation.
 
 ---
 
-# Runtime Readiness States
+# Interaction with the Expression Layer
 
-The console exposes three primary health states.
+The Ambient Runtime and the Expression Layer provide complementary responsibilities within the Ambient Physical AI ecosystem.
 
-## DEGRADED
+The Ambient Runtime is responsible for environmental awareness and contextual presentation.
+
+The Expression Layer is responsible for physical interaction with the user through voice, audio and other expressive modalities.
+
+The Ambient Runtime does not directly control Expression Layer devices.
+
+Instead, both subsystems consume information produced by the Cognitive Runtime while maintaining independent responsibilities.
+
+---
+
+# Interaction with Physical Devices
+
+The Ambient Runtime interfaces directly with multiple embedded peripherals.
 
 ```text
-One or more mandatory local hardware devices are unavailable.
+                 Ambient Runtime
+
+                        │
+        ┌───────────────┼────────────────┐
+        │               │                │
+        ▼               ▼                ▼
+
+    ENV-IV          DLight          Mini OLED
+
+        │               │                │
+        └───────────────┼────────────────┘
+                        │
+                        ▼
+
+                  Tab5 Platform
+
+                        │
+                        ▼
+
+                M5Stack Tab5 Hardware
 ```
 
-## LOCAL READY
-
-```text
-Local hardware is operational, but the network is not yet ready.
-```
-
-## NETWORK READY
-
-```text
-Local hardware is operational and DHCP has assigned network configuration.
-```
-
-State logic:
-
-```cpp
-const bool hardware_ready =
-    data->pahub_ok &&
-    data->env_iv_ok &&
-    data->dlight_ok &&
-    data->mini_oled_ok;
-
-const bool runtime_ready =
-    hardware_ready &&
-    data->network_ready;
-```
+Hardware-specific initialization and communication remain encapsulated within dedicated platform components.
 
 ---
 
 # Runtime Data Flow
 
-```text
-ENV-IV
-    │
-    ├── Temperature
-    ├── Humidity
-    └── Pressure
-            │
-            ▼
-DLight
-    │
-    └── Ambient light
-            │
-            ▼
-Ambient Network
-    │
-    ├── Wi-Fi state
-    ├── IPv4
-    ├── Netmask
-    ├── Gateway
-    └── RSSI
-            │
-            ▼
-Ambient Runtime State
-    │
-    ├── Hardware health
-    ├── Sensor values
-    ├── I²C state
-    └── Network state
-            │
-            ▼
-Ambient Runtime Console
-```
-
----
-
-# Runtime Initialization Sequence
+The overall runtime data flow is illustrated below.
 
 ```text
-Boot
- │
- ▼
-Initialize ESP32-P4 runtime
- │
- ▼
-Initialize internal I²C
- │
- ▼
-Initialize PI4IOE2
- │
- ▼
-Enable WLAN_PWR_EN
- │
- ▼
-Wait for ESP32-C6 power stabilization
- │
- ▼
-Initialize PORT A I²C
- │
- ▼
-Initialize PI4IOE1
- │
- ▼
-Initialize LCD / touch control
- │
- ▼
-Initialize MIPI DSI
- │
- ▼
-Initialize ST7121 panel
- │
- ▼
-Initialize Ambient Console
- │
- ▼
-Initialize Ambient Network
- │
- ├── NVS
- │
- ├── esp_netif
- │
- ├── event loop
- │
- ├── Wi-Fi Station netif
- │
- ├── ESP-Hosted connection
- │
- ├── Wi-Fi Station
- │
- └── DHCP
- │
- ▼
-Initialize Mini OLED
- │
- ▼
-Enter runtime loop
-```
-
----
-
-# Runtime Loop
-
-```text
-Runtime loop
- │
- ├── Select ENV-IV channel
- ├── Read SHT40
- ├── Read BMP280
- ├── Select DLight channel
- ├── Read lux
- ├── Revalidate Mini OLED channel
- ├── Read network snapshot
- ├── Update RSSI
- ├── Build console state
- ├── Render console
- ├── Log complete system health
- └── Wait 3 seconds
-```
-
-Current update interval:
-
-```cpp
-static constexpr TickType_t RUNTIME_UPDATE_INTERVAL =
-    pdMS_TO_TICKS(3000);
-```
-
----
-
-# Sensor Responsibilities
-
-## ENV-IV
-
-### SHT40
-
-Provides:
-
-- temperature;
-- relative humidity.
-
-Example:
-
-```text
-SHT40 Temp: 30.67 C  Hum: 66.39 %
-```
-
-### BMP280
-
-Provides:
-
-- atmospheric pressure;
-- secondary temperature measurement.
-
-Example:
-
-```text
-BMP280 Temp: 31.35 C  Press: 1012.65 hPa
-```
-
-The console uses the SHT40 value as its primary environmental temperature.
-
-## DLight
-
-The DLight unit provides ambient light measurement in lux.
-
-Example:
-
-```text
-DLight Lux: 166.67 lx
-```
-
-## Mini OLED SH1107
-
-The Mini OLED is an auxiliary diagnostic display.
-
-Current baseline:
-
-- initialization validated;
-- communication through PaHub validated;
-- test content validated.
-
-It is not the primary Runtime Console.
-
----
-
-# Ambient Network Component
-
-The network subsystem is implemented as an independent ESP-IDF component.
-
-```text
-components/
-└── ambient_network/
-    ├── CMakeLists.txt
-    ├── ambient_network.cpp
-    └── include/
-        └── ambient_network.h
-```
-
-Responsibilities:
-
-- NVS initialization;
-- `esp_netif` initialization;
-- default event loop creation;
-- Wi-Fi Station netif creation;
-- Wi-Fi event registration;
-- IP event registration;
-- Wi-Fi initialization;
-- Station mode configuration;
-- connection request;
-- minimal reconnection;
-- DHCP state capture;
-- IPv4 storage;
-- netmask storage;
-- gateway storage;
-- RSSI update;
-- public network status snapshot.
-
-Public API:
-
-```cpp
-esp_err_t ambient_network_init(void);
-
-ambient_network_status_t
-ambient_network_get_status(void);
-```
-
----
-
-# Network Status Structure
-
-```cpp
-typedef struct {
-    bool initialized;
-    bool connected;
-    bool network_ready;
-
-    char ipv4[16];
-    char netmask[16];
-    char gateway[16];
-
-    int8_t rssi_dbm;
-} ambient_network_status_t;
-```
-
-The application retrieves a snapshot without depending on the internal Wi-Fi implementation.
-
----
-
-# Wi-Fi State Machine
-
-```text
-ambient_network_init()
+Environmental Sensors
         │
-        ├── initialize NVS
-        ├── initialize esp_netif
-        ├── create default event loop
-        ├── create default Wi-Fi STA netif
-        ├── register WIFI_EVENT handler
-        ├── register IP_EVENT handler
-        ├── esp_wifi_init()
-        ├── esp_wifi_set_mode(WIFI_MODE_STA)
-        ├── esp_wifi_set_config()
-        └── esp_wifi_start()
-                │
-                ▼
-WIFI_EVENT_STA_START
-                │
-                ▼
-esp_wifi_connect()
-                │
-                ▼
-WIFI_EVENT_STA_CONNECTED
-                │
-                ▼
-DHCP
-                │
-                ▼
-IP_EVENT_STA_GOT_IP
-                │
-                ├── store IPv4
-                ├── store netmask
-                ├── store gateway
-                └── set NETWORK READY
+        ▼
+Sensor Drivers
+        │
+        ▼
+Runtime Data
+        │
+        ├───────────────┐
+        │               │
+        ▼               ▼
+
+Ambient Console    Runtime Status
+
+────────────────────────────────────────────
+
+Cognitive Runtime
+        │
+        ▼
+Semantic Messages
+        │
+        ▼
+semantic_event_receiver
+        │
+        ▼
+Ambient Context Snapshot
+        │
+        ▼
+oled_context_presenter
+        │
+        ▼
+Mini OLED
 ```
 
-Minimal reconnection is requested after disconnection.
+The two information flows remain intentionally independent.
+
+Environmental measurements originate locally from physical sensors.
+
+Semantic context originates remotely from the Cognitive Runtime.
+
+Both are integrated by the Ambient Runtime without merging their responsibilities.
+
+# Development
+
+## Build Environment
+
+The Ambient Runtime is implemented using the ESP-IDF framework and follows the same engineering standards adopted throughout the Ambient Physical AI repository.
+
+Current development is performed using:
+
+- ESP-IDF
+- Visual Studio Code
+- CMake
+- Ninja
+- ESP32-P4 Toolchain
+
+The project is designed to build as a standard ESP-IDF application.
 
 ---
 
-# Final Network Validation
+## Application Entry Point
 
-Validated network:
+The application entry point is implemented in:
 
 ```text
-SSID: OKFIBRA-Claudio_2GHz
-IPv4: 192.168.77.13
-Netmask: 255.255.255.0
-Gateway: 192.168.77.1
-RSSI: approximately -29 to -32 dBm
+main/main.cpp
 ```
 
-Representative logs:
+This module is responsible for:
+
+- initializing the platform;
+- initializing runtime services;
+- starting communication services;
+- coordinating periodic runtime execution.
+
+Detailed implementation is documented separately in:
 
 ```text
-ambient-network: Wi-Fi Station started
-ambient-network: Connecting to SSID: OKFIBRA-Claudio_2GHz
-ambient-network: Wi-Fi associated with access point
-```
-
-```text
-esp_netif_handlers:
-sta ip: 192.168.77.13,
-mask: 255.255.255.0,
-gw: 192.168.77.1
-```
-
-```text
-ambient-network: DHCP IPv4 assigned
-ambient-network: IP:      192.168.77.13
-ambient-network: Netmask: 255.255.255.0
-ambient-network: Gateway: 192.168.77.1
-ambient-network: STATUS:  NETWORK READY
-```
-
----
-
-# Final Runtime Log
-
-```text
-Ambient Runtime alive |
-Platform=OK |
-I2C=OK |
-ENV-IV=OK |
-DLight=OK |
-OLED=OK |
-Wi-Fi=CONNECTED |
-IP=192.168.77.13 |
-Mask=255.255.255.0 |
-GW=192.168.77.1 |
-RSSI=-30 dBm |
-STATUS=NETWORK READY
+main/README.md
 ```
 
 ---
 
-# Project Structure
+# Runtime Validation
+
+After flashing the firmware, verify the following:
+
+- Platform initialization completed successfully.
+- Wi-Fi connection established.
+- ENV-IV sensor detected.
+- DLight sensor detected.
+- Mini OLED initialized.
+- Runtime Console displayed on the Tab5 LCD.
+- Semantic Receiver listening on the configured UDP port.
+- Ambient Context updates are reflected on the Mini OLED.
+
+---
+
+## Engineering Principles
+
+The Ambient Runtime implementation follows several engineering principles adopted across the Ambient Physical AI project.
+
+### Modular Design
+
+Each component owns a single engineering responsibility.
+
+Responsibilities are intentionally separated to simplify maintenance, testing and future evolution.
+
+---
+
+### Platform Independence
+
+Application logic remains independent from hardware-specific implementation whenever possible.
+
+Platform details remain encapsulated within dedicated components.
+
+---
+
+### Layer Isolation
+
+Hardware drivers never implement application logic.
+
+Likewise, application components never manipulate low-level hardware directly.
+
+This separation reduces coupling between runtime layers.
+
+---
+
+### Normalized Runtime Data
+
+Communication components convert transport-specific information into normalized runtime structures before exposing it to the application.
+
+The remainder of the runtime operates exclusively on validated snapshots rather than protocol-specific payloads.
+
+---
+
+### Explicit Responsibilities
+
+Each runtime component exposes a clearly defined public interface.
+
+Internal implementation details remain private to the corresponding module.
+
+---
+
+# Building and Running
+
+The Ambient Runtime is built as a standard ESP-IDF application.
+
+## Open the project
+
+```bash
+cd firmware/nodes/ambient-runtime-node
+```
+
+---
+
+## Configure the target
+
+```bash
+idf.py set-target esp32p4
+```
+
+---
+
+## Build
+
+```bash
+idf.py build
+```
+
+---
+
+## Flash
+
+```bash
+idf.py flash
+```
+
+---
+
+## Monitor
+
+```bash
+idf.py monitor
+```
+
+---
+
+## Flash and Monitor
+
+```bash
+idf.py flash monitor
+```
+
+---
+
+## Full Clean
+
+When switching ESP-IDF versions or after significant configuration changes:
+
+```bash
+idf.py fullclean
+idf.py build
+```
+
+---
+
+## Expected Startup Sequence
+
+A successful startup should initialize the major runtime subsystems in the following order:
+
+```text
+Tab5 Platform
+↓
+Ambient Console
+↓
+Ambient Network
+↓
+Semantic Event Receiver
+↓
+Mini OLED
+↓
+Runtime Loop
+```
+
+Once initialization is complete, the Ambient Runtime continuously:
+
+- acquires environmental sensor data;
+- monitors runtime health;
+- receives semantic context from the Cognitive Runtime;
+- updates the Runtime Console;
+- updates the Mini OLED whenever the semantic context changes.
+
+---
+
+# Current Implementation Status
+
+The following functionality has been validated in the current implementation.
+
+## Platform
+
+- M5Stack Tab5 initialization
+- Display initialization
+- Platform I²C buses
+- External Port A I²C bus
+- Display backlight control
+
+Status:
+
+```text
+VALIDATED
+```
+
+---
+
+## Environmental Monitoring
+
+Validated sensors include:
+
+- ENV-IV
+    - Temperature
+    - Humidity
+    - Atmospheric Pressure
+
+- DLight
+    - Ambient Light
+
+Status:
+
+```text
+VALIDATED
+```
+
+---
+
+## Runtime Console
+
+Current implementation provides:
+
+- runtime overview;
+- hardware status;
+- environmental measurements;
+- network information;
+- Cognitive Runtime status;
+- engineering validation interface.
+
+Status:
+
+```text
+VALIDATED
+```
+
+---
+
+## Network Infrastructure
+
+Current implementation includes:
+
+- Wi-Fi Station mode;
+- network initialization;
+- connection monitoring;
+- runtime status snapshot;
+- automatic reconnection.
+
+Status:
+
+```text
+VALIDATED
+```
+
+---
+
+## Semantic Communication
+
+Current implementation provides:
+
+- UDP reception;
+- semantic event reception;
+- Ambient Context reception;
+- normalized runtime snapshots.
+
+Status:
+
+```text
+VALIDATED
+```
+
+---
+
+## Mini OLED Context Presentation
+
+Current implementation supports:
+
+- waiting state;
+- stale context indication;
+- global context presentation;
+- personalized context presentation;
+- optimized rendering through snapshot change detection.
+
+Status:
+
+```text
+VALIDATED
+```
+
+---
+
+# Future Work
+
+The following items represent planned evolution of the Ambient Runtime.
+
+These items are intentionally separated from the validated implementation.
+
+## Planned Improvements
+
+Potential future work includes:
+
+- additional environmental sensors;
+- richer contextual presentation;
+- expanded visualization capabilities;
+- additional runtime diagnostics;
+- improved engineering instrumentation.
+
+Implementation priorities remain defined by the overall Ambient Physical AI roadmap.
+
+---
+
+# Related Documentation
+
+Additional documentation is available within the Ambient Runtime source tree.
+
+| Location | Description |
+|----------|-------------|
+| `main/README.md` | Runtime entry point and execution lifecycle. |
+| `components/tab5_platform/README.md` | Platform abstraction and hardware initialization. |
+| `components/ambient_network/README.md` | Network services and connectivity management. |
+| `components/ambient_console/README.md` | Runtime console architecture. |
+| `components/semantic_event_receiver/README.md` | Semantic communication layer. |
+| `components/oled_context_presenter/README.md` | Mini OLED context presentation. |
+| `components/oled_sh1107/README.md` | SH1107 display driver. |
+| `components/env_iv/README.md` | Environmental sensor interface. |
+| `components/dlight/README.md` | Ambient light sensor interface. |
+| `components/pahub/README.md` | External I²C multiplexer support. |
+
+Component-specific documentation contains implementation details intentionally omitted from this document.
+
+---
+
+# Repository Structure
 
 ```text
 ambient-runtime-node/
 │
-├── CMakeLists.txt
 ├── README.md
-├── sdkconfig
-├── sdkconfig.defaults
+├── CMakeLists.txt
 │
 ├── main/
-│   ├── CMakeLists.txt
-│   ├── idf_component.yml
-│   └── main.cpp
+│   ├── main.cpp
+│   └── README.md
 │
 └── components/
-    ├── README.md
     ├── ambient_console/
     ├── ambient_network/
     ├── dlight/
     ├── env_iv/
-    ├── esp_lcd_st7121/
+    ├── oled_context_presenter/
     ├── oled_sh1107/
     ├── pahub/
+    ├── semantic_event_receiver/
     └── tab5_platform/
 ```
 
----
-
-# Component Responsibilities
-
-| Component | Responsibility |
-|---|---|
-| `tab5_platform` | Tab5 initialization, PI4IOE1, PI4IOE2, C6 power, display, backlight and I²C buses |
-| `esp_lcd_st7121` | ST7121 panel driver |
-| `ambient_console` | Framebuffer, font rendering and Runtime Console |
-| `ambient_network` | ESP-Hosted, Wi-Fi Station, DHCP, addresses, RSSI and network status |
-| `pahub` | I²C multiplexer channel selection |
-| `env_iv` | SHT40 and BMP280 measurements |
-| `dlight` | Ambient light measurement |
-| `oled_sh1107` | Mini OLED initialization and rendering |
-
-Detailed component documentation is available in:
-
-```text
-components/README.md
-```
-
----
-
-# Platform Initialization Responsibilities
-
-The `tab5_platform` component isolates board-specific code.
-
-Responsibilities:
-
-- internal I²C initialization;
-- PORT A I²C initialization;
-- PI4IOE1 initialization;
-- PI4IOE2 initialization;
-- `WLAN_PWR_EN`;
-- ESP32-C6 power enable;
-- LCD and touch reset;
-- MIPI DSI PHY LDO configuration;
-- MIPI DSI bus creation;
-- DBI panel I/O creation;
-- ST7121 panel creation;
-- framebuffer drawing;
-- LCD backlight control.
-
----
-
-# Framebuffer
-
-Resolution:
-
-```text
-720 × 1280
-```
-
-Pixel format:
-
-```text
-RGB565
-```
-
-Memory requirement:
-
-```text
-720 × 1280 × 2 bytes
-= 1,843,200 bytes
-```
-
-The framebuffer is allocated in PSRAM:
-
-```cpp
-heap_caps_malloc(
-    frame_size,
-    MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT
-);
-```
-
----
-
-# Text Rendering
-
-The console uses a lightweight 8×8 bitmap font.
-
-The current implementation provides:
-
-- pixel rendering;
-- character rendering;
-- text rendering;
-- configurable integer scaling;
-- horizontal separators;
-- formatted sensor values;
-- formatted network values;
-- dynamic runtime state.
-
-This avoids introducing LVGL into the validated baseline and reduces dependency complexity and competition risk.
-
----
-
-# Dependencies
-
-The network layer uses ESP-IDF Component Manager dependencies.
-
-```yaml
-dependencies:
-  idf: ">=5.3"
-  espressif/esp_hosted: "1.4.0"
-  espressif/esp_wifi_remote: "0.8.5"
-```
-
-Resolved components include:
-
-```text
-espressif__esp_hosted
-espressif__esp_wifi_remote
-espressif__eppp_link
-espressif__esp_serial_slave_link
-```
-
-These generated dependencies are stored in:
-
-```text
-managed_components/
-```
-
-They should not be committed.
-
----
-
-# Build Requirements
-
-Validated environment:
-
-```text
-ESP-IDF 5.4.2
-Target: ESP32-P4
-Flash: 16 MB
-PSRAM: 32 MB
-ESP-Hosted: 1.4.0
-ESP Wi-Fi Remote: 0.8.5
-```
-
----
-
-# Build
-
-```cmd
-cd C:\Users\profc\projetos\ambient-physical-ai\firmware\nodes\ambient-runtime-node
-idf.py set-target esp32p4
-idf.py reconfigure
-idf.py build
-```
-
-The Component Manager resolves ESP-Hosted and ESP Wi-Fi Remote automatically.
-
----
-
-# Flash
-
-```cmd
-idf.py flash monitor
-```
-
-Exit the monitor with:
-
-```text
-Ctrl + ]
-```
-
----
-
-# Expected Boot Sequence
-
-```text
-Ambient Physical AI - Ambient Runtime Console
-
-Tab5 platform init based on H020 baseline
-init internal I2C bus SDA=31 SCL=32
-
-init PI4IOE2 at I2C address 0x44
-PI4IOE2 output state: 0x09
-ESP32-C6 Wi-Fi power enabled
-
-init PORT A I2C bus SDA=53 SCL=54
-init PI4IOE1 at I2C address 0x43
-reset LCD_RST/TP_RST via PI4IOE1
-
-Acquire MIPI DSI PHY LDO
-Create MIPI DSI bus
-Create DBI panel IO
-Configure ST7121 DPI panel
-Create ST7121 panel
-
-Tab5 platform init OK
-
-Ambient Runtime Console init
-Console framebuffer allocated: 1843200 bytes
-
-Ambient Network Wi-Fi Station initialization
-NVS initialized
-
-Attempt connection with slave
-Reset slave using GPIO[15]
-SDIO master: Data-Lines: 4-bit Freq(KHz)[40000 KHz]
-Received INIT event from ESP32 peripheral
-Base transport is set-up
-
-Wi-Fi Station initialization complete
-Wi-Fi Station started
-Connecting to SSID: ...
-
-Mini OLED initialized
-
-Wi-Fi associated with access point
-DHCP IPv4 assigned
-STATUS: NETWORK READY
-```
-
----
-
-# Expected Runtime Behavior
-
-After boot:
-
-1. the ESP32-C6 is powered through PI4IOE2;
-2. ESP-Hosted establishes the SDIO transport;
-3. Wi-Fi Station starts;
-4. the Tab5 display becomes active;
-5. the Ambient Runtime Console is rendered;
-6. temperature, humidity and pressure are read;
-7. ambient light is read;
-8. PaHub devices are checked;
-9. Wi-Fi association occurs;
-10. DHCP assigns IPv4, netmask and gateway;
-11. RSSI is updated;
-12. the console reports `NETWORK READY`;
-13. the console is refreshed every three seconds;
-14. the serial log reports the complete runtime state.
-
----
-
-# Definition of Local Ready
-
-The console reports `LOCAL READY` when all local mandatory devices are operational, but the network is not yet ready.
-
-```text
-PaHub
-+
-ENV-IV
-+
-DLight
-+
-Mini OLED
-```
-
----
-
-# Definition of Network Ready
-
-The console reports `NETWORK READY` when:
-
-```text
-Local hardware ready
-+
-Wi-Fi associated
-+
-DHCP IPv4 assigned
-+
-Gateway available
-```
-
----
-
-# Known Limitations
-
-| Item | Status |
-|---|---|
-| Cognitive Runtime connection | Not implemented |
-| MQTT | Out of scope for this milestone |
-| Semantic Events | Out of scope for this milestone |
-| Dynamic Mini OLED content | Partially implemented |
-| Touch interface | Not used |
-| Advanced graphics | Out of scope |
-| Wi-Fi credential provisioning | Not implemented |
-| OTA | Not implemented |
-| NTP | Not implemented |
-
-The current direct Wi-Fi credentials are suitable only for the controlled laboratory and demonstration environment.
-
----
-
-# Engineering Decisions
-
-## Tab5 replaces PoE-P4
-
-Previous host:
-
-```text
-PoE-P4
-```
-
-Current host:
-
-```text
-Tab5
-```
-
-The architectural responsibility remains unchanged.
-
-## Text-oriented console
-
-Reasons:
-
-- deterministic rendering;
-- easier debugging;
-- lower complexity;
-- reduced dependency risk;
-- better readability;
-- reliable competition demonstration.
-
-## Component-based organization
-
-Benefits:
-
-- modularity;
-- testability;
-- reuse;
-- easier maintenance;
-- clearer documentation;
-- independent evolution of platform and network layers.
-
-## Board power belongs to `tab5_platform`
-
-PI4IOE2 and `WLAN_PWR_EN` are board-level responsibilities.
-
-They are implemented in:
-
-```text
-tab5_platform
-```
-
-They are not implemented in:
-
-```text
-ambient_network
-```
-
-## Network services belong to `ambient_network`
-
-Wi-Fi Station, DHCP, addresses, RSSI and network status are encapsulated in:
-
-```text
-ambient_network
-```
-
-## Official M5Stack implementation as specification
-
-The official M5Stack UserDemo and BSP were used to identify:
-
-- ESP-Hosted versions;
-- C6 target;
-- SDIO mapping;
-- PI4IOE2;
-- `WLAN_PWR_EN`;
-- board power sequence.
-
-The project did not redesign the official transport architecture.
-
-## Local readiness separated from network readiness
-
-The console differentiates:
-
-```text
-DEGRADED
-LOCAL READY
-NETWORK READY
-```
-
----
-
-# Challenges Overcome
-
-## Display Bring-Up
-
-The Tab5 display required dedicated investigation involving:
-
-- MIPI DSI;
-- DBI;
-- DPI;
-- ST7121/ST7123 driver analysis;
-- PSRAM;
-- framebuffer allocation;
-- panel initialization sequences.
-
-The final runtime uses a stable ST7121-based display baseline.
-
-## PSRAM and Framebuffer
-
-The full console framebuffer requires approximately 1.84 MB.
-
-PSRAM was validated and used for framebuffer allocation.
-
-## Internal and External I²C Separation
-
-The final platform keeps:
-
-```text
-Internal I²C
-```
-
-separate from:
-
-```text
-PORT A I²C
-```
-
-This prevents board-control devices from being mixed with external Grove peripherals.
-
-## PaHub Multiplexing
-
-The system validates explicit channel selection before accessing each external device.
-
-## Sensor Integration
-
-ENV-IV and DLight were integrated as reusable components with typed data and periodic acquisition.
-
-## ESP32-C6 Power Discovery
-
-The missing `WLAN_PWR_EN` sequence was identified through BSP inspection and validated on real hardware.
-
-## ESP-Hosted SDIO Bring-Up
-
-The SDIO timeout was resolved without redesigning ESP-Hosted or reflashing the C6 firmware.
-
-## Network State Integration
-
-Wi-Fi association, DHCP, addresses, gateway and RSSI were integrated without placing Wi-Fi internals in `main.cpp`.
-
----
-
-# Current Validation Matrix
-
-| Capability | Status |
-|---|---|
-| ESP32-P4 boot | PASS |
-| Flash 16 MB | PASS |
-| PSRAM 32 MB | PASS |
-| MIPI DSI | PASS |
-| ST7121 display | PASS |
-| RGB565 framebuffer | PASS |
-| LCD backlight | PASS |
-| Internal I²C | PASS |
-| PORT A I²C | PASS |
-| PI4IOE1 | PASS |
-| PI4IOE2 | PASS |
-| ESP32-C6 power enable | PASS |
-| ESP-Hosted | PASS |
-| ESP Wi-Fi Remote | PASS |
-| SDIO 4-bit / 40 MHz | PASS |
-| ESP32-C6 INIT event | PASS |
-| Wi-Fi Station | PASS |
-| Wi-Fi association | PASS |
-| DHCP | PASS |
-| IPv4 address | PASS |
-| Netmask | PASS |
-| Gateway | PASS |
-| RSSI | PASS |
-| PaHub | PASS |
-| ENV-IV SHT40 | PASS |
-| ENV-IV BMP280 | PASS |
-| DLight | PASS |
-| Mini OLED SH1107 | PASS |
-| Periodic runtime loop | PASS |
-| Real sensor data on console | PASS |
-| Real network data on console | PASS |
-| Local hardware health | PASS |
-| `NETWORK READY` | PASS |
-| Cognitive Runtime connection | NOT IMPLEMENTED |
-| MQTT | OUT OF SCOPE |
-| Semantic Events | OUT OF SCOPE |
-
----
-
-# Recommended Development Workflow
-
-```text
-Implement
-    │
-    ▼
-Build
-    │
-    ▼
-Flash
-    │
-    ▼
-Validate logs
-    │
-    ▼
-Validate display
-    │
-    ▼
-Validate hardware
-    │
-    ▼
-Document
-    │
-    ▼
-Commit
-```
-
----
-
-# Repository Hygiene
-
-Before committing:
-
-```cmd
-git status
-```
-
-The repository should not track:
-
-```text
-build/
-managed_components/
-sdkconfig.old
-.vscode/
-__pycache__/
-README*.old
-```
-
-The validated `sdkconfig` currently contains important ESP-Hosted and SDIO settings.
-
-Before removing it from version control, the essential values must be migrated to:
-
-```text
-sdkconfig.defaults
-```
-
-Expected versioned files include:
-
-```text
-README.md
-sdkconfig.defaults
-main/
-components/
-docs/architecture/
-```
-
----
-
-# Suggested Commit Scope
-
-```text
-feat(ambient-runtime): complete Tab5 network-enabled runtime baseline
-```
-
-Suggested description:
-
-```text
-- finalize Tab5 Ambient Runtime Console
-- validate periodic ENV-IV sensor acquisition
-- validate periodic DLight lux acquisition
-- validate PaHub channel topology
-- retain Mini OLED as auxiliary display
-- initialize PI4IOE2
-- enable ESP32-C6 through WLAN_PWR_EN
-- integrate ESP-Hosted and ESP Wi-Fi Remote
-- validate SDIO transport
-- add ambient_network component
-- implement Wi-Fi Station
-- implement DHCP, IPv4, netmask and gateway reporting
-- add RSSI monitoring
-- report NETWORK READY state
-- document final Ambient Runtime architecture
-```
-
----
-
-# Final Current State
-
-```text
-Tab5
-    │
-    ├── ESP32-P4 ............ OK
-    ├── Display ............. OK
-    ├── PSRAM ............... OK
-    ├── Internal I²C ........ OK
-    ├── PI4IOE1 ............. OK
-    ├── PI4IOE2 ............. OK
-    ├── ESP32-C6 Power ...... OK
-    ├── ESP-Hosted .......... OK
-    ├── SDIO ................ OK
-    ├── Wi-Fi Station ....... CONNECTED
-    ├── DHCP ................ OK
-    ├── IPv4 ................ ASSIGNED
-    ├── Gateway ............. ASSIGNED
-    ├── RSSI ................ VISIBLE
-    ├── PORT A I²C .......... OK
-    ├── PaHub ............... OK
-    ├── ENV-IV .............. OK
-    ├── DLight .............. OK
-    ├── Mini OLED ........... OK
-    ├── Runtime Console ..... OK
-    ├── Periodic Updates .... OK
-    └── STATUS .............. NETWORK READY
-```
-
-The validated baseline is suitable for:
-
-- competition demonstration;
-- environmental sensing;
-- engineering inspection;
-- distributed node integration;
-- future Cognitive Runtime communication;
-- future semantic event execution.
-
----
-
-# Roadmap Transition
-
-The Ambient Runtime Node baseline is complete.
-
-The next project priority becomes:
-
-```text
-AX630C Cognitive Runtime
-```
-
-The Ambient Runtime should now remain frozen except for:
-
-- confirmed regressions;
-- essential documentation corrections;
-- repository hygiene;
-- final evidence collection;
-- explicitly authorized integration missions.
-
----
-
-# Ambient Physical AI
-
-```text
-Presence
-    │
-    ▼
-Identity
-    │
-    ▼
-Cognitive Runtime
-    │
-    ▼
-Ambient Runtime
-    │
-    ▼
-Physical Environment
-```
-
-Current Ambient Runtime status:
-
-```text
-LOCAL HARDWARE READY
-+
-NETWORK READY
-=
-AMBIENT RUNTIME NODE V1 COMPLETE
-```
+The directory organization reflects the architectural decomposition of the Ambient Runtime and is intended to simplify navigation, maintenance and future extension.
 
 ---
 
 # References
 
-- M5Stack Tab5 official hardware documentation
-- M5Stack M5Tab5 UserDemo
-- Espressif ESP-Hosted
-- Espressif ESP Wi-Fi Remote
-- ESP-IDF 5.4.2
-- Ambient Physical AI architecture documentation
+The Ambient Runtime is part of the Ambient Physical AI project and should be understood together with the documentation of the remaining runtime subsystems.
+
+Related project documentation includes:
+
+- Presence Layer
+- Identity Layer
+- Cognitive Runtime
+- Expression Layer
+- System Architecture
+- StackFlow Architecture
+
+Together, these documents describe the complete distributed architecture of the Ambient Physical AI ecosystem.
 
 ---
 
-# Final Statement
+# Conclusion
 
-The Ambient Runtime Node evolved from a local hardware console into a complete network-capable physical runtime node.
+The Ambient Runtime provides the embedded execution environment responsible for integrating physical devices, environmental sensing and contextual presentation within the Ambient Physical AI ecosystem.
 
-The final implementation provides:
+Its implementation emphasizes modularity, clear separation of responsibilities and maintainable software architecture while remaining independent from semantic reasoning performed by the Cognitive Runtime.
 
-```text
-Environmental sensing
-+
-hardware supervision
-+
-runtime visualization
-+
-ESP32-C6 Wi-Fi connectivity
-+
-DHCP network identity
-+
-NETWORK READY state
-```
-
-The decisive discovery was the board-level power dependency:
-
-```text
-PI4IOE2
-    │
-    ▼
-WLAN_PWR_EN
-    │
-    ▼
-ESP32-C6
-```
-
-Once this dependency was reproduced from the official M5Stack BSP, the complete ESP-Hosted, SDIO, Wi-Fi Station, DHCP, IPv4, gateway and RSSI chain became operational.
-
-This README represents the final validated engineering baseline of the Ambient Runtime Node.
+By combining hardware abstraction, runtime infrastructure, environmental monitoring and semantic context presentation, the Ambient Runtime serves as the embedded foundation that connects validated cognitive information to the physical laboratory environment.
