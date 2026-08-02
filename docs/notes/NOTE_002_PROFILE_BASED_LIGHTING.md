@@ -1,30 +1,22 @@
-# TECHNICAL_NOTE_RGB_STRIP_NODE_PROFILE_LIGHTING.md
+# NOTE_002_PROFILE_BASED_LIGHTING
 
-# Ambient Physical AI
+## Ambient Physical AI
 
-## Technical Note
-
-### RGB Strip Node — Profile-Based Ambient Lighting Integration
-
-Version: 1.0
-
-Date: July 2026
+### RGB Strip Node
 
 ---
 
 # Purpose
 
-This note documents the engineering work performed to evolve the RGB Strip Node from a generic semantic event consumer into a profile-aware ambient lighting node.
+This document records the engineering work that evolved the RGB Strip Node from a generic semantic event consumer into a profile-aware ambient lighting node.
 
-The objective was **not** to transform the RGB strip into a user identification indicator, but to use it as an **ambient expression device**, applying a predefined lighting profile after successful identity authentication.
-
-This document is intended to support future README updates and maintenance activities.
+The objective was **not** to transform the RGB Strip into a user identification indicator, but to use it as an ambient expression device by applying a predefined lighting profile after successful identity authentication.
 
 ---
 
 # Initial Behavior
 
-Originally the RGB Strip Node reacted only to semantic events.
+Originally, the RGB Strip Node reacted only to Semantic Events.
 
 Example:
 
@@ -83,17 +75,20 @@ Profile Lighting
 
 ---
 
-# Cognitive Runtime Modification (AX630C)
+# Cognitive Runtime Modification
 
 One Cognitive Runtime component was modified.
 
-File:
+Modified file:
 
 ```text
-runtime/cognitive/stackflow/rgb_strip_notifier.py
+runtime/
+└── cognitive/
+    └── stackflow/
+        └── rgb_strip_notifier.py
 ```
 
-The notifier originally transmitted only:
+Originally, the notifier transmitted only:
 
 ```json
 {
@@ -103,7 +98,7 @@ The notifier originally transmitted only:
 }
 ```
 
-It now forwards the authenticated profile inside the payload:
+The implementation now forwards the authenticated profile inside the optional payload:
 
 ```json
 {
@@ -137,16 +132,16 @@ semantic_context_t
 
 Current information:
 
-- authenticated user id
+- authenticated user identifier.
 
 Future extensions may include:
 
-- accessibility preferences
-- preferred brightness
-- preferred animation
-- environmental preferences
+- accessibility preferences;
+- preferred brightness;
+- preferred animation;
+- environmental preferences.
 
-without changing the communication protocol.
+These future extensions can be incorporated without changing the communication protocol.
 
 ---
 
@@ -161,7 +156,7 @@ payload
     └── user_id
 ```
 
-The parsed information is stored inside:
+The extracted information is stored in:
 
 ```text
 semantic_context_t
@@ -181,9 +176,9 @@ event_type
 semantic_context
 ```
 
-instead of only the semantic event.
+instead of receiving only the Semantic Event.
 
-When the event is:
+When processing:
 
 ```text
 identity_authenticated
@@ -195,7 +190,7 @@ the processor selects the appropriate ambient lighting profile according to:
 user_id
 ```
 
-instead of using one fixed illumination.
+instead of applying a single fixed lighting behavior.
 
 ---
 
@@ -227,7 +222,7 @@ The approved lighting profiles are:
 The node also implements lighting states independent of authenticated users.
 
 | State | Lighting |
-|--------|----------|
+|-------|----------|
 | Idle | Very soft blue (low brightness) |
 | Presence Detected | Soft yellow while waiting for authentication |
 | Error | Persistent red with limited brightness |
@@ -252,12 +247,9 @@ Apply user lighting profile
 Maintain ambient lighting
 ```
 
-The selected profile remains active until:
+The selected lighting profile remains active until:
 
-- another user authenticates;
-
-or
-
+- another user authenticates; or
 - the environment returns to the unoccupied state.
 
 ---
@@ -267,20 +259,15 @@ or
 The implementation intentionally preserves:
 
 - semantic-event architecture;
-
 - backward compatibility;
-
-- separation between Cognitive Runtime and Expression Nodes;
-
+- separation between the Cognitive Runtime and Expression Nodes;
 - low coupling;
-
 - modular expression processing;
-
 - future extensibility.
 
 No communication protocol was broken.
 
-No existing semantic events were modified.
+No existing Semantic Events were modified.
 
 Only optional payload information was added.
 
@@ -296,8 +283,6 @@ runtime/
     └── stackflow/
         └── rgb_strip_notifier.py
 ```
-
----
 
 ## RGB Strip Node
 
@@ -319,4 +304,16 @@ The RGB Strip Node now supports profile-aware ambient lighting.
 
 The Cognitive Runtime provides the authenticated user identifier.
 
-The Expression Node interprets this information locally and applies the predefined ambient lighting profile while preserving the project's modular architecture and semantic event model.
+The Expression Node interprets this information locally and applies the predefined ambient lighting profile while preserving the project's modular architecture and semantic-event model.
+
+---
+
+# Status
+
+```text
+STATUS
+
+Completed
+
+Validated
+```
