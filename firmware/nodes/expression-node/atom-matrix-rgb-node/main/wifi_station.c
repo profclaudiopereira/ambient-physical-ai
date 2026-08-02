@@ -203,7 +203,7 @@ ESP_ERROR_CHECK(esp_netif_dhcpc_stop(sta_netif));
 esp_netif_ip_info_t ip_info = {0};
 
 ip_info.ip.addr =
-    ESP_IP4TOADDR(192, 168, 77, 28);
+    ESP_IP4TOADDR(192, 168, 77, 206);
 
 ip_info.gw.addr =
     ESP_IP4TOADDR(192, 168, 77, 1);
