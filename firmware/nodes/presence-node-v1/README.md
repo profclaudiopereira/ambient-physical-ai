@@ -266,6 +266,14 @@ avoid unnecessary structural changes.
 ``` text
 components/ld2410/
 ```
+The reusable LD2410 component is documented separately in:
+
+```text
+components/ld2410/README.md
+```
+
+This document describes only the role of the component within the Presence Layer. Detailed information about the public API, driver lifecycle, streaming parser architecture and protocol decoding is available in the component documentation.
+
 
 Responsibilities:
 
@@ -606,6 +614,14 @@ Not implemented in this node:
 -   StackFlow orchestration;
 -   ambient actuation;
 -   expression output.
+
+------------------------------------------------------------------------
+
+# Related Documentation
+
+| Document | Description |
+|----------|-------------|
+| `components/ld2410/README.md` | LD2410 reusable radar driver architecture and public API. |
 
 ------------------------------------------------------------------------
 
