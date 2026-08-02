@@ -1,394 +1,80 @@
 # Architecture
 
-## Ambient Physical AI
+This directory contains the official architectural documentation of the Ambient Physical AI project.
 
-### Distributed Cognitive Ecosystem Powered by StackFlow
+The documents presented here describe the validated architecture of the distributed ecosystem and serve as the primary architectural reference for the repository.
 
-> "Percebe. Identifica. Compreende. Decide. Transforma. Expressa."
+They explain the overall system organization, subsystem responsibilities, runtime coordination model, engineering philosophy, and communication contracts without duplicating implementation-specific documentation.
 
----
-
-# Overview
-
-Ambient Physical AI é um ecossistema cognitivo distribuído projetado para transformar ambientes em espaços inteligentes, contextuais e responsivos.
-
-O objetivo não é construir:
-
-* uma plataforma IoT tradicional;
-* um dashboard;
-* uma arquitetura cloud-first;
-* um chatbot conectado a sensores.
-
-O objetivo é criar:
-
-* cognição distribuída;
-* inteligência contextual;
-* interação natural;
-* transformação ambiental;
-* embodiment físico;
-* experiências memoráveis.
+Readers interested in firmware organization, hardware integration, or implementation details should consult the corresponding subsystem documentation, README files, and Technical Notes available throughout the repository.
 
 ---
 
-# Architectural Flow
+# Architecture Documents
 
-O ecossistema opera através do seguinte fluxo:
-
-```text
-Presence
-↓
-Identity
-↓
-Cognition
-↓
-Ambient Transformation
-↓
-Expression
-```
-
-Cada camada possui responsabilidades específicas dentro da arquitetura.
+| Document | Description |
+|----------|-------------|
+| **AMBIENT_PHYSICAL_AI_SYSTEM_ARCHITECTURE.md** | Primary architectural overview of Ambient Physical AI. Describes the distributed cognitive ecosystem, architectural layers, subsystem responsibilities, end-to-end operation, validated reference hardware, and overall architectural vision. |
+| **RUNTIME_AND_COMMUNICATION_ARCHITECTURE.md** | Describes the Cognitive Runtime, StackFlow, semantic communication model, distributed coordination, communication contracts, runtime services, and information flow throughout the ecosystem. |
+| **ENGINEERING_PRINCIPLES.md** | Defines the engineering philosophy adopted by the project, including architectural engineering principles, reproducibility, validation strategy, documentation standards, and long-term maintainability guidelines. |
+| **IDENTITY_PACKAGE_SPECIFICATION.md** | Official specification of the Identity Package communication contract, including semantic structure, compatibility rules, validation requirements, and architectural responsibilities. |
 
 ---
 
-# Presence Layer
+# Reference Implementation
 
-Responsável por perceber que existe alguém ou algo no ambiente.
+The system architecture is intentionally defined in terms of **architectural responsibilities** rather than specific hardware platforms.
 
-Pergunta respondida:
+The validated reference implementation is documented within **AMBIENT_PHYSICAL_AI_SYSTEM_ARCHITECTURE.md**, where each architectural responsibility is mapped to the hardware platform used during system validation.
 
-> Existe alguém aqui?
-
-## Baseline Atual
-
-Hardware:
-
-```text
-AtomS3 Lite
-+
-Unit Mini ToF-90 (VL53L0X)
-```
-
-Responsabilidades:
-
-* detecção de presença;
-* medição de distância;
-* eventos de aproximação;
-* gatilhos contextuais iniciais.
-
-Status:
-
-```text
-Operational Baseline
-```
+This distinction preserves hardware independence while providing a clear reference for the implementation submitted to the M5Stack Global Innovation Contest.
 
 ---
 
-# Identity Layer
+# Relationship to the Repository
 
-Responsável por identificar quem está interagindo com o ambiente.
+The architecture documents provide the conceptual foundation of Ambient Physical AI.
 
-Pergunta respondida:
+Additional documentation is organized as follows:
 
-> Quem está aqui?
+- **README files** describe subsystem implementation and usage.
+- **Technical Notes** document engineering investigations and validated technical findings.
+- **Engineering Notes** preserve engineering rationale and implementation experience.
+- **Firmware documentation** explains platform-specific implementation details.
 
-## Baseline Atual
-
-Hardware:
-
-```text
-M5Dial
-+
-WS1850S NFC
-```
-
-Responsabilidades:
-
-* identificação NFC;
-* leitura de UID;
-* mapeamento UID → perfil;
-* seleção de contexto;
-* geração de Identity Package;
-* visualização da identidade.
-
-Exemplo:
-
-```text
-UID
-↓
-Profile
-↓
-Identity Package
-```
-
-Status:
-
-```text
-Operational Baseline
-```
+Together, these resources provide a complete view of the project while maintaining a clear separation between architecture, implementation, and engineering knowledge.
 
 ---
 
-# Cognitive Layer
+# Design Philosophy
 
-Responsável por compreender contexto e tomar decisões.
+Ambient Physical AI is documented as a **distributed cognitive ecosystem**, not as a collection of independent firmware projects.
 
-Pergunta respondida:
+The architecture emphasizes:
 
-> O que significa esta situação?
+- responsibility-driven subsystem design;
+- semantic communication;
+- distributed cognition;
+- modular engineering;
+- implementation-independent interfaces;
+- reproducible engineering.
 
-````
-
-## Cognitive Runtime Node
-
-Hardware:
-
-```text
-AX630C
-+
-LLM Mate
-````
-
-Software:
-
-```text
-StackFlow Runtime
-```
-
-Responsabilidades:
-
-* interpretação contextual;
-* coordenação cognitiva;
-* inferência local;
-* multimodalidade;
-* memória;
-* tomada de decisão;
-* futuras capacidades de RAG.
-
-Status:
-
-```text
-Integration Phase Next
-```
+These principles remain stable even as the underlying hardware and software implementations evolve.
 
 ---
 
-# Ambient Transformation Layer
+# Historical Architecture
 
-Responsável por transformar fisicamente o ambiente.
-
-Pergunta respondida:
-
-> Como o ambiente deve responder?
-
-## Ambient Runtime Node
-
-Hardware:
+Earlier architectural studies, design explorations, and superseded architectural documents have been preserved in:
 
 ```text
-PoE-P4
+docs/archive/architecture/
 ```
 
-Responsabilidades:
+Those documents record the historical evolution of the project and provide engineering context, but they are **not** the authoritative architectural reference.
 
-* adaptação ambiental;
-* displays;
-* sincronização espacial;
-* estados ambientais;
-* feedback contextual;
-* futuras transformações físicas.
-
-Status:
-
-```text
-Active Development
-```
+The documents contained in this directory represent the current validated architecture of Ambient Physical AI.
 
 ---
 
-# Expression Layer
-
-Representa a forma como a inteligência do ambiente se manifesta para o usuário.
-
-Pergunta respondida:
-
-> Como o ambiente se expressa?
-
-Exemplos:
-
-```text
-StackChan
-Voice Pyramid
-Displays
-Lighting
-Animations
-Audio Feedback
-```
-
-Responsabilidades:
-
-* embodiment;
-* comunicação;
-* feedback visual;
-* feedback sonoro;
-* interação natural.
-
-Status:
-
-```text
-Future Integration
-```
-
----
-
-# StackFlow
-
-StackFlow não é:
-
-* MQTT;
-* middleware;
-* barramento de mensagens;
-* abstração de firmware.
-
-StackFlow é uma:
-
-## Distributed Cognitive Coordination Fabric
-
-Responsável por coordenar:
-
-```text
-Presence
-↓
-Identity
-↓
-Cognition
-↓
-Ambient Transformation
-↓
-Expression
-```
-
-através de eventos, contexto e coordenação cognitiva distribuída.
-
----
-
-# Runtime Model
-
-```text
-runtime/
-
-├── cognitive/
-│   └── stackflow/
-│
-├── ambient/
-│
-├── shared/
-│
-└── infrastructure/
-```
-
----
-
-# Current Architectural Roles
-
-| Component             | Role                                      |
-| --------------------- | ----------------------------------------- |
-| AtomS3 Lite + VL53L0X | Presence Node                             |
-| M5Dial                | Identity Node                             |
-| AX630C + LLM Mate     | Cognitive Runtime Node                    |
-| PoE-P4                | Ambient Runtime Node                      |
-| StackChan             | Expression Node                           |
-| Voice Pyramid         | Voice Expression Node                     |
-| StackFlow             | Distributed Cognitive Coordination Fabric |
-
----
-
-# Current Project Position
-
-## Operational Baselines
-
-Validated:
-
-```text
-Presence Layer
-Identity Layer
-```
-
-In Progress:
-
-```text
-Ambient Layer
-```
-
-Next:
-
-```text
-Presence
-↓
-Identity
-↓
-AX630C Cognitive Runtime
-```
-
----
-
-# Design Principles
-
-Priorizar:
-
-* simplicidade;
-* modularidade;
-* cognição distribuída;
-* interação contextual;
-* validação em hardware real;
-* demonstrações funcionais.
-
-Evitar:
-
-* overengineering;
-* abstrações prematuras;
-* arquitetura enterprise;
-* cloud-first mentality;
-* complexidade sem valor demonstrável.
-
----
-
-# Guiding Principle
-
-## Demo First. Complexity Later.
-
-Toda evolução arquitetural deve ser validada através de:
-
-* hardware real;
-* firmware real;
-* integração real;
-* experiências reais.
-
-A arquitetura deve evoluir a partir da prática e não de abstrações prematuras.
-
----
-
-# Current Milestone
-
-O projeto concluiu com sucesso as primeiras camadas operacionais:
-
-```text
-Presence
-✓
-
-Identity
-✓
-```
-
-O próximo marco arquitetural é:
-
-```text
-Presence Event
-↓
-Identity Package
-↓
-AX630C Cognitive Runtime
-↓
-Decision
-```
-
-estabelecendo a primeira integração fim-a-fim do ecossistema Ambient Physical AI.
+**Last Updated:** August 2026
