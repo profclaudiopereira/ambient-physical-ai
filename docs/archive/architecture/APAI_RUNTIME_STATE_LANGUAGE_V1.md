@@ -418,25 +418,3 @@ Responding
 
 ---
 
-# Competition Demonstration Value
-
-The Runtime State Language provides:
-
-* immediate visual understanding;
-* consistent behavior across devices;
-* reduced explanation burden;
-* stronger perception of system intelligence.
-
-Judges can understand system status without reading documentation.
-
----
-
-# MASTER Decision
-
-Approved as:
-
-```text
-Ambient Physical AI Runtime State Language v1
-```
-
-This specification shall be considered the official visual runtime communication model for the Ambient Physical AI ecosystem.
