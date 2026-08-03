@@ -18,14 +18,6 @@ Identity Node V1
 VALIDATED
 ```
 
-Current milestone:
-
-```text
-IDENTITY_NODE_V1_MILESTONE_002
-
-Identity visualization with profile images validated.
-```
-
 ---
 
 # Mission

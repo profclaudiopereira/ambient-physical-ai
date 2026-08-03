@@ -75,7 +75,3 @@ Consumed by the Identity Node as a reusable NFC driver.
 
 Current implementation supports ISO/IEC 14443 Type A cards with
 four-byte UIDs obtained through Cascade Level 1.
-
-## README REVIEW SUMMARY
-
-Technical Content Preserved: Yes Outstanding Questions: None

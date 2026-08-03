@@ -60,14 +60,6 @@ Identity Node V1
 VALIDATED
 ```
 
-Current validated milestone:
-
-```text
-IDENTITY_NODE_V1_MILESTONE_002
-
-Identity visualization with profile images validated.
-```
-
 The current implementation validates the complete identity acquisition pipeline, including:
 
 - NFC communication;
