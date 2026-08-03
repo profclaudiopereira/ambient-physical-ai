@@ -224,7 +224,7 @@ No incorrect identity was observed.
 
 The decisive validation question was:
 
-> ChatGPT, quem está conectado agora?
+> StackChan, quem está conectado agora?
 
 This wording forced the conversational agent to obtain the current
 runtime state.

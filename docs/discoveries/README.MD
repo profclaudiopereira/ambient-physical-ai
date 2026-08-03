@@ -2,362 +2,307 @@
 
 ## Ambient Physical AI
 
-### Cognitive Runtime Discovery Archive
+The `docs/discoveries/` directory preserves engineering discoveries made during the evolution of the Ambient Physical AI project.
 
-Esta área centraliza as descobertas técnicas realizadas durante a exploração das tecnologias que compõem o Cognitive Runtime do projeto Ambient Physical AI.
+Unlike Architecture, Technical Notes, or Milestones, the documents stored here record the investigation process that led to important engineering decisions. They capture protocol analysis, hardware characterization, implementation experiments, integration studies, and architectural discoveries before they became part of the validated system.
 
-O objetivo não é armazenar documentação definitiva nem arquitetura final.
-
-Seu propósito é preservar conhecimento adquirido durante investigações, validações e experimentos realizados antes da integração oficial ao ecossistema.
+These reports are preserved as technical history and provide traceability between experimental investigations and the project's current implementation.
 
 ---
 
-# Philosophy
+## Engineering Philosophy
 
-Princípio adotado:
+The Discoveries directory follows a simple engineering principle:
 
 ```text
-Explore First
-Understand First
-Validate First
-Integrate Later
+Explore
+↓
+Understand
+↓
+Validate
+↓
+Integrate
 ```
 
-Toda descoberta registrada nesta área deve contribuir para decisões arquiteturais futuras baseadas em evidências práticas.
+Every discovery should be based on practical investigation and observable evidence.
+
+The implementation, architecture, and validated documentation remain the authoritative sources for the current project state. Discovery documents preserve how that knowledge was originally obtained.
 
 ---
 
-# Scope
+# Discovery Reports
 
-Esta área concentra principalmente investigações relacionadas a:
+## DISCOVERY_REPORT_STACKFLOW_PROTOCOL_V1_EN.md
 
-```text
-AX630C
-LLM Mate
-StackFlow Runtime
-Context Processing
-Memory
-ASR
-TTS
-Vision
-Multimodal Services
-```
+**Purpose**
 
----
+Provides a concise overview of the first successful investigation of the StackFlow communication protocol running on the AX630C Cognitive Runtime.
 
-# Discovery Timeline
+**Contents**
 
-## 2026-06
+* Identification of the TCP communication endpoint.
+* Validation of the JSON-based communication protocol.
+* Session creation workflow.
+* Local inference lifecycle.
+* Streaming response behavior.
+* Initial engineering conclusions.
 
----
+**Engineering Relevance**
 
-## Discovery 01 — StackFlow Protocol
+This report documents the first successful programmatic interaction with the AX630C runtime and established the foundation for all subsequent Cognitive Runtime integrations.
 
-### Objective
+**Related Document**
 
-Identificar como acessar programaticamente o Cognitive Runtime.
-
-### Results
-
-Validado:
-
-```text
-TCP Port 10001
-llm_sys service
-llm_llm service
-JSON over TCP protocol
-Session setup
-Inference request
-Streaming response
-Session termination
-```
-
-### Architecture Insight
-
-```text
-Client
-↓
-TCP 10001
-↓
-llm_sys
-↓
-llm_llm
-↓
-Qwen2.5-0.5B
-```
-
-### Status
-
-```text
-COMPLETED
-```
+* `DISCOVERY_REPORT_STACKFLOW_PROTOCOL_V1_DETAILED_EN.md`
 
 ---
 
-## Discovery 02 — Context and Session Behavior
+## DISCOVERY_REPORT_STACKFLOW_PROTOCOL_V1_DETAILED_EN.md
 
-### Objective
+**Purpose**
 
-Compreender:
+Provides the complete engineering record of the StackFlow protocol investigation.
 
-```text
-Session lifecycle
-Context injection
-Multi-turn behavior
-Memory behavior
-```
+**Contents**
 
-### Validated
+* Experimental environment.
+* Runtime services identified.
+* Protocol messages.
+* Session allocation.
+* Python client implementation.
+* Runtime architecture.
+* Engineering conclusions.
+* Architectural impact.
 
-```text
-Session creation
-Context injection
-Single-turn inference
-Streaming responses
-```
+**Engineering Relevance**
 
-### Not Yet Validated
+This document serves as the primary technical record of the StackFlow protocol discovery and preserves the evidence supporting the protocol validation.
 
-```text
-Persistent memory
-Long-term context retention
-Internal conversational state
-```
+**Related Documents**
 
-### Current Hypothesis
-
-```text
-Event
-↓
-Context Package
-↓
-Inference
-↓
-Response
-```
-
-mais do que:
-
-```text
-Conversation
-↓
-Persistent Memory
-↓
-Response
-```
-
-### Status
-
-```text
-PARTIAL
-```
+* `DISCOVERY_REPORT_STACKFLOW_PROTOCOL_V1_EN.md`
+* `DISCOVERY_REPORT_STACKFLOW_CONTEXT_V1_EN_COMPLETE.md`
 
 ---
 
-## Discovery 03 — Presence and Identity Baselines
+## DISCOVERY_REPORT_STACKFLOW_CONTEXT_V1_EN_COMPLETE.md
 
-### Objective
+**Purpose**
 
-Estabelecer as primeiras camadas físicas do ecossistema.
+Documents the investigation of session behavior, context injection, conversational state, and runtime stability after the communication protocol had been successfully identified.
 
-### Results
+**Contents**
 
-Presence Layer validated:
+* Session lifecycle analysis.
+* Context injection experiments.
+* Multi-turn conversation evaluation.
+* Runtime stability observations.
+* Recovery procedures.
+* Architectural implications for context management.
 
-```text
-AtomS3 Lite
-+
-Unit Mini ToF-90
-(VL53L0X)
-```
+**Engineering Relevance**
 
-Identity Layer validated:
+The investigation demonstrated that Ambient Physical AI should treat each event as carrying its own contextual information, influencing the design of later semantic processing components.
 
-```text
-M5Dial
-+
-WS1850S NFC
-```
+**Related Documents**
 
-### Architectural Impact
-
-O projeto agora possui duas camadas operacionais independentes:
-
-```text
-Presence
-↓
-Identity
-```
-
-criando a base necessária para integração com o Cognitive Runtime.
-
-### Status
-
-```text
-COMPLETED
-```
+* `DISCOVERY_REPORT_STACKFLOW_PROTOCOL_V1_EN.md`
+* `DISCOVERY_REPORT_STACKFLOW_PROTOCOL_V1_DETAILED_EN.md`
 
 ---
 
-# Current Discovery Status
+## echo-pyramid-atoms3r-characterization.md
 
-| Discovery               | Status    |
-| ----------------------- | --------- |
-| StackFlow Protocol V1   | Completed |
-| Context Behavior V1     | Partial   |
-| Presence Layer Baseline | Completed |
-| Identity Layer Baseline | Completed |
-| Memory V1               | Planned   |
-| ASR V1                  | Planned   |
-| TTS V1                  | Planned   |
-| VLM V1                  | Planned   |
-| YOLO V1                 | Planned   |
+**Purpose**
 
----
+Records the engineering characterization of the Echo Pyramid and AtomS3R hardware platform before the ESP-IDF implementation of the Expression Layer.
 
-# Next Investigation Phase
+**Contents**
 
-O próximo objetivo do projeto não é mais validar hardware isoladamente.
+* Hardware baseline validation.
+* Arduino-based hardware characterization.
+* Audio subsystem observations.
+* Touch interface evaluation.
+* AudioStage investigation.
+* Engineering decisions for the ESP-IDF migration.
 
-O próximo objetivo é validar integração entre camadas.
+**Engineering Relevance**
 
-Fluxo alvo:
-
-```text
-Presence Event
-↓
-Identity Package
-↓
-AX630C Cognitive Runtime
-↓
-Decision
-```
+This report documents the practical knowledge obtained during hardware evaluation and defines the validated baseline used before firmware development moved entirely to ESP-IDF.
 
 ---
 
-## Cognitive Integration V1
+## IDENTITY_PROFILE_IMAGES_V1.md
 
-Primeira integração prevista:
+**Purpose**
 
-```text
-Presence Layer
-↓
-Identity Layer
-↓
-AX630C
-```
+Documents the engineering decisions adopted during the implementation of profile photographs in the Identity Node Version 1.
 
-Objetivos:
+**Contents**
 
-```text
-Receive Identity Package
-Inject Context
-Execute Inference
-Generate Decision
-```
+* Motivation for visual profile identification.
+* ProfileImageManager abstraction.
+* Embedded RGB565 image strategy.
+* Image conversion pipeline.
+* Firmware integration.
+* Temporary implementation rationale.
+* Planned migration path toward synchronized profile storage.
 
-Status:
+**Engineering Relevance**
 
-```text
-NEXT
-```
+This document preserves the engineering reasoning behind the first profile visualization implementation while maintaining a clear migration path toward a future dynamic profile infrastructure.
+
+---
+## STACKCHAN_INTEGRATION_SUSPENSION_001.md
+
+**Purpose**
+
+Documents the engineering decision to suspend the initial StackChan integration laboratory after identifying a potentially more appropriate integration strategy through the Model Context Protocol (MCP).
+
+**Contents**
+
+* Original integration objective.
+* Implemented software artifacts.
+* Validated components.
+* Context Builder results.
+* Human-readable message generation.
+* WebSocket capability validation.
+* MCP-related architectural discovery.
+* Reasons for suspending the laboratory.
+* Conditions required to resume the investigation.
+
+**Engineering Relevance**
+
+This document demonstrates an important engineering principle adopted throughout the project: implementation may be intentionally suspended when new technical evidence indicates that continuing would introduce unnecessary rework or architectural inconsistency.
+
+**Related Documents**
+
+* `STACKCHAN_MCP_DISCOVERY_001.md`
+* `STACKCHAN_MCP_DISCOVERY_001_CONSOLIDATED.md`
+* `STACKCHAN_MCP_DISCOVERY_002.md`
 
 ---
 
-# Future Discoveries
+## STACKCHAN_MCP_DISCOVERY_001.md
 
-## Memory V1
+**Purpose**
 
-Objetivo:
+Records the initial discovery that StackChan appeared to communicate through an MCP-based architecture rather than a direct command interface.
 
-```text
-Session
-↓
-Context
-↓
-Memory
-```
+**Contents**
 
-e seus limites.
+* Initial StackChan integration assumptions.
+* Discovery of the MCP endpoint.
+* Network validation.
+* AX630C WebSocket capability.
+* Early architectural reinterpretation.
+* Context-oriented integration hypothesis.
+* Engineering risks.
+* Recommended next laboratory.
 
----
+**Engineering Relevance**
 
-## ASR V1
+This investigation shifted the project's understanding of StackChan integration from direct message delivery toward semantic context exchange through MCP, establishing the basis for subsequent validation work.
 
-Investigar:
+**Related Documents**
 
-```text
-llm_asr
-```
-
----
-
-## TTS V1
-
-Investigar:
-
-```text
-llm_tts
-llm_melotts
-```
+* `STACKCHAN_INTEGRATION_SUSPENSION_001.md`
+* `STACKCHAN_MCP_DISCOVERY_001_CONSOLIDATED.md`
+* `STACKCHAN_MCP_DISCOVERY_002.md`
 
 ---
 
-## VLM V1
+## STACKCHAN_MCP_DISCOVERY_001_CONSOLIDATED.md
 
-Investigar:
+**Purpose**
 
-```text
-llm_vlm
-llm_camera
-```
+Consolidates the complete MCP discovery cycle, combining the original architectural observations with the subsequent laboratory validation.
 
----
+**Contents**
 
-## YOLO V1
+* Initial architectural hypothesis.
+* MCP investigation rationale.
+* Experimental environment.
+* Security considerations.
+* MCP protocol validation.
+* Tool Provider validation.
+* Semantic tool execution.
+* Architectural conclusions.
+* Final engineering assessment.
 
-Investigar:
+**Engineering Relevance**
 
-```text
-llm_yolo
-```
+This document represents the consolidated engineering record of the MCP investigation and establishes the validated architectural foundation for exposing semantic services from the AX630C Cognitive Runtime.
 
----
+**Related Documents**
 
-# Architectural Relevance
-
-As descobertas desta pasta fundamentam diretamente a evolução do ecossistema:
-
-```text
-Presence
-↓
-Identity
-↓
-Cognition
-↓
-Ambient Transformation
-↓
-Expression
-```
-
-Todo conhecimento registrado aqui deve servir como base para futuras integrações e decisões arquiteturais do Ambient Physical AI.
+* `STACKCHAN_MCP_DISCOVERY_001.md`
+* `STACKCHAN_MCP_DISCOVERY_002.md`
 
 ---
 
-# Current Project Position
+## STACKCHAN_MCP_DISCOVERY_002.md
 
-```text
-Presence Layer ............ Operational Baseline
-Identity Layer ............ Operational Baseline
-Cognitive Layer ........... Integration Phase Next
-Ambient Layer ............. Active Development
-Expression Layer .......... Future Integration
-```
+**Purpose**
+
+Documents the experimental validation that confirmed the AX630C Cognitive Runtime can operate as an MCP Tool Provider for the StackChan/XiaoZhi ecosystem.
+
+**Contents**
+
+* Laboratory objectives.
+* Experimental environment.
+* MCP handshake validation.
+* Tool discovery.
+* Tool invocation.
+* Semantic service validation.
+* Validated communication flow.
+* Architectural conclusions.
+* Recommended next milestone.
+
+**Engineering Relevance**
+
+This report concludes the protocol investigation by demonstrating that semantic services exposed by the Cognitive Runtime can be consumed through MCP without requiring modifications to the StackChan firmware.
+
+**Related Documents**
+
+* `STACKCHAN_MCP_DISCOVERY_001.md`
+* `STACKCHAN_MCP_DISCOVERY_001_CONSOLIDATED.md`
 
 ---
 
-# Guiding Principle
+# Relationship with Other Documentation
 
-## Discover. Validate. Integrate.
+The Discoveries directory complements the remaining documentation maintained by the Ambient Physical AI project.
 
-Nenhuma integração deve ocorrer sem compreensão prévia do comportamento real dos sistemas envolvidos.
+Each documentation area has a distinct purpose:
+
+| Directory            | Primary Purpose                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------- |
+| `docs/architecture/` | Defines the approved system architecture and component responsibilities.                                |
+| `docs/discoveries/`  | Preserves engineering investigations and technical discoveries that influenced project evolution.       |
+| `docs/notes/`        | Documents focused engineering knowledge, implementation details, and reproducible technical procedures. |
+| `docs/milestones/`   | Records completed engineering achievements and validated project phases.                                |
+| `firmware/`          | Documents the implementation of embedded nodes and firmware components.                                 |
+| `runtime/`           | Documents Cognitive Runtime services, StackFlow components, and runtime infrastructure.                 |
+
+Together, these directories provide complete traceability from engineering investigation to validated implementation.
+
+---
+
+# Preservation Policy
+
+Discovery documents are preserved because they capture engineering knowledge that influenced the evolution of Ambient Physical AI.
+
+Even after an implementation becomes stable or an architectural decision is consolidated, the original investigation remains valuable as technical history.
+
+Some reports may eventually be consolidated or superseded by newer documentation. When this occurs, the original discoveries should normally remain available as historical engineering references unless an equivalent consolidated document fully preserves their technical content.
+
+---
+
+# Conclusion
+
+The `docs/discoveries/` directory serves as the engineering history of Ambient Physical AI.
+
+Rather than describing the current implementation, it documents the investigations, experiments, hardware characterization activities, protocol analyses, and architectural discoveries that shaped the project's evolution.
+
+These reports provide the technical context behind important engineering decisions and complement the project's Architecture, Technical Notes, Milestones, Firmware, and Runtime documentation by preserving the knowledge acquired throughout the development process.

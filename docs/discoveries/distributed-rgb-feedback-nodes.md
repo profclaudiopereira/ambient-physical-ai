@@ -322,7 +322,7 @@ Possible integration targets:
 
 ---
 
-# MASTER Assessment
+# Assessment
 
 The validation demonstrated that inexpensive and already available hardware can provide distributed visual feedback across the Ambient Physical AI ecosystem.
 

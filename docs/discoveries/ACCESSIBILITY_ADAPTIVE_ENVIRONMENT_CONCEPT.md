@@ -165,8 +165,6 @@ This may strengthen the project's:
 
 # Current Position
 
-This concept is not part of the M005 Foundation Integration milestone.
-
 It is considered:
 
 ```text

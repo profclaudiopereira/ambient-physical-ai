@@ -948,6 +948,3 @@ By separating perception, identity, cognition, environmental adaptation, and use
 The architecture presented in this document serves as the official conceptual foundation for the Ambient Physical AI project and provides the entry point for understanding the complete distributed ecosystem.
 
 ---
-```
-**End of Document**
-```
