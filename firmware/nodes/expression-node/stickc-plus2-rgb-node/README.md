@@ -430,7 +430,6 @@ firmware/
     └── expression-node/
         └── stickc-plus2-rgb-node/
             ├── main/
-            ├── notes/
             ├── CMakeLists.txt
             ├── dependencies.lock
             ├── sdkconfig
@@ -787,22 +786,18 @@ stickc-plus2-rgb-node/
 ├── dependencies.lock
 │
 ├── main/
-│   ├── stickc_plus2_rgb_node.cpp
-│   ├── wifi_station.c
-│   ├── semantic_receiver.c
-│   ├── semantic_consumer.c
-│   ├── expression_processor.c
-│   ├── rgb_effects.c
-│   ├── rgb_controller.cpp
-│   └── ...
-│
-└── notes/
-    └── TECHNICAL_NOTE_001_RUNTIME_STATE_INTEGRATION.md
+    ├── stickc_plus2_rgb_node.cpp
+    ├── wifi_station.c
+    ├── semantic_receiver.c
+    ├── semantic_consumer.c
+    ├── expression_processor.c
+    ├── rgb_effects.c
+    ├── rgb_controller.cpp
+    └── ...
+
 ```
 
 The `main` directory contains the production firmware implementation.
-
-The `notes` directory preserves engineering investigations and implementation rationale developed during the evolution of the Runtime State Indicator.
 
 ---
 
