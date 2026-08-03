@@ -1296,7 +1296,7 @@ The Tab5 Platform supports the following Ambient Runtime components.
 | `firmware/nodes/ambient-runtime-node/components/esp_lcd_st7121/README.md` | ST7121 panel driver. |
 | `firmware/nodes/ambient-runtime-node/components/ambient_console/README.md` | Primary Runtime Console. |
 | `firmware/nodes/ambient-runtime-node/components/pahub/README.md` | External I²C multiplexer. |
-| `docs/notes/NOTE_001_TAB5_WIFI_POWER_ENABLE.md` | Recommended technical note documenting the ESP32-C6 power-enable investigation. |
+| `docs/notes/NOTE_001_TAB5_ESP32C6_POWER_ENABLE_INVESTIGATION.md` | Documents the engineering investigation that identified and validated the PI4IOE2-controlled `WLAN_PWR_EN` sequence required to power the onboard ESP32-C6 before ESP-Hosted initialization. |
 
 ---
 

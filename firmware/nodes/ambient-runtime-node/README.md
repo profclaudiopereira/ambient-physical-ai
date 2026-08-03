@@ -973,6 +973,20 @@ ambient-runtime-node/
 
 The directory organization reflects the architectural decomposition of the Ambient Runtime and is intended to simplify navigation, maintenance and future extension.
 
+
+---
+
+# Technical Notes
+
+Some engineering investigations are documented separately from the architectural documentation.
+
+These documents preserve engineering rationale, validation procedures and implementation decisions that are intentionally not duplicated in the component documentation.
+
+| Document | Description |
+|----------|-------------|
+| `docs/notes/NOTE_001_TAB5_ESP32C6_POWER_ENABLE_INVESTIGATION.md` | Engineering investigation describing the discovery and validation of the ESP32-C6 power enable sequence implemented by the Tab5 platform. |
+| `docs/notes/NOTE_002_SH1107_DISPLAY_GEOMETRY_VALIDATION.md` | Engineering validation of the SH1107 display geometry adopted by the Ambient Runtime. |
+
 ---
 
 # References
