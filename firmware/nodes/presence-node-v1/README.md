@@ -40,19 +40,6 @@ OFFICIAL BASELINE
 VALIDATED
 ```
 
-Current milestone:
-
-``` text
-PRESENCE_NODE_V2_MILESTONE_002
-Presence → Identity UDP unicast integration validated
-```
-
-Validation date:
-
-``` text
-2026-07-17
-```
-
 Validated end-to-end path:
 
 ``` text
