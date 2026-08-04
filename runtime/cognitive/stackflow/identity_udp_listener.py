@@ -27,6 +27,9 @@ from pathlib import Path
 from threading import Thread
 
 from ambient_runtime_notifier import AmbientRuntimeNotifier
+from cognitive_runtime_console_notifier import (
+    CognitiveRuntimeConsoleNotifier,
+)
 from context_builder import build_context, build_human_message
 from context_registry import get_current_context, update_context
 from echo_pyramid_adapter import EchoPyramidAdapter
@@ -82,6 +85,44 @@ def notify_runtime_state(state: str) -> bool:
         return runtime_state_notifier.notify(state)
     except Exception as exc:
         print(f"Runtime State notification failed [{state}]: {exc}")
+        return False
+
+
+def publish_runtime_console(
+    *,
+    state: str | None = None,
+    current_context: dict | None = None,
+    semantic_event: dict | None = None,
+    log_event: str | None = None,
+) -> bool:
+    """
+    Publish Cognitive Runtime observability without blocking core processing.
+
+    The Runtime Console is observational. UART or console failures must never
+    interrupt Identity, Context, Semantic Event, TTS, MCP or destination-node
+    processing.
+    """
+    try:
+        if current_context is not None:
+            runtime_console_notifier.update_from_context(current_context)
+
+        if semantic_event is not None:
+            runtime_console_notifier.update_from_semantic_event(
+                semantic_event
+            )
+
+        if state is not None:
+            runtime_console_notifier.update_cognitive(
+                state=state,
+            )
+
+        if log_event:
+            runtime_console_notifier.record_event(log_event)
+
+        return runtime_console_notifier.publish()
+
+    except Exception as exc:
+        print(f"Runtime Console notification failed: {exc}")
         return False
 
 
@@ -222,6 +263,7 @@ rgb_strip_notifier = RGBStripNotifier()
 ambient_runtime_notifier = AmbientRuntimeNotifier()
 echo_pyramid_adapter = EchoPyramidAdapter()
 runtime_state_notifier = RuntimeStateNotifier()
+runtime_console_notifier = CognitiveRuntimeConsoleNotifier()
 
 dispatcher = SemanticDispatcher()
 dispatcher.register_adapter("stackchan", notifier.notify)
@@ -252,11 +294,16 @@ print(
     f"{echo_pyramid_adapter.host}:{echo_pyramid_adapter.port}"
 )
 print("Runtime State Notifier: ENABLED")
+print("Cognitive Runtime Console Notifier: ENABLED")
 print("StackChan MCP Server: STARTING")
 print("Shared Context Registry: ENABLED")
 print("====================================")
 
 notify_runtime_state("idle")
+publish_runtime_console(
+    state="idle",
+    log_event="Cognitive Runtime listener started",
+)
 
 
 while True:
@@ -273,7 +320,19 @@ while True:
 
         if packet_type == "context_change_request":
             notify_runtime_state("thinking")
+            publish_runtime_console(
+                state="thinking",
+                log_event="Context change request received",
+            )
+
             handle_context_change_request(payload)
+
+            updated_context = get_current_context()
+            publish_runtime_console(
+                state="responding",
+                current_context=updated_context,
+                log_event="Context change processed",
+            )
             notify_runtime_state("responding")
             continue
 
@@ -295,11 +354,21 @@ while True:
         print("Source:", payload.get("source"))
 
         notify_runtime_state("thinking")
+        publish_runtime_console(
+            state="thinking",
+            log_event="Identity package received",
+        )
 
         # Normalize the Identity Package and replace the active Registry state.
         context = build_context(payload)
         update_context(context)
         current_context = get_current_context()
+
+        publish_runtime_console(
+            state="thinking",
+            current_context=current_context,
+            log_event="Identity authenticated and context built",
+        )
 
         refresh_ambient_context(current_context)
 
@@ -356,13 +425,28 @@ while True:
         print(json.dumps(semantic_events, ensure_ascii=False, indent=2))
 
         for semantic_event in semantic_events:
+            publish_runtime_console(
+                state="responding",
+                current_context=current_context,
+                semantic_event=semantic_event,
+            )
+
             dispatch_results = dispatcher.dispatch(semantic_event)
             print_dispatch_results(dispatch_results)
 
         notify_runtime_state("responding")
+        publish_runtime_console(
+            state="responding",
+            current_context=current_context,
+            log_event="Semantic processing completed",
+        )
 
     except Exception as exc:
         notify_runtime_state("error")
+        publish_runtime_console(
+            state="error",
+            log_event=f"Runtime error: {exc}",
+        )
         print("JSON parse error or listener error")
         print("Raw:", raw)
         print("Error:", exc)
@@ -371,3 +455,7 @@ while True:
         # Every processing cycle returns the explicit cognitive indicator to
         # idle, including the context-change branch that uses continue above.
         notify_runtime_state("idle")
+        publish_runtime_console(
+            state="idle",
+            current_context=get_current_context(),
+        )
