@@ -13,7 +13,7 @@
  * Hardware configuration inherited from the validated
  * stickc-plus2-ws2812-status laboratory firmware.
  */
-#define RGB_GPIO   32
+#define RGB_GPIO   9
 #define RGB_COUNT  8
 
 static const char *TAG = "stickc_rgb_controller";
