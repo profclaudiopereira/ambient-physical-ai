@@ -1577,3 +1577,73 @@ For the engineering evolution of this subsystem, validation history, laboratory 
 ```text
 ENGINEERING_HISTORY.md
 ```
+
+---
+
+## Runtime Integration Note
+
+During the final end-to-end integration of the Ambient Physical AI system, an
+additional Cognitive Runtime configuration was identified.
+
+The `ambient_context` service itself correctly loads its configuration from the
+`.env` file located in this directory.
+
+However, when the Ambient Context generation is triggered indirectly through the
+main Cognitive Runtime (`identity_udp_listener.py`), the systemd service that
+starts the Cognitive Runtime must also expose the same environment variables.
+
+The `ambient-cognitive-runtime.service` unit should therefore include:
+
+```ini
+EnvironmentFile=/root/ambient-runtime/runtime/cognitive/stackflow/services/ambient_context/.env
+```
+
+This allows the Cognitive Runtime to access configuration values required by
+external context adapters, including:
+
+- `TMDB_BEARER_TOKEN`
+- `TAB5_HOST`
+- `TAB5_PORT`
+
+Without this configuration, the direct validation commands described in this
+document continue to work correctly, but profile-triggered Ambient Context
+generation may execute without access to the required environment variables.
+
+This is an operating-system deployment configuration and does not require any
+modification to the Ambient Context Service implementation.
+
+## Competition Performance Adjustment — Asynchronous Identity Voice
+
+Final end-to-end validation identified that personalized StackFlow TTS was
+executed synchronously inside `identity_udp_listener.py`. The main Cognitive
+Runtime loop therefore remained in `thinking` until voice generation and Echo
+Pyramid delivery completed.
+
+For the competition demonstration, identity voice dispatch was moved to a
+single background worker. Semantic Event processing and Runtime State completion
+can now continue without waiting for TTS.
+
+The adjustment, validation evidence, concurrency policy, rollback procedure and
+post-competition limitations are documented in:
+
+```text
+docs/notes/TECHNICAL_NOTE_003_ASYNC_IDENTITY_VOICE_DISPATCH.md
+```
+
+The competition-time policy permits only one greeting at a time. A greeting
+received while another is active is skipped instead of queued, preventing
+overlapping or stale speech. A more complete latest-wins or cancellation model
+remains post-competition work.
+
+## StackChan MCP Configuration
+
+The StackChan integration requires the authenticated MCP endpoint (`STACKCHAN_MCP_URL`) to be available before the Cognitive Runtime service starts.
+
+The complete configuration, validation procedure, expected startup logs and recommended functional tests are documented in:
+
+```text
+docs/notes/TECHNICAL_NOTE_004_STACKCHAN_MCP_CONFIGURATION_AND_VALIDATION.md
+```
+
+This section is intentionally appended to preserve the existing README structure unchanged.
+

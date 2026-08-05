@@ -21,3 +21,16 @@ Thumbs.db
 
 # ESP-IDF Component Manager
 **/managed_components/
+
+# -----------------------------------------------------------------------------
+# Runtime Environment (Secrets)
+# -----------------------------------------------------------------------------
+# Runtime configuration files may contain API tokens, MCP endpoints and other
+# environment-specific credentials. Never commit these files.
+
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Keep template configuration files under version control.
+!**/.env.example

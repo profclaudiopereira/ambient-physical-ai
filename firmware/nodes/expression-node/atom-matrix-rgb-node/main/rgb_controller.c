@@ -17,7 +17,7 @@
  */
 #define RGB_GPIO       27
 #define RGB_COUNT      25
-#define RGB_BRIGHTNESS 64
+#define RGB_BRIGHTNESS 170
 
 static const char *TAG = "rgb_controller";
 

@@ -24,7 +24,7 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
-from threading import Thread
+from threading import Lock, Thread
 
 from ambient_runtime_notifier import AmbientRuntimeNotifier
 from cognitive_runtime_console_notifier import (
@@ -60,6 +60,13 @@ VALID_CONTEXTS = {
     "Classroom",
     "Demo",
 }
+
+
+# Identity voice synthesis is decoupled from the main UDP processing loop.
+# Only one greeting may use StackFlow TTS at a time. If another greeting is
+# already active, the newer greeting is skipped to prevent overlap or stale
+# speech during rapid NFC authentication sequences.
+identity_voice_lock = Lock()
 
 
 def start_mcp_server_thread() -> Thread:
@@ -145,6 +152,61 @@ def refresh_ambient_context(current_context: dict) -> None:
 
     except Exception as exc:
         print(f"Ambient Context update failed: {exc}")
+
+
+
+def run_identity_voice(voice_message: str) -> None:
+    """
+    Generate and deliver one personalized greeting outside the UDP listener.
+
+    This preserves the existing StackFlow TTS client and exit-code handling
+    while preventing TTS generation from holding the Cognitive Runtime in the
+    ``thinking`` state. Only one greeting is allowed at a time.
+
+    A new greeting received while another one is active is deliberately skipped.
+    A richer latest-wins queue remains post-competition work.
+    """
+    if not identity_voice_lock.acquire(blocking=False):
+        print(
+            "Echo Pyramid personalized voice skipped: "
+            "another greeting is already active"
+        )
+        return
+
+    try:
+        tts_client_path = (
+            Path(__file__).resolve().parent
+            / "stackflow_tts_to_echo_pyramid.py"
+        )
+
+        if not tts_client_path.is_file():
+            raise FileNotFoundError(
+                f"StackFlow TTS client not found: {tts_client_path}"
+            )
+
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(tts_client_path),
+                "--text",
+                voice_message,
+            ],
+            check=False,
+        )
+
+        if completed.returncode == 0:
+            print("Echo Pyramid personalized voice: PASS")
+        else:
+            print(
+                "Echo Pyramid personalized voice: FAIL "
+                f"(TTS client exit code {completed.returncode})"
+            )
+
+    except Exception as exc:
+        print(f"Echo Pyramid personalized voice failed: {exc}")
+
+    finally:
+        identity_voice_lock.release()
 
 
 def print_dispatch_results(dispatch_results: dict) -> None:
@@ -374,6 +436,9 @@ while True:
 
         # Identity voice runs only for Identity Packages. Context changes never
         # execute this block and therefore never replay the welcome greeting.
+        #
+        # The TTS client runs in a daemon worker so voice generation does not
+        # block Semantic Event dispatch or hold the Runtime in ``thinking``.
         try:
             identity = current_context.get("who")
             voice_message = build_identity_voice_message(identity)
@@ -381,33 +446,15 @@ while True:
             print("\nIdentity voice message selected:")
             print(voice_message)
 
-            tts_client_path = (
-                Path(__file__).resolve().parent
-                / "stackflow_tts_to_echo_pyramid.py"
+            voice_thread = Thread(
+                target=run_identity_voice,
+                args=(voice_message,),
+                name="identity-voice-worker",
+                daemon=True,
             )
+            voice_thread.start()
 
-            if not tts_client_path.is_file():
-                raise FileNotFoundError(
-                    f"StackFlow TTS client not found: {tts_client_path}"
-                )
-
-            completed = subprocess.run(
-                [
-                    sys.executable,
-                    str(tts_client_path),
-                    "--text",
-                    voice_message,
-                ],
-                check=False,
-            )
-
-            if completed.returncode == 0:
-                print("Echo Pyramid personalized voice: PASS")
-            else:
-                print(
-                    "Echo Pyramid personalized voice: FAIL "
-                    f"(TTS client exit code {completed.returncode})"
-                )
+            print("Echo Pyramid personalized voice: STARTED ASYNC")
 
         except Exception as exc:
             print(f"Echo Pyramid personalized voice failed: {exc}")
