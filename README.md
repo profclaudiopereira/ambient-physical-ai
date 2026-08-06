@@ -1,913 +1,836 @@
-# Ambient Physical AI
-
 ## Distributed Cognitive Ecosystem Powered by StackFlow
 
-> Perceive. Identify. Understand. Decide. Transform. Express.
+> **The environment understands the person.**
 
-Ambient Physical AI is an exploration of what happens when Ambient Intelligence, Physical AI, Edge Computing, Large Language Models, Context-Aware Computing and Embodied Interaction converge into a single ecosystem.
+> *An open research platform investigating how Context-Aware Computing,
+> Embedded Artificial Intelligence and Distributed Cognitive Systems can
+> transform physical environments into intelligent partners for human
+> interaction.*
 
-Rather than building isolated devices, dashboards or chatbots, the project investigates how environments themselves can become intelligent, contextual and responsive.
+------------------------------------------------------------------------
 
-The long-term vision is simple:
+# Ambient Physical AI
 
-> The environment understands the person.
+![Ambient Physical AI](assets/photos/hero_ambient_physical_ai.jpg)
 
----
+------------------------------------------------------------------------
 
-# Inspiration
+# Why Ambient Physical AI?
 
-Ambient Physical AI is strongly inspired by the vision of ubiquitous computing proposed by Mark Weiser.
+Most Artificial Intelligence systems today still live inside screens.
 
-His famous observation remains one of the most important design principles behind this project:
+They wait for commands.
 
-> "The most profound technologies are those that disappear. They weave themselves into the fabric of everyday life until they are indistinguishable from it."
+They rarely understand where people are, who they are, what is happening
+around them, or how the surrounding environment should respond.
 
-While traditional systems focus on interfaces, Ambient Physical AI focuses on environments.
+Ambient Physical AI investigates a different question:
 
-Instead of interacting with a computer, the user interacts with a space capable of perception, cognition and expression.
+> **What happens when the environment itself becomes intelligent?**
 
----
+Instead of building another chatbot or another IoT dashboard, this
+project explores how an intelligent environment can perceive,
+understand, reason and physically express itself through a distributed
+ecosystem of embedded devices coordinated by a centralized cognitive
+runtime.
 
-# The Problem
+This repository documents that journey.
 
-Modern intelligent systems often remain trapped inside screens.
+------------------------------------------------------------------------
 
-Even advanced AI systems typically:
+# Research Motivation
 
-* wait for explicit commands;
-* lack physical awareness;
-* ignore environmental context;
-* cannot perceive presence;
-* cannot adapt their behavior to individuals;
-* struggle to express their internal state in meaningful ways.
+The origins of Ambient Physical AI can be traced back several years,
+during graduate studies in Computer Science.
 
-Ambient Physical AI investigates a different approach:
+It was during this period that **Professor Dr. Carlos Ferraz**
+introduced the concepts of **Context-Aware Computing**, planting the
+seed for a research question that would remain active for many years:
 
-```text
-Environment
-↓
-Perception
-↓
-Identity
-↓
-Context
-↓
-Cognition
-↓
-Physical Transformation
-↓
-Expression
+> **Can computers understand not only explicit commands, but also the
+> context in which people exist?**
+
+At that time, the vision was compelling, but the necessary technology
+was still immature.
+
+Embedded processors had limited computational power.
+
+Edge Artificial Intelligence was still emerging.
+
+Large Language Models did not yet exist.
+
+Affordable multimodal sensors were uncommon.
+
+Today, this landscape has changed dramatically.
+
+Modern embedded processors, Edge AI accelerators, distributed embedded
+systems, speech recognition, computer vision and local Large Language
+Models finally make it possible to revisit those original ideas through
+real hardware.
+
+Ambient Physical AI is the result of that evolution.
+
+------------------------------------------------------------------------
+
+# Scientific Inspiration
+
+One of the strongest conceptual inspirations behind this project is the
+work of **Mark Weiser**, widely recognized as the pioneer of Ubiquitous
+Computing.
+
+His vision remains remarkably current:
+
+> *"The most profound technologies are those that disappear. They weave
+> themselves into the fabric of everyday life until they are
+> indistinguishable from it."*
+
+Ambient Physical AI adopts this philosophy as a practical engineering
+goal.
+
+Instead of making computers more visible, the project investigates how
+computation can become naturally embedded into physical environments,
+allowing technology to support people without demanding constant
+attention.
+
+------------------------------------------------------------------------
+
+# From Context-Aware Computing to Ambient Physical AI
+
+The evolution of the research can be summarized as:
+
+``` text
+Context-Aware Computing
+            ↓
+Embedded Systems
+            ↓
+Internet of Things
+            ↓
+Edge Computing
+            ↓
+Embedded Artificial Intelligence
+            ↓
+Large Language Models
+            ↓
+Distributed Cognitive Systems
+            ↓
+Ambient Physical AI
 ```
 
----
+Rather than replacing previous ideas, Ambient Physical AI integrates
+them into a single distributed architecture.
 
-# Ecosystem Vision
+------------------------------------------------------------------------
 
-The current ecosystem vision is:
+# Project Vision
 
-```text
-Person
-   ↓
-Presence
-   ↓
-Identity
-   ↓
-Physical Context
-   ↓
-Cognition
-   ↓
-Ambient Transformation
-   ↓
-Expression
-   ↓
-Experience
+Ambient Physical AI is not designed around devices.
+
+It is designed around **human interaction with intelligent
+environments**.
+
+Its long-term objective is to investigate environments capable of:
+
+-   perceiving people;
+-   identifying who is present;
+-   understanding environmental context;
+-   reasoning about situations;
+-   adapting the physical environment;
+-   expressing cognitive state through visual, audio and haptic
+    modalities;
+-   respecting privacy through local-first intelligence.
+
+This vision can be summarized by a simple statement:
+
+> **The environment understands the person.**
+
+------------------------------------------------------------------------
+
+## Official Prototype
+
+![Project Prototype](assets/photos/project_author_and_panel.jpg)
+
+------------------------------------------------------------------------
+
+# The Ecosystem at a Glance
+
+``` text
+                 Human
+
+                   │
+
+          Presence Detection
+
+                   │
+
+         Identity Recognition
+
+                   │
+
+      Physical Context Builder
+
+                   │
+
+     Cognitive Runtime (AX630C)
+
+                   │
+
+             StackFlow
+
+                   │
+
+     Distributed Semantic Events
+
+         ┌─────────┼─────────┐
+         │         │         │
+
+ Ambient Runtime  Voice   Expression
+
+         │         │         │
+
+      Adaptive Physical Environment
 ```
 
-This flow emerged through multiple architectural discoveries, hardware validations and runtime investigations.
+------------------------------------------------------------------------
 
----
+# System Architecture
+
+Ambient Physical AI is organized as a **distributed cognitive
+ecosystem**. Each hardware node has a single responsibility while the
+Cognitive Runtime coordinates semantic reasoning.
+
+The architecture intentionally avoids concentrating sensing, reasoning
+and actuation into a single embedded device.
+
+------------------------------------------------------------------------
+
+## Official Architecture Panel
+
+![Architecture Panel](assets/photos/official_architecture_panel.jpg)
+
+![Presence Layer](assets/photos/presence_layer.jpg)
+
+![Identity Layer](assets/photos/identity_layer.jpg)
+
+![Cognitive Runtime](assets/photos/cognitive_runtime.jpg)
+
+![Ambient Runtime](assets/photos/ambient_runtime_tab5.jpg)
+
+------------------------------------------------------------------------
 
 # Architectural Layers
 
-## Presence Layer
+``` text
++------------------------------------------------------+
+|                    Human Interaction                 |
++------------------------------------------------------+
+                       │
+        +--------------+--------------+
+        │                             │
+ Presence Layer              Identity Layer
+        │                             │
+        +--------------+--------------+
+                       │
+               Context Builder
+                       │
+            Cognitive Runtime (AX630C)
+                       │
+                  StackFlow Fabric
+                       │
+      +----------------+----------------+
+      │                │                │
+ Ambient Runtime   Voice Interface  Expression Layer
+      │                │                │
+      +----------------+----------------+
+                       │
+          Adaptive Physical Environment
+```
 
-Question:
+------------------------------------------------------------------------
 
-> Is someone here?
+# Cognitive Runtime
+
+📷 **Photo:** AX630C + LLM Mate
+
+The Cognitive Runtime is the semantic core of the ecosystem.
+
+Responsibilities include:
+
+-   receiving perception events;
+-   building contextual knowledge;
+-   executing semantic services;
+-   coordinating StackFlow;
+-   distributing semantic events.
+
+It deliberately remains independent from any particular sensor or
+actuator.
+
+------------------------------------------------------------------------
+
+# Ambient Runtime
+
+📷 **Photo:** M5Stack Tab5
+
+The Ambient Runtime bridges semantic reasoning and the physical
+laboratory.
+
+Current responsibilities include:
+
+-   environmental sensing;
+-   local visualization;
+-   Mini OLED contextual information;
+-   execution of ambient adaptations;
+-   monitoring local platform health.
+
+------------------------------------------------------------------------
+
+# Presence Layer
+
+📷 **Photo:** Presence Node (LD2410C)
+
+Detects human presence before any interaction occurs.
 
 Responsibilities:
 
-* presence detection;
-* distance measurement;
-* approach detection;
-* occupancy awareness.
+-   radar sensing;
+-   presence state generation;
+-   distance estimation;
+-   presence event publication.
 
-Current baseline:
+------------------------------------------------------------------------
 
-```text
-AtomS3 Lite
-+
-Unit Mini ToF-90
-(VL53L0X)
-```
+# Identity Layer
 
-Status:
+📷 **Photo:** M5Dial Identity Node
 
-```text
-Operational Baseline
-```
-
----
-
-## Identity Layer
-
-Question:
-
-> Who is here?
+Transforms an anonymous presence into an authenticated interaction.
 
 Responsibilities:
 
-* NFC identification;
-* profile recognition;
-* context selection;
-* identity confirmation;
-* Identity Package generation.
+-   NFC authentication;
+-   profile selection;
+-   context selection;
+-   identity package generation.
 
-Current baseline:
+------------------------------------------------------------------------
 
-```text
-M5Dial
-+
-WS1850S NFC
-```
+# Voice Interface
 
-Validated capabilities:
+📷 **Photo:** Echo Pyramid + AtomS3R
 
-```text
-UID Reading
-Profile Mapping
-Identity Package Generation
-FreeRTOS Runtime
-```
+Provides natural bidirectional interaction.
 
-Example:
+Capabilities:
 
-```json
-{
-  "type":"identity_package",
-  "profile":{
-    "id":"claudio",
-    "role":"owner"
-  }
-}
-```
+-   wake word;
+-   speech capture;
+-   speech synthesis;
+-   contextual voice commands.
 
-Status:
+------------------------------------------------------------------------
 
-```text
-Operational Baseline
-```
+# Expression Layer
 
----
+📷 **Photos:** - RGB Strip Node - StickC Plus RGB Node - Atom Matrix RGB
+Node
 
-## Physical Context Layer
+Instead of simply displaying status LEDs, these nodes externalize the
+cognitive state of the ecosystem.
 
-One of the most important discoveries of the project.
+Examples include:
 
-Initial model:
+-   Thinking
+-   Listening
+-   Speaking
+-   Waiting for Identity
+-   Processing Context
+-   Idle
 
-```text
-Presence
-↓
-Identity
-↓
-Cognition
-```
+This makes AI activity visible and understandable to nearby users.
 
-Refined model:
+------------------------------------------------------------------------
 
-```text
-Presence
-↓
-Identity
-↓
-Physical Context
-↓
-Cognition
-```
+# Wearable Interaction
 
-Physical artifacts become contextual markers.
+📷 **Photo:** Wearable Node
 
-Examples:
+The wearable extends interaction beyond fixed devices by combining
+visual and haptic feedback.
 
-* identity cards;
-* environment cards;
-* intent cards;
-* semantic objects;
-* contextual anchors.
+Accessibility is considered a first-class architectural requirement
+rather than an optional feature.
 
-This transforms NFC from simple authentication into contextual interaction.
+------------------------------------------------------------------------
 
----
+# Technology Stack
 
-## Cognitive Layer
+## Embedded
 
-Question:
+-   ESP-IDF
+-   FreeRTOS
+-   ESP32-S3
+-   ESP32-P4
+-   ESP32-C6
 
-> What does this situation mean?
+## Runtime
 
-Current platform:
+-   Ubuntu 22.04
+-   Python
+-   StackFlow
+-   Semantic Services
 
-```text
-AX630C
-+
-LLM Mate
-+
-StackFlow
-```
+## Communication
 
-Responsibilities:
+-   UDP
+-   Wi-Fi
+-   I²C
+-   UART
+-   NFC
 
-* reasoning;
-* context interpretation;
-* multimodal processing;
-* memory;
-* decision making;
-* future RAG capabilities.
+## Sensors
 
-Current status:
+-   LD2410C Radar
+-   Environmental Sensors
+-   Ambient Light
+-   NFC
+-   Voice
 
-```text
-Runtime Validated
-Integration Phase Next
-```
+------------------------------------------------------------------------
 
-Major discoveries:
+### Communication Strategy
 
-* Ubuntu 22.04 runtime validated;
-* local LLM inference validated;
-* multimodal AI services identified;
-* TCP integration endpoint discovered;
-* StackFlow protocol investigation completed.
+The current implementation adopts UDP because of its simplicity, low latency and suitability for distributed research validation. This choice allowed rapid prototyping and efficient communication between the distributed nodes of the Ambient Physical AI ecosystem.
 
----
+Future production-oriented deployments will evaluate additional communication mechanisms considering reliability, security, interoperability, device management and long-term maintainability requirements. The project intentionally remains open to assessing alternative transport protocols and secure communication architectures as the platform evolves.
 
-## Ambient Transformation Layer
+------------------------------------------------------------------------
 
-Question:
+# Engineering Principles
 
-> How should the environment respond?
+The architecture follows a small set of engineering principles applied
+consistently across all nodes:
 
-Current platform:
+-   One responsibility per node.
+-   Local-first processing whenever practical.
+-   Modular hardware.
+-   Explainable system behavior.
+-   Distributed cognition.
+-   Reproducible engineering.
+-   Documentation as part of development.
 
-```text
-PoE-P4
-```
+------------------------------------------------------------------------
 
-Responsibilities:
+# Repository Organization
 
-* environmental adaptation;
-* display management;
-* ambient orchestration;
-* physical synchronization;
-* contextual responses.
+Ambient Physical AI is organized to separate hardware, firmware, runtime
+software and documentation while preserving a modular engineering
+workflow.
 
-The Ambient Runtime Node transforms the environment itself.
-
----
-
-## Expression Layer
-
-Question:
-
-> How does the environment express itself?
-
-Current platforms:
-
-```text
-StackChan
-Voice Pyramid
-```
-
-Future platforms:
-
-```text
-Atom Matrix
-NanoC6 RGB Bar
-Mini OLED
-Wearable Devices
-```
-
-Responsibilities:
-
-* embodiment;
-* voice;
-* visual feedback;
-* emotional expression;
-* environmental communication.
-
----
-
-# StackFlow
-
-StackFlow is not simply a messaging system.
-
-It is not MQTT.
-
-It is not middleware.
-
-It is not a device protocol.
-
-Current definition:
-
-## Distributed Cognitive Coordination Fabric
-
-StackFlow coordinates:
-
-```text
-Presence
-↓
-Identity
-↓
-Context
-↓
-Cognition
-↓
-Ambient Transformation
-↓
-Expression
-```
-
-across a distributed ecosystem of physical devices.
-
----
-
-# Key Architectural Discoveries
-
-## Discovery 01 — Hardware Before Assumptions
-
-Many architectural decisions were only possible because real hardware was tested before assumptions were made.
-
-Principle:
-
-```text
-Hardware First
-Architecture Second
-```
-
----
-
-## Discovery 02 — Identity is More Than Authentication
-
-The M5Dial evolved from:
-
-```text
-RFID Reader
-```
-
-into:
-
-```text
-Identity
-+
-Intent
-+
-Context Selection
-```
-
----
-
-## Discovery 03 — Physical Context
-
-Context can be represented through physical artifacts.
-
-Examples:
-
-```text
-Cards
-Objects
-Tokens
-Markers
-```
-
-allowing context to become tangible.
-
----
-
-## Discovery 04 — StackChan
-
-Initial assumption:
-
-```text
-Robot + LLM
-```
-
-Current assessment:
-
-```text
-Physical AI Agent Platform
-```
-
-StackChan is not the Cognitive Runtime.
-
-It is an embodiment and expression platform.
-
----
-
-## Discovery 05 — Runtime State Language
-
-Ambient Physical AI is developing a common expression language for runtime states.
-
-Examples:
-
-```text
-Thinking
-→ White Pulse
-
-Responding
-→ Blue
-
-Alert
-→ Orange
-
-Error
-→ Red
-```
-
-The goal is to make cognition visible.
-
----
-
-# Accessibility and Human-Centered Design
-
-An important idea emerged during project discussions involving accessibility and game design.
-
-Modern games often implement dedicated color-blind modes:
-
-```text
-Deuteranopia
-Protanopia
-Tritanopia
-```
-
-Ambient Physical AI extends this idea beyond interfaces.
-
-Future vision:
-
-```text
-Identity
-↓
-Accessibility Profile
-↓
-Environment Adaptation
-↓
-Personalized Expression
-```
-
-Potential adaptations:
-
-* alternative color palettes;
-* high-contrast displays;
-* audio feedback;
-* wearable haptic feedback;
-* adaptive environmental responses.
-
-The objective is simple:
-
-> The environment adapts to the person.
-
----
-
-# Wearable Computing
-
-The ecosystem is also exploring wearable interaction.
-
-Reference platform:
-
-```text
-M5StickC Plus 2
-+
-Vibration HAT
-```
-
-Future role:
-
-```text
-Wearable Runtime Node
-```
-
-Potential capabilities:
-
-* silent notifications;
-* haptic feedback;
-* contextual alerts;
-* accessibility support;
-* ambient interaction.
-
-Expression should not rely only on vision.
-
-Future expression may combine:
-
-```text
-Visual
-+
-Audio
-+
-Haptic
-```
-
----
-
-# Current Operational Baselines
-
-## Presence Layer
-
-```text
-AtomS3 Lite
-+
-VL53L0X
-```
-
-Status:
-
-```text
-Operational Baseline
-```
-
----
-
-## Identity Layer
-
-```text
-M5Dial
-+
-WS1850S NFC
-```
-
-Status:
-
-```text
-Operational Baseline
-```
-
----
-
-## Cognitive Runtime
-
-```text
-AX630C
-+
-LLM Mate
-```
-
-Status:
-
-```text
-Validated
-```
-
----
-
-## Ambient Runtime
-
-```text
-PoE-P4
-```
-
-Status:
-
-```text
-Active Development
-```
-
----
-
-# Repository Structure
-
-```text
+``` text
 ambient-physical-ai/
-
+│
 ├── firmware/
+│   ├── nodes/
+│   └── shared/
+│
 ├── runtime/
+│   ├── cognitive/
+│   └── stackflow/
+│
+├── hardware/
 ├── docs/
 ├── assets/
-├── hardware/
-├── demos/
 ├── tools/
 ├── scripts/
-└── .github/
+└── demos/
 ```
 
-Additional details can be found throughout the repository documentation.
+Each top-level directory has a dedicated purpose and its own technical
+documentation.
 
----
+The goal is to make every subsystem understandable and reproducible
+without requiring knowledge of the entire project.
 
-# Competition
+------------------------------------------------------------------------
 
-Project developed for:
+# Engineering Philosophy
 
-```text
-M5Stack Global Innovation Contest 2026
-```
+Ambient Physical AI was intentionally developed as a collection of
+small, well-defined systems rather than a monolithic application.
 
-Target submission:
+Each node has a clear responsibility.
 
-```text
-27 July 2026
-```
+Each subsystem can evolve independently.
 
-Current focus:
+The Cognitive Runtime coordinates the ecosystem without tightly coupling
+the hardware platforms.
 
-```text
-Presence
-↓
-Identity
-↓
-Cognition Integration
-```
+This approach improves:
 
----
+-   maintainability;
+-   scalability;
+-   reproducibility;
+-   experimentation;
+-   long-term research.
 
-# Roadmap
+------------------------------------------------------------------------
 
-Near-term objective:
+# Documentation Philosophy
 
-```text
-Presence Event
-↓
-Identity Package
-↓
-AX630C Cognitive Runtime
-↓
-Decision
-```
+Documentation is considered part of the engineering process.
 
-Future objective:
+Every relevant architectural decision should be documented.
 
-```text
-Presence
-↓
-Identity
-↓
-Context
-↓
-Cognition
-↓
-Ambient Transformation
-↓
-Expression
-↓
-Experience
-```
+Every important interface should define clear contracts.
 
----
+Every subsystem should explain not only **how** it works, but also
+**why** it exists.
+
+The main README introduces the project.
+
+Subsystem READMEs provide implementation details.
+
+This separation keeps the repository accessible to both researchers and
+developers.
+
+------------------------------------------------------------------------
+
+# Reproducibility
+
+Scientific and engineering reproducibility are central goals of this
+repository.
+
+Whenever practical, documentation should allow another engineer to
+reproduce:
+
+-   hardware configuration;
+-   firmware build process;
+-   runtime deployment;
+-   network configuration;
+-   integration workflow;
+-   validation procedure.
+
+The objective is not only to publish code, but also to preserve
+engineering knowledge.
+
+------------------------------------------------------------------------
+
+# Research Areas
+
+Ambient Physical AI integrates ideas from multiple research domains.
+
+Core topics include:
+
+-   Context-Aware Computing
+-   Ambient Intelligence
+-   Physical AI
+-   Embedded Artificial Intelligence
+-   Edge AI
+-   Distributed Cognitive Systems
+-   Human-Computer Interaction
+-   Human-Centered Computing
+-   Embedded Networking
+-   Wearable Computing
+-   Accessibility
+-   Explainable Intelligent Systems
+
+Rather than treating these disciplines independently, the project
+investigates how they can operate together inside a distributed
+intelligent environment.
+
+------------------------------------------------------------------------
 
 # Design Principles
 
-Ambient Physical AI follows a set of principles refined throughout the project:
+The project is guided by several long-term principles.
 
-* Demo First. Complexity Later.
-* Explore First. Integrate Later.
-* Hardware Before Assumptions.
-* Architecture Before Integration.
-* Local First.
-* Distributed Cognition.
-* Human-Centered Design.
-* Real Systems Over Simulations.
+## Human First
 
----
+Technology exists to improve interaction with people rather than
+attracting attention to itself.
 
-# Final Vision
+## Local First
 
-Ambient Physical AI is not a single device.
+Whenever practical, intelligence should remain close to where data is
+generated.
 
-It is not a chatbot.
+## Privacy by Design
 
-It is not an automation platform.
+Personal information should remain under local control whenever
+possible.
 
-It is an investigation into how environments can perceive, understand and respond to people through distributed cognition embodied in the physical world.
+## Explainability
 
-The long-term goal is not to build smarter devices.
+System behavior should be understandable by developers and by nearby
+users.
 
-The long-term goal is to build environments that understand the people within them.
+## Accessibility
 
----
+Accessibility is considered part of the architecture from the beginning,
+including visual and haptic feedback.
 
-# Additional Architectural Notes
+## Modular Evolution
 
-## Dual NFC Identity Strategy
+New hardware should be integrated without requiring architectural
+redesign.
 
-Ambient Physical AI supports two complementary identity acquisition strategies.
+------------------------------------------------------------------------
 
-### Strategy 1 — UID Mapping
+# Open Source Goals
 
-Current operational baseline.
+This repository has three complementary objectives:
 
-```text
-NTAG216
-↓
-UID Read
-↓
-UID Mapping
-↓
-Profile
-↓
-Identity Package
+1.  Document an ongoing research platform.
+2.  Encourage reproducible embedded AI engineering.
+3.  Serve as an educational reference for students, researchers and
+    developers interested in intelligent environments.
+
+------------------------------------------------------------------------
+
+# About the Competition
+
+Ambient Physical AI was developed for the **M5Stack Global Innovation
+Contest 2026**.
+
+The competition provided an opportunity to validate the architecture
+using real hardware under realistic integration constraints.
+
+Beyond the competition itself, the project continues as a long-term
+research platform exploring distributed cognitive environments.
+
+------------------------------------------------------------------------
+
+# Navigating This Repository
+
+If you are new to the project, the recommended reading order is:
+
+1.  Read this README.
+2.  Review the system architecture.
+3.  Explore the hardware photographs.
+4.  Read the README of the subsystem of interest.
+5.  Explore the source code and engineering documentation.
+
+This progression provides both the conceptual overview and the
+implementation details.
+
+------------------------------------------------------------------------
+
+## Security and Privacy Roadmap
+
+Ambient Physical AI adopts a **local-first** architecture in which identity resolution, contextual reasoning and environmental adaptation are primarily performed within the local ecosystem.
+
+For the current research prototype and competition demonstration, security mechanisms were intentionally implemented at a level compatible with rapid experimentation, validation and reproducibility.
+
+The project treats security as a continuous engineering process rather than a one-time implementation task. As the platform evolves toward long-term deployments, future work will include systematic evaluation and validation of security mechanisms appropriate for distributed Ambient Intelligence systems.
+
+Planned research topics include:
+
+- secure onboarding and provisioning of new devices;
+- mutual authentication between distributed nodes;
+- evaluation of encrypted communication channels where appropriate;
+- secure key management and hardware-backed cryptographic capabilities;
+- secure Over-the-Air (OTA) firmware update strategies;
+- role-based access control and administrative policies;
+- audit logging and operational traceability;
+- resilience against unauthorized devices and replay attacks;
+- privacy-preserving identity management;
+- compliance with applicable data protection regulations (including LGPD and GDPR);
+- comparative evaluation of communication protocols and security architectures for production deployments.
+
+The project intentionally remains open to evaluating different technologies and standards as the platform evolves, prioritizing interoperability, maintainability, scalability and long-term security.
+
+------------------------------------------------------------------------
+
+# Future Directions
+
+Ambient Physical AI is not intended to be a finished product.
+
+It is an evolving research platform designed to investigate how
+intelligent environments can perceive, understand and collaborate with
+people in natural and explainable ways.
+
+Future work includes, but is not limited to:
+
+-   richer multimodal perception;
+-   additional wearable interfaces;
+-   adaptive accessibility features;
+-   expanded semantic services;
+-   more expressive physical interactions;
+-   larger distributed deployments;
+-   Security hardening for production-oriented deployments.
+-   Evaluation of secure communication architectures and distributed trust models.
+-   Expanded accessibility features, including adaptive visual palettes for different types of color vision deficiency and richer multimodal feedback.
+-   Validation of larger multi-room and multi-user Ambient Intelligence deployments.
+
+As new technologies emerge, the architecture is expected to evolve while
+preserving its modular design principles.
+
+------------------------------------------------------------------------
+
+# Engineering Beyond the Competition
+
+Although this repository was initially prepared for the **M5Stack Global
+Innovation Contest 2026**, its objectives extend beyond the competition.
+
+The project serves as:
+
+-   a research platform;
+-   an educational resource;
+-   an embedded AI integration reference;
+-   a foundation for future academic work.
+
+Every validated subsystem contributes to a broader vision of distributed
+intelligent environments.
+
+------------------------------------------------------------------------
+
+# Contributing
+
+Contributions are welcome.
+
+Researchers, students, educators and developers interested in
+intelligent environments are encouraged to explore the project,
+reproduce experiments and propose improvements.
+
+When contributing, please consider the project's engineering philosophy:
+
+-   preserve modularity;
+-   document important decisions;
+-   avoid unnecessary architectural complexity;
+-   prioritize reproducibility;
+-   validate changes on real hardware whenever possible.
+
+Meaningful documentation is considered as valuable as source code.
+
+Contributions involving distributed cognitive systems, accessibility, embedded AI, Edge AI, secure IoT architectures and multimodal interaction are especially welcome.
+
+------------------------------------------------------------------------
+
+# References and Inspiration
+
+Ambient Physical AI builds upon decades of research in ubiquitous and
+context-aware computing.
+
+Some of the concepts that influenced this work include:
+
+-   Context-Aware Computing
+-   Ubiquitous Computing
+-   Ambient Intelligence
+-   Human-Centered Computing
+-   Embedded Artificial Intelligence
+-   Distributed Systems
+-   Edge Computing
+
+Special recognition is given to the pioneering vision of **Mark
+Weiser**, whose work continues to inspire research into computing that
+naturally integrates with everyday environments.
+
+The project also acknowledges the influence of **Professor Dr. Carlos
+Ferraz**, whose teaching introduced the foundational concepts of
+Context-Aware Computing that motivated the original research questions
+explored here.
+
+------------------------------------------------------------------------
+
+## License
+
+Ambient Physical AI is released under the **MIT License**.
+
+The project is intended to encourage research, education and community collaboration in the areas of Ambient Intelligence, Distributed Physical AI and Edge AI.
+
+See the `LICENSE` file for the complete license text.
+
+------------------------------------------------------------------------
+
+# Acknowledgements
+
+This project would not exist without the continuous evolution of the
+open-source ecosystem.
+
+The author gratefully acknowledges the communities and organizations
+behind technologies that make this research possible, including:
+
+-   ESP-IDF
+-   FreeRTOS
+-   Python
+-   Ubuntu
+-   M5Stack
+-   Open-source AI communities
+
+Their work enables researchers around the world to transform ideas into
+real embedded systems.
+
+------------------------------------------------------------------------
+
+# Final Message
+
+Ambient Physical AI began with a simple question:
+
+> **Can an environment understand people rather than simply react to
+> commands?**
+
+Years later, that question evolved into a distributed ecosystem capable
+of perceiving presence, recognizing identity, understanding context,
+reasoning locally and expressing cognitive state through physical
+interaction.
+
+This repository documents not only the resulting software and hardware,
+but also the engineering decisions, architectural evolution and research
+philosophy behind the project.
+
+The journey continues.
+
+------------------------------------------------------------------------
+
+# Explore the Project
+
+For implementation details, please continue with the dedicated
+documentation available throughout the repository.
+
+Subsystem READMEs provide:
+
+-   hardware information;
+-   firmware architecture;
+-   build instructions;
+-   communication protocols;
+-   validation procedures;
+-   engineering notes.
+
+Together they form the complete technical documentation of Ambient
+Physical AI.
+
+------------------------------------------------------------------------
+
+# Repository
+
+``` text
+README.md
+│
+├── firmware/
+├── runtime/
+├── hardware/
+├── docs/
+├── assets/
+├── tools/
+├── scripts/
+└── demos/
 ```
 
-Validated examples:
+------------------------------------------------------------------------
 
-```text
-8804DC32 → Claudio / owner
+# Closing Statement
 
-88048667 → Student / learner
-```
+> **The environment understands the person.**
 
-Advantages:
+Ambient Physical AI explores a future in which intelligent environments
+become collaborative partners rather than passive tools.
 
-* simple;
-* robust;
-* fast;
-* independent of card content.
+Thank you for visiting this repository.
 
-Status:
+We hope this work inspires new ideas, new collaborations and new
+research toward the next generation of embedded intelligent
+environments.
 
-```text
-VALIDATED
-```
+------------------------------------------------------------------------
 
----
 
-### Strategy 2 — NDEF Identity
 
-Future evolution.
-
-```text
-NTAG216
-↓
-Read UID
-↓
-Read NDEF
-↓
-Identity Package
-```
-
-The system follows the rule:
-
-```text
-If NDEF exists
-    Use NDEF
-
-Else
-    Use UID Mapping
-```
-
-This allows identity information to be carried directly by the card while preserving compatibility with the validated UID Mapping approach.
-
-Status:
-
-```text
-PLANNED
-```
-
----
-
-# Expression Layer Prototypes
-
-Although the Expression Layer has not yet entered the main integration path, several hardware platforms have already been validated independently.
-
-Current laboratory platforms include:
-
-```text
-ESP32-S3
-RGB Rings
-RGB Bars
-Atom Matrix
-Mini OLED Displays
-```
-
-Characteristics:
-
-```text
-Wi-Fi Connected
-Independent Runtime
-Distributed Operation
-```
-
-These devices are capable of expressing system state through visual feedback patterns and may later become distributed Expression Nodes within the ecosystem.
-
-Current classification:
-
-```text
-Expression Layer Prototypes
-```
-
----
-
-# Wearable Runtime Node
-
-Ambient Physical AI is also exploring wearable interaction.
-
-Reference platform:
-
-```text
-M5StickC Plus 2
-+
-Vibration HAT
-```
-
-Potential role:
-
-```text
-Wearable Runtime Node
-```
-
-Future capabilities:
-
-```text
-Silent Notifications
-Haptic Feedback
-Accessibility Support
-Ambient Alerts
-Personal Context Delivery
-```
-
-This extends the Expression Layer beyond visual and audio channels.
-
-Future expression model:
-
-```text
-Visual
-+
-Audio
-+
-Haptic
-```
-
-The long-term objective is to allow the environment to communicate through the most appropriate modality for each individual.
-
----
-
-# Advanced Expression Branch
-
-Current ecosystem roadmap:
-
-```text
-Core Path
-
-Presence
-↓
-Identity
-↓
-Cognition
-↓
-Ambient Runtime
-↓
-Expression
-```
-
-Additional expression platforms:
-
-```text
-Advanced Expression Branch
-
-RGB Nodes
-Wearable Node
-Accessibility Adaptation
-```
-
-This branch investigates personalized and adaptive forms of environmental expression.
-
----
-
-# Adaptive Environment Vision
-
-One emerging principle of Ambient Physical AI is:
-
-```text
-The environment does not merely understand the person.
-
-The environment also chooses how to express itself to that person.
-```
-
-Examples:
-
-```text
-Identity
-↓
-Accessibility Profile
-↓
-Adaptive Expression
-```
-
-Possible adaptations:
-
-```text
-Alternative Color Schemes
-High Contrast Modes
-Audio Feedback
-Wearable Haptics
-Context-Aware Visual Feedback
-```
-
-This principle is inspired by accessibility strategies commonly found in modern games and extends them to physical environments.
