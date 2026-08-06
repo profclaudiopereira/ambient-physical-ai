@@ -17,8 +17,14 @@ static const char *TAG = "ambient-network";
  * Depois do milestone, poderemos migrar isso para Kconfig,
  * NVS ou provisionamento. Nesta missão, não ampliaremos o escopo.
  */
-#define AMBIENT_WIFI_SSID "OKFIBRA-Claudio_2GHz"
-#define AMBIENT_WIFI_PASS "15120813"
+
+/*
+ * Update the Wi-Fi credentials below before building.
+ * If static IP addressing is enabled, also adjust the network
+ * configuration (IP, gateway and subnet mask) for your environment.
+ */ 
+#define AMBIENT_WIFI_SSID "<YOUR_WIFI_SSID>"
+#define AMBIENT_WIFI_PASS "<YOUR_WIFI_PASSWORD>"
 
 static esp_netif_t *s_sta_netif = nullptr;
 
@@ -330,10 +336,10 @@ ESP_ERROR_CHECK(
 esp_netif_ip_info_t ip_info = {};
 
 ip_info.ip.addr =
-    ESP_IP4TOADDR(192,168,77,25);
+    ESP_IP4TOADDR(192,168,1,203);
 
 ip_info.gw.addr =
-    ESP_IP4TOADDR(192,168,77,1);
+    ESP_IP4TOADDR(192,168,1,1);
 
 ip_info.netmask.addr =
     ESP_IP4TOADDR(255,255,255,0);

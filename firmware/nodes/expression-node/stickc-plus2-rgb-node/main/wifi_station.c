@@ -11,8 +11,13 @@
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 
-#define WIFI_SSID "OKFIBRA-Claudio_2GHz"
-#define WIFI_PASSWORD "15120813"
+/*
+ * Update the Wi-Fi credentials below before building.
+ * If static IP addressing is enabled, also adjust the network
+ * configuration (IP, gateway and subnet mask) for your environment.
+ */
+#define WIFI_SSID "<YOUR_WIFI_SSID>"
+#define WIFI_PASSWORD "<YOUR_WIFI_PASSWORD>"
 
 #define WIFI_CONNECTED_BIT BIT0
 
@@ -203,10 +208,10 @@ ESP_ERROR_CHECK(esp_netif_dhcpc_stop(sta_netif));
 esp_netif_ip_info_t ip_info = {0};
 
 ip_info.ip.addr =
-    ESP_IP4TOADDR(192, 168, 77, 207);
+    ESP_IP4TOADDR(192, 168, 1, 207);
 
 ip_info.gw.addr =
-    ESP_IP4TOADDR(192, 168, 77, 1);
+    ESP_IP4TOADDR(192, 168, 1, 1);
 
 ip_info.netmask.addr =
     ESP_IP4TOADDR(255, 255, 255, 0);

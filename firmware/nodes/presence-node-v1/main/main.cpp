@@ -36,10 +36,15 @@
  */
 static const char *TAG = "presence-radar";
 
-#define WIFI_SSID "OKFIBRA-Claudio_2GHz"
-#define WIFI_PASS "15120813"
+/*
+ * Update the Wi-Fi credentials below before building.
+ * If static IP addressing is enabled, also adjust the network
+ * configuration (IP, gateway and subnet mask) for your environment.
+ */
+#define WIFI_SSID "<YOUR_WIFI_SSID>"
+#define WIFI_PASS "<YOUR_WIFI_PASSWORD>"
 
-#define UDP_BROADCAST_IP "192.168.77.7"
+#define UDP_BROADCAST_IP "192.168.1.41"
 #define UDP_PORT 3333
 
 static int udp_socket_fd = -1;
