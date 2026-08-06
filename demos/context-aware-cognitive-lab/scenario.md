@@ -14,12 +14,15 @@ The demonstration takes place inside a technology laboratory.
 
 The laboratory contains:
 
-* Presence sensors
-* Identity devices
-* Cognitive runtime nodes
-* Ambient runtime nodes
-* Expression nodes
-* Voice interaction nodes
+- an LD2410C Radar Presence Node;
+- an M5Dial Identity Node with WS1850S NFC;
+- the AX630C Cognitive Runtime with LLM Mate;
+- the M5Stack Tab5 Ambient Runtime;
+- StackChan as an embodied research assistant;
+- the Echo Pyramid with AtomS3R as the voice interface;
+- distributed RGB Expression Nodes;
+- a Wearable Haptic Node;
+- a dedicated Cognitive Runtime Console.
 
 All components cooperate through the Ambient Physical AI architecture.
 
@@ -29,13 +32,14 @@ All components cooperate through the Ambient Physical AI architecture.
 
 The environment is idle.
 
-No user is currently interacting with the system.
+No participant is currently interacting with the system.
 
 ```text
 Presence: Idle
 Identity: Unknown
 Context: Empty
-Ambient State: Standby
+Ambient Runtime: Waiting
+Cognitive State: Idle
 ```
 
 ---
@@ -44,54 +48,49 @@ Ambient State: Standby
 
 A person enters the environment.
 
-The Unit Mini ToF detects movement and proximity.
+The LD2410C radar detects human presence and initiates the contextual interaction.
 
 ```text
-Person detected
+Presence detected
 ```
 
-Event generated:
-
-```json
-{
-  "event": "presence_detected"
-}
-```
+A presence event is transmitted to the Identity Node.
 
 ---
 
 # Step 2 — Identity Recognition
 
-The user presents an NFC credential using M5Dial.
+The participant presents an NFC credential using the M5Dial and WS1850S NFC reader.
+
+The Identity Node resolves the credential and associates it with a validated profile.
 
 Example:
 
 ```json
 {
-  "user": "claudio",
+  "profile_id": "claudio",
   "role": "owner",
-  "mode": "developer"
+  "context": "Lab"
 }
 ```
 
-Identity becomes available to the ecosystem.
+The Identity Package becomes available to the ecosystem.
 
 ---
 
 # Step 3 — Context Creation
 
-Identity information is forwarded to the Cognitive Runtime.
+The Identity Package is forwarded to the AX630C Cognitive Runtime.
 
-The AX630C creates a contextual package.
+The Runtime updates the Current Runtime Context using the authenticated profile, selected context and available environmental information.
 
 Example:
 
 ```json
 {
-  "user": "claudio",
-  "role": "owner",
-  "mode": "developer",
-  "location": "lab"
+  "profile_id": "claudio",
+  "context": "Lab",
+  "authenticated": true
 }
 ```
 
@@ -101,64 +100,75 @@ Example:
 
 The AX630C processes:
 
-* identity;
-* context;
-* environmental information;
-* system state.
+- identity;
+- active context;
+- environmental information;
+- runtime state;
+- available semantic services.
 
-A contextual decision is produced.
-
-Example:
+The Runtime transitions through cognitive states such as:
 
 ```text
-Developer mode activated.
+IDLE
+THINKING
+RESPONDING
 ```
+
+Runtime snapshots and semantic events are distributed to the corresponding consumers.
 
 ---
 
 # Step 5 — Ambient Transformation
 
-The Ambient Runtime Node receives the decision.
+The M5Stack Tab5 Ambient Runtime receives the contextual information.
 
-PoE-P4 adapts the environment.
+Possible actions include:
 
-Possible actions:
+- updating the main Ambient Runtime interface;
+- presenting personalized information on the Mini OLED;
+- displaying local sensor information;
+- exposing network and runtime status;
+- coordinating profile-based environmental adaptation.
 
-* display information;
-* update OLED messages;
-* environmental feedback;
-* visual indicators.
+The environment changes according to the authenticated participant and the active context.
 
 ---
 
-# Step 6 — Expression
+# Step 6 — Multimodal Expression
 
-StackChan becomes the physical embodiment of the system.
+The Expression Layer presents the cognitive state through multiple physical modalities.
+
+Validated behaviors include:
+
+- StackChan contextual interaction;
+- personalized welcome through the Echo Pyramid;
+- synchronized RGB state presentation;
+- runtime state presentation on dedicated displays;
+- a short haptic pulse during the `RESPONDING` state;
+- runtime observability through the Cognitive Runtime Console.
 
 Example:
 
 ```text
-Welcome back Claudio.
-Developer mode activated.
+Welcome, Claudio.
+Context: Lab.
 ```
 
-The interaction becomes visible and tangible.
+The interaction becomes visible, audible, embodied and tactile.
 
 ---
 
-# Step 7 — Voice Interaction
+# Step 7 — Voice-Driven Context Change
 
-Voice Pyramid becomes available.
-
-The user may continue interacting naturally through speech.
+The Echo Pyramid with AtomS3R supports wake-word-driven context change requests.
 
 Example:
 
 ```text
-What should I work on today?
+Hi ESP, Meeting.
 ```
 
-The Cognitive Runtime processes the request and generates a response.
+The request is forwarded to the Cognitive Runtime, which validates the request, updates the active context and redistributes the resulting state to the ecosystem.
 
 ---
 
@@ -166,20 +176,22 @@ The Cognitive Runtime processes the request and generates a response.
 
 ```text
 Person
-    ↓
-Presence
-    ↓
-Identity
-    ↓
-Context
-    ↓
-Cognition
-    ↓
+  ↓
+Presence Detection
+  ↓
+Identity Recognition
+  ↓
+Identity Package
+  ↓
+Current Runtime Context
+  ↓
+Cognitive Processing
+  ↓
+Semantic Event Distribution
+  ↓
 Ambient Transformation
-    ↓
-Expression
-    ↓
-Voice Interaction
+  ↓
+Multimodal Expression
 ```
 
 ---
@@ -191,6 +203,8 @@ The objective of the demonstration is not to show individual devices.
 The objective is to show how multiple specialized nodes cooperate to create a context-aware cognitive environment.
 
 The environment perceives.
+
+The environment recognizes.
 
 The environment understands.
 

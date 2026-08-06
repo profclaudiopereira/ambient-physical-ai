@@ -2,48 +2,47 @@
 
 ## Demonstration Experience
 
-This document describes the visitor experience during the Ambient Physical AI demonstration.
+This document describes the participant experience during the Ambient Physical AI demonstration.
 
-The objective is to present the system from the user's perspective rather than from the perspective of the hardware or software components.
+The objective is to present the system from the participant's perspective rather than from the perspective of individual hardware or software components.
 
 ---
 
 # Before Arrival
 
-The environment is operating in standby mode.
+The environment operates in standby mode.
 
-No user is currently interacting with the system.
+No participant is currently interacting with the system.
 
 ```text
-Environment State
-
 Presence: Idle
 Identity: Unknown
 Context: Empty
 Ambient Runtime: Waiting
+Cognitive State: Idle
 ```
 
 ---
 
 # Arrival
 
-The visitor approaches the demonstration area.
+The participant approaches the demonstration area.
 
-Without requiring any action from the user, the environment detects presence.
+Without requiring any initial action, the LD2410C Presence Node detects human presence.
 
 ```text
 Presence detected
 ```
 
-At this moment the visitor realizes that the environment is aware that someone has arrived.
+At this moment, the participant realizes that the environment is aware that someone has arrived.
 
 ---
 
 # Identification
 
-The visitor presents an NFC credential using M5Dial.
+The participant presents an NFC credential using the M5Dial and WS1850S NFC reader.
 
-The system identifies the user.
+The system identifies the participant and activates the associated profile.
 
 Example:
 
@@ -52,115 +51,110 @@ User identified
 
 Name: Claudio
 Role: Owner
-Mode: Developer
+Context: Lab
 ```
 
-The visitor understands that the environment can distinguish different people and contexts.
+The participant understands that the environment can distinguish different people and contexts.
 
 ---
 
 # Context Awareness
 
-The identity information is sent to the Cognitive Runtime.
+The Identity Package is sent to the AX630C Cognitive Runtime.
 
 The system now knows:
 
 ```text
 Who arrived
+Which profile is active
+Which context is selected
 ```
 
-instead of simply:
+instead of simply knowing that someone is present.
 
-```text
-Someone arrived
-```
-
-Context becomes available.
-
-The environment transitions from detection to understanding.
+The environment transitions from detection to contextual understanding.
 
 ---
 
 # Cognitive Processing
 
-The AX630C processes:
+The Cognitive Runtime processes:
 
-* identity;
-* role;
-* context;
-* environmental information.
+- identity;
+- active context;
+- environmental information;
+- runtime state;
+- available semantic services.
 
-A contextual decision is generated.
+The participant observes the system transitioning through visible cognitive states.
 
 Example:
 
 ```text
-Developer mode activated.
+THINKING
+RESPONDING
+IDLE
 ```
 
-The visitor observes that the system is no longer reacting to a sensor event.
+The system is no longer reacting to an isolated sensor event.
 
-The system is interpreting context.
+It is interpreting context and coordinating the distributed ecosystem.
 
 ---
 
 # Ambient Adaptation
 
-The Ambient Runtime Node receives the decision.
+The M5Stack Tab5 Ambient Runtime receives the updated context.
 
-Environmental components react.
+The environment responds through:
 
-Possible actions include:
+- contextual information on the main display;
+- personalized content on the Mini OLED;
+- local sensor information;
+- visual environmental feedback;
+- network and runtime status.
 
-* visual feedback;
-* environmental indicators;
-* contextual information;
-* display updates.
-
-The environment changes according to the identified user.
+The environment changes according to the authenticated participant.
 
 ---
 
-# Embodied Interaction
+# Embodied and Multimodal Interaction
 
-StackChan becomes active.
+The Expression Layer becomes active.
 
-Example:
+The participant may observe:
 
-```text
-Welcome back Claudio.
-Developer mode activated.
-```
+- StackChan acting as an embodied research assistant;
+- the Echo Pyramid delivering a personalized welcome;
+- RGB nodes presenting runtime and profile states;
+- the Wearable Haptic Node producing tactile feedback during response;
+- the Cognitive Runtime Console displaying identity, context, health and runtime state.
 
-The interaction gains a physical presence.
+The participant no longer interacts with an invisible software service.
 
-The visitor no longer interacts with an invisible system.
-
-The environment now has an embodiment.
+The environment gains physical expression through coordinated devices.
 
 ---
 
 # Conversational Interaction
 
-Voice Pyramid becomes available.
-
-The visitor may continue naturally.
+The participant may use the Echo Pyramid to request a context change.
 
 Example:
 
 ```text
-What should I work on today?
+Hi ESP, Meeting.
 ```
 
-The environment responds using the Cognitive Runtime.
+The Cognitive Runtime processes the request, updates the active context and redistributes the resulting state across the ecosystem.
 
-The interaction becomes multimodal.
+The participant observes the environment adapting again without interacting separately with each device.
 
 ---
 
 # User Perception
 
-At this point the visitor should perceive:
+At this point, the participant should perceive:
 
 ```text
 The environment noticed me.
@@ -176,15 +170,17 @@ The environment interacted with me.
 
 Ambient Physical AI is not demonstrating:
 
-* a sensor;
-* a chatbot;
-* a display;
-* an ESP32 board.
+- a sensor;
+- a chatbot;
+- a display;
+- an ESP32 board;
+- an isolated automation routine.
 
 Ambient Physical AI demonstrates a distributed cognitive environment capable of:
 
 ```text
 Perceiving
+Recognizing
 Understanding
 Adapting
 Interacting
@@ -196,10 +192,10 @@ through the collaboration of multiple specialized runtime nodes.
 
 # Final Demonstration Statement
 
-The visitor does not interact with individual devices.
+The participant does not interact with individual devices.
 
-The visitor interacts with an environment.
+The participant interacts with an environment.
 
-That environment perceives presence, understands identity, reasons about context and adapts its behavior accordingly.
+That environment detects presence, resolves identity, maintains context, performs cognitive processing and adapts its physical behavior accordingly.
 
 This is the essence of Ambient Physical AI.
