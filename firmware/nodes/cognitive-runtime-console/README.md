@@ -35,8 +35,8 @@ PARTIAL JSON UPDATES            IMPLEMENTED
 UART RECEIVER                   IMPLEMENTED
 THREAD-SAFE LVGL UPDATES        IMPLEMENTED
 DEVELOPMENT DATA PATH           VALIDATED
-LIVE AX630C STATUS PUBLISHER     PENDING
-PHYSICAL UART INTEGRATION       PENDING FINAL VALIDATION
+LIVE AX630C STATUS PUBLISHER     IMPLEMENTED
+PHYSICAL UART INTEGRATION       VALIDATED
 ```
 
 Current milestone:
@@ -88,7 +88,7 @@ ESP-IDF UART Driver
 ```text
 AX630C Cognitive Runtime
         ↓
-Python Runtime Status Publisher
+cognitive_runtime_console_notifier.py
         ↓
 Newline-delimited JSON over UART
         ↓
@@ -503,22 +503,22 @@ The UART task also reports its configured port, GPIO, and baud rate.
 
 The remaining Linux-side component should follow the StackFlow convention of specialized Python modules.
 
-Recommended name:
+Implemented AX630C publisher:
 
 ```text
 cognitive_runtime_console_notifier.py
 ```
 
-Its role will be to:
+Validated implementation:
 
-- collect Linux and Cognitive Runtime status;
-- serialize `runtime_status` JSON;
-- send one newline-delimited document per update;
-- provide periodic health snapshots;
-- publish semantic and identity changes;
-- maintain heartbeat and recent-event information.
+- publishes complete `runtime_status` snapshots over `/dev/ttyS1`;
+- configures the UART automatically for 115200 8N1 without flow control;
+- uses newline-delimited UTF-8 JSON;
+- uses only the Python standard library (no PySerial dependency);
+- is integrated into `identity_udp_listener.py`;
+- publishes identity, context, runtime state, health telemetry, network status and recent events.
 
-This is an observability publisher, not a semantic-action notifier.
+The Runtime Console remains a pure observability component. Failures in the console publisher never interrupt the Cognitive Runtime semantic pipeline.
 
 ---
 
@@ -544,15 +544,37 @@ This is an observability publisher, not a semantic-action notifier.
 
 ### Final Integration
 
-- [ ] Validate physical UART wiring
-- [ ] Confirm final RX/TX GPIO orientation
-- [ ] Implement AX630C Python publisher
+- [x] Validate physical UART wiring
+- [x] Confirm final RX/TX GPIO orientation
+- [x] Implement AX630C Python publisher
 - [ ] Install publisher as a Linux service
-- [ ] Validate continuous live telemetry
+- [x] Validate continuous live telemetry
 - [ ] Validate heartbeat loss indication
 - [ ] Remove or disable development JSON
 - [ ] Capture final hardware evidence
 - [ ] Record final integration logs
+
+---
+
+## Engineering Update (August 2026)
+
+The AX630C integration has been completed and validated using the dedicated
+`cognitive_runtime_console_notifier.py` publisher.
+
+Validated configuration:
+
+```text
+Transport : UART
+Linux Port: /dev/ttyS1
+Console RX: GPIO18
+Baud Rate : 115200
+Format    : UTF-8 JSON + LF
+```
+
+The publisher is integrated with `identity_udp_listener.py` and automatically
+publishes Cognitive Runtime state transitions, active identity, active context,
+Linux health telemetry, network information and recent runtime events to the
+CoreS3 Lite Runtime Console.
 
 ---
 
@@ -594,4 +616,4 @@ docs/architecture/COGNITIVE_RUNTIME_CONSOLE_TECHNICAL_ARCHITECTURE.md
 
 ## Current Status Statement
 
-> The Cognitive Runtime Console firmware has a complete modular graphical architecture, five touch-navigable views, a stable runtime status model, a validated JSON ingestion path, and an operational UART receiver. The remaining milestone is the implementation and validation of the AX630C-side Python publisher that will provide live Cognitive Runtime telemetry.
+> The Cognitive Runtime Console firmware now includes a validated end-to-end integration with the AX630C Cognitive Runtime through the dedicated `cognitive_runtime_console_notifier.py` publisher. Live Runtime telemetry is transported over `/dev/ttyS1` using newline-delimited JSON, updating all five console views in real time while remaining architecturally independent from the semantic execution pipeline.

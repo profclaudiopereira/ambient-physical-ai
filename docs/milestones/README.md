@@ -66,6 +66,15 @@ Documents the validated production integration between the Cognitive Runtime and
 
 **Engineering purpose:** Validate context-aware conversational integration through the production MCP infrastructure.
 
+
+---
+
+### `ECHO_PYRAMID_VOICE_INTEGRATION_MILESTONE.md`
+
+Documents the first complete end-to-end integration of the Echo Pyramid Voice Node with the Ambient Physical AI Cognitive Runtime, validating personalized voice generation through StackFlow Text-to-Speech services, TCP voice transport, embedded audio playback, and the architectural separation between centralized cognition and distributed expression.
+
+**Engineering purpose:** Establish the validated engineering baseline for distributed personalized voice interaction within the Expression Layer.
+
 ---
 
 ## Version Notes

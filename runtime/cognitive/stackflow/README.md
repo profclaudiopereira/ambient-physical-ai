@@ -1133,6 +1133,32 @@ This preserves the same separation of responsibilities adopted throughout the ru
 
 ---
 
+# Cognitive Runtime Console Integration
+
+Current implementation:
+
+```text
+cognitive_runtime_console_notifier.py
+```
+
+The Cognitive Runtime Console integration provides a dedicated observability
+channel between the AX630C and the M5Stack CoreS3 Lite Runtime Console.
+
+Validated implementation characteristics:
+
+- UART transport through `/dev/ttyS1`;
+- 115200 bit/s, 8N1, no flow control;
+- newline-delimited UTF-8 JSON (`runtime_status`);
+- complete runtime snapshots;
+- integration with `identity_udp_listener.py`;
+- Python standard library only (no PySerial dependency).
+
+The Runtime Console is intentionally independent from the semantic execution
+pipeline. Its responsibility is to publish runtime observability without
+participating in semantic interpretation, routing or decision making.
+
+---
+
 # Independent Runtime Services
 
 Not every runtime communication belongs to the Semantic Event pipeline.
@@ -1264,7 +1290,7 @@ The complete StackFlow Cognitive Runtime architecture currently implemented by A
 
              Independent Runtime Services
 
-     Runtime State     Ambient Context     Embedded MCP
+ Runtime State   Runtime Console   Ambient Context   Embedded MCP
 ```
 
 The following sections describe repository organization, validation procedures, engineering evidence and future development roadmap.
@@ -1296,6 +1322,7 @@ runtime/
         ├── echo_pyramid_adapter.py
         ├── rgb_strip_notifier.py
         ├── runtime_state_notifier.py
+        ├── cognitive_runtime_console_notifier.py
         ├── stackchan_notifier.py
         │
         ├── stackchan_mcp_server.py
@@ -1341,6 +1368,7 @@ The following modules connect the runtime to external systems.
 | `rgb_strip_notifier.py` | Expression Layer integration |
 | `stackchan_notifier.py` | StackChan integration |
 | `runtime_state_notifier.py` | Runtime observability |
+| `cognitive_runtime_console_notifier.py` | Cognitive Runtime Console observability over UART |
 
 These modules intentionally remain independent from semantic processing.
 
@@ -1407,6 +1435,7 @@ Ambient Runtime Adapter ................ PASS
 Echo Pyramid Adapter ................... PASS
 
 Runtime State Channel .................. PASS
+Cognitive Runtime Console ............... PASS
 
 Shared Runtime Context ................. PASS
 ```
@@ -1524,6 +1553,7 @@ The StackFlow Cognitive Runtime currently represents the validated semantic base
 Implemented capabilities include:
 
 - semantic runtime coordination;
+- Cognitive Runtime Console UART observability;
 - canonical Context Package generation;
 - Current Runtime Context management;
 - Semantic Event generation;

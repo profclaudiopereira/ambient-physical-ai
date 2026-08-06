@@ -38,21 +38,22 @@ documentation artifact.
 
 # Relationship with Other Documentation
 
-  -----------------------------------------------------------------------
-  Category                    Primary Purpose
-  --------------------------- -------------------------------------------
-  `architecture/`             System structure, responsibilities and
-                              long-term design.
+  ---------------------------------------------------------------------
+  Category                   Primary Purpose
+  -------------------------- ------------------------------------------
+  `architecture/`            System structure, responsibilities and
+                             long-term design.
 
-  `discoveries/`              Engineering investigations and discoveries
-                              before consolidation.
+  `discoveries/`             Engineering investigations and discoveries
+                             before consolidation.
 
-  `milestones/`               Validated project achievements and
-                              integration baselines.
+  `milestones/`              Validated project achievements and
+                             integration baselines.
 
-  `notes/`                    Engineering rationale, implementation
-                              decisions and technical reference material.
-  -----------------------------------------------------------------------
+  `notes/`                   Engineering rationale, implementation
+                             decisions and technical reference
+                             material.
+  ---------------------------------------------------------------------
 
 ------------------------------------------------------------------------
 
@@ -134,6 +135,33 @@ backward compatibility.
 Records the validated procedures required to reproduce the build
 environment, recover ESP-SR configuration and perform controlled Wake
 Word calibration.
+
+------------------------------------------------------------------------
+
+## `TECHNICAL_NOTE_002_EXPRESSION_LAYER_HARDWARE_SPECIALIZATION.md`
+
+Documents the engineering decision that specialized the Runtime State
+RGB Node and the Wearable Haptic Node, preserving a shared Runtime State
+protocol while assigning each hardware platform to the role for which it
+was validated.
+
+------------------------------------------------------------------------
+
+## `TECHNICAL_NOTE_003_ASYNC_IDENTITY_VOICE_DISPATCH.md`
+
+Records the competition-time optimization that decoupled personalized
+identity voice generation from the main Cognitive Runtime processing
+loop, preserving existing communication contracts while eliminating
+synchronous TTS bottlenecks.
+
+------------------------------------------------------------------------
+
+## `TECHNICAL_NOTE_004_STACKCHAN_MCP_CONFIGURATION_AND_VALIDATION.md`
+
+Documents the validated StackChan MCP deployment and configuration
+procedure, including the required runtime configuration, operational
+validation steps and engineering considerations for restoring the
+integration after a clean installation.
 
 ------------------------------------------------------------------------
 
