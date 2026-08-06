@@ -147,7 +147,7 @@ Identity Node
 Network configuration used during validation:
 
 ```text
-SSID      : CAZAZUL
+SSID      : <YOUR_WIFI_SSID>
 Broadcast : 192.168.0.255
 Port      : 3333
 ```

@@ -41,9 +41,13 @@
 #define STATIC_DNS_MAIN   "192.168.1.1"
 #define STATIC_DNS_BACKUP "8.8.8.8"
 
-
-#define WIFI_SSID "APT_201_2G"
-#define WIFI_PASS "Severina73"
+/*
+ * Update the Wi-Fi credentials below before building.
+ * If static IP addressing is enabled, also adjust the network
+ * configuration (IP, gateway and subnet mask) for your environment.
+ */
+#define WIFI_SSID "<YOUR_WIFI_SSID>"
+#define WIFI_PASS "<YOUR_WIFI_PASSWORD>"
 
 static const char *TAG = "echo_pyramid_net";
 static volatile bool s_wifi_connected = false;

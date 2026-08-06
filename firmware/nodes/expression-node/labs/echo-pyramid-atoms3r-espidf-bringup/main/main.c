@@ -18,8 +18,14 @@
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 
-#define WIFI_SSID "OKFIBRA-Claudio_2GHz"
-#define WIFI_PASS "15120813"
+
+/*
+ * Update the Wi-Fi credentials below before building.
+ * If static IP addressing is enabled, also adjust the network
+ * configuration (IP, gateway and subnet mask) for your environment.
+ */
+#define WIFI_SSID "<YOUR_WIFI_SSID>"
+#define WIFI_PASS "<YOUR_WIFI_PASSWORD>"
 
 #define UDP_PORT 5005
 #define UDP_BUFFER_SIZE 128
