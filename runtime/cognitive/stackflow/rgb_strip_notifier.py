@@ -17,8 +17,8 @@ from semantic_event import is_semantic_event
 
 class RGBStripNotifier:
     DEFAULT_HOSTS = [
-        "192.168.77.205",
-        "192.168.77.206",
+        "192.168.1.205",
+        "192.168.1.206",
     ]
 
     def __init__(self):

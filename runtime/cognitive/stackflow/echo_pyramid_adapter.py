@@ -38,7 +38,7 @@ class EchoPyramidAdapter:
     arrive in order.
     """
 
-    DEFAULT_HOST = "192.168.77.204"
+    DEFAULT_HOST = "192.168.1.204"
     DEFAULT_PORT = 5005
     DEFAULT_VOICE_PORT = 5006
 

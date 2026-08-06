@@ -23,8 +23,8 @@ from typing import Any
 
 
 DEFAULT_RUNTIME_STATE_HOSTS = (
-    "192.168.77.207",
-    "192.168.77.208",
+    "192.168.1.207",
+    "192.168.1.208",
 )
 
 DEFAULT_RUNTIME_STATE_PORT = 5555
@@ -55,11 +55,11 @@ class RuntimeStateNotifier:
 
         Preferred configuration:
 
-            RUNTIME_STATE_HOSTS=192.168.77.207,192.168.77.208
+            RUNTIME_STATE_HOSTS=192.168.1.207,192.168.1.208
 
         Legacy single-host configuration remains supported through:
 
-            RUNTIME_STATE_HOST=192.168.77.207
+            RUNTIME_STATE_HOST=192.168.1.207
         """
 
         configured_hosts = os.getenv(

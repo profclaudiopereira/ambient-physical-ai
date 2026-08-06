@@ -23,7 +23,7 @@ class AmbientRuntimeNotifier:
 
         self.host = os.getenv(
             "AMBIENT_RUNTIME_HOST",
-            "192.168.77.203",
+            "192.168.1.203",
         )
 
         self.port = int(

@@ -83,7 +83,7 @@ def build_test_payload() -> dict[str, Any]:
             "connected": True,
             "heartbeat": True,
             "rssi_dbm": 0,
-            "ip": "192.168.77.15",
+            "ip": "192.168.1.15",
             "runtime_link": "AX630C UART",
         },
         "events": [

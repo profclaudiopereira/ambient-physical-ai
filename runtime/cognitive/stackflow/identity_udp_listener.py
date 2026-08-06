@@ -145,7 +145,7 @@ def refresh_ambient_context(current_context: dict) -> None:
 
         send_ambient_context(
             profile_id=profile_id,
-            tab5_host="192.168.77.203",
+            tab5_host="192.168.1.203",
         )
 
         print(f"Ambient Context updated for '{profile_id}'")
