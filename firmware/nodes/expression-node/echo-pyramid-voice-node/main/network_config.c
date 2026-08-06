@@ -22,12 +22,12 @@
 
 #define STATIC_IP_OCTET_1 192
 #define STATIC_IP_OCTET_2 168
-#define STATIC_IP_OCTET_3 77
+#define STATIC_IP_OCTET_3 1
 #define STATIC_IP_OCTET_4 204
 
 #define GATEWAY_OCTET_1   192
 #define GATEWAY_OCTET_2   168
-#define GATEWAY_OCTET_3   77
+#define GATEWAY_OCTET_3   1
 #define GATEWAY_OCTET_4   1
 
 #define NETMASK_OCTET_1   255
@@ -35,14 +35,15 @@
 #define NETMASK_OCTET_3   255
 #define NETMASK_OCTET_4   0
 
-#define STATIC_IP_TEXT    "192.168.77.202"
-#define STATIC_GATEWAY    "192.168.77.1"
+#define STATIC_IP_TEXT    "192.168.1.202"
+#define STATIC_GATEWAY    "192.168.1.1"
 #define STATIC_NETMASK    "255.255.255.0"
-#define STATIC_DNS_MAIN   "192.168.77.1"
+#define STATIC_DNS_MAIN   "192.168.1.1"
 #define STATIC_DNS_BACKUP "8.8.8.8"
 
-#define WIFI_SSID         "OKFIBRA-Claudio_2GHz"
-#define WIFI_PASS         "15120813"
+
+#define WIFI_SSID "APT_201_2G"
+#define WIFI_PASS "Severina73"
 
 static const char *TAG = "echo_pyramid_net";
 static volatile bool s_wifi_connected = false;

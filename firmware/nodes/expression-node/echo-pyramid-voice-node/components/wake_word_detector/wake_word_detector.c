@@ -294,7 +294,7 @@ esp_err_t wake_word_detector_start(
     }
 
     afe_config_t *config = afe_config_init(
-        "MR", s_models, AFE_TYPE_SR, AFE_MODE_LOW_COST);
+        "MR", s_models, AFE_TYPE_SR, AFE_MODE_HIGH_PERF);
 
     if (config == NULL) {
         ESP_LOGE(TAG, "Unable to create AFE configuration");
