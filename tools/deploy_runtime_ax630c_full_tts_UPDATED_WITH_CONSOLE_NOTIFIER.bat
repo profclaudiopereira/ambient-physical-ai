@@ -16,7 +16,7 @@ rem ============================================================================
 cd /d "%~dp0.."
 if errorlevel 1 goto :local_error
 
-set "HOST=root@192.168.77.202"
+set "HOST=root@192.168.1.202"
 set "LOCAL=runtime\cognitive\stackflow"
 set "REMOTE=/root/ambient-runtime/runtime/cognitive/stackflow"
 
