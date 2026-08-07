@@ -207,14 +207,6 @@ and actuation into a single embedded device.
 
 ![Architecture Panel](assets/photos/official_architecture_panel.jpg)
 
-![Presence Layer](assets/photos/presence_layer.jpg)
-
-![Identity Layer](assets/photos/identity_layer.jpg)
-
-![Cognitive Runtime](assets/photos/cognitive_runtime.jpg)
-
-![Ambient Runtime](assets/photos/ambient_runtime_tab5.jpg)
-
 ------------------------------------------------------------------------
 
 # Architectural Layers
@@ -249,7 +241,8 @@ and actuation into a single embedded device.
 
 # Cognitive Runtime
 
-📷 **Photo:** AX630C + LLM Mate
+![Cognitive Runtime](assets/photos/cognitive_runtime.jpg)
+**Photo:** AX630C + LLM Mate
 
 The Cognitive Runtime is the semantic core of the ecosystem.
 
@@ -268,7 +261,8 @@ actuator.
 
 # Ambient Runtime
 
-📷 **Photo:** M5Stack Tab5
+![Ambient Runtime](assets/photos/ambient_runtime_tab5.jpg)
+**Photo:** M5Stack Tab5
 
 The Ambient Runtime bridges semantic reasoning and the physical
 laboratory.
@@ -285,7 +279,8 @@ Current responsibilities include:
 
 # Presence Layer
 
-📷 **Photo:** Presence Node (LD2410C)
+![Presence Layer](assets/photos/presence_layer.jpg)
+**Photo:** Presence Node (LD2410C)
 
 Detects human presence before any interaction occurs.
 
@@ -300,7 +295,8 @@ Responsibilities:
 
 # Identity Layer
 
-📷 **Photo:** M5Dial Identity Node
+![Identity Layer](assets/photos/identity_layer.jpg)
+**Photo:** M5Dial Identity Node
 
 Transforms an anonymous presence into an authenticated interaction.
 
@@ -315,7 +311,8 @@ Responsibilities:
 
 # Voice Interface
 
-📷 **Photo:** Echo Pyramid + AtomS3R
+![Voice Interface](assets/photos/voice_pyramid.jpeg)
+**Photo:** Echo Pyramid + AtomS3R
 
 Provides natural bidirectional interaction.
 
@@ -330,7 +327,8 @@ Capabilities:
 
 # Expression Layer
 
-📷 **Photos:** - RGB Strip Node - StickC Plus RGB Node - Atom Matrix RGB
+![Expression Layer](assets/photos/stickcplus2.jpeg)
+**Photos:** - RGB Strip Node - StickC Plus RGB Node - Atom Matrix RGB
 Node
 
 Instead of simply displaying status LEDs, these nodes externalize the
@@ -351,7 +349,8 @@ This makes AI activity visible and understandable to nearby users.
 
 # Wearable Interaction
 
-📷 **Photo:** Wearable Node
+![Expression Layer](assets/photos/weareble.jpeg)
+**Photo:** Wearable Node
 
 The wearable extends interaction beyond fixed devices by combining
 visual and haptic feedback.
