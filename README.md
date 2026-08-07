@@ -328,8 +328,7 @@ Capabilities:
 # Expression Layer
 
 ![Expression Layer](assets/photos/stickcplus2.jpeg)
-**Photos:** - RGB Strip Node - StickC Plus RGB Node - Atom Matrix RGB
-Node
+**Photos:** - StickC Plus 2 RGB Node 
 
 Instead of simply displaying status LEDs, these nodes externalize the
 cognitive state of the ecosystem.
